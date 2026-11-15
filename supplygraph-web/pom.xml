@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.supplygraph</groupId>
+        <artifactId>supplygraph</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>supplygraph-web</artifactId>
+    <packaging>jar</packaging>
+
+    <name>SupplyGraph :: Web &amp; Composition Root</name>
+    <description>Spring Boot application composition root, Vaadin Flow Java frontend views, and Actuator observability</description>
+
+    <dependencies>
+        <!-- Internal Architecture Modules -->
+        <dependency>
+            <groupId>com.supplygraph</groupId>
+            <artifactId>supplygraph-core-domain</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.supplygraph</groupId>
+            <artifactId>supplygraph-industry-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.supplygraph</groupId>
+            <artifactId>supplygraph-concurguard</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.supplygraph</groupId>
+            <artifactId>supplygraph-simulation-engine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.supplygraph</groupId>
+            <artifactId>supplygraph-core-application</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.supplygraph</groupId>
+            <artifactId>supplygraph-industry-ev</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.supplygraph</groupId>
+            <artifactId>supplygraph-industry-pharma</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.supplygraph</groupId>
+            <artifactId>supplygraph-industry-semiconductor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.supplygraph</groupId>
+            <artifactId>supplygraph-industry-automotive</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.supplygraph</groupId>
+            <artifactId>supplygraph-adapter-persistence</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.supplygraph</groupId>
+            <artifactId>supplygraph-adapter-ai</artifactId>
+        </dependency>
+
+        <!-- Vaadin Flow Java Frontend -->
+        <dependency>
+            <groupId>com.vaadin</groupId>
+            <artifactId>vaadin-spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Web & Observability -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Testing & Architecture Verification -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
