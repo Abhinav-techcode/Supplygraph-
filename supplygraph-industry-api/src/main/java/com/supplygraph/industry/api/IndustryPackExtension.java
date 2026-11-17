@@ -17,5 +17,25 @@ public interface IndustryPackExtension {
     String getDescription();
 
     List<String> getSupportedScenarioCodes();
+
+    default List<IndustryPolicy> getIndustryPolicies() {
+        return List.of();
+    }
+
+    default List<String> getCriticalMaterials() {
+        return List.of();
+    }
+
+    default List<String> getQualityValidationRules() {
+        return List.of();
+    }
+
+    default boolean isMaterialCompatible(String materialName, String contextDescription) {
+        return true;
+    }
+
+    default String evaluateSupplierQualification(String supplierName, String country) {
+        return "QUALIFIED";
+    }
 }
 

@@ -12,6 +12,7 @@ public enum AuditAction {
     REPLANNING_TRIGGERED("Adaptive replanning triggered by continuous monitoring"),
     USER_ROLE_CHANGED("User role or workspace assignment modified"),
     MONITORING_RULE_MODIFIED("Operational monitoring rule created or updated"),
+    DATA_IMPORTED("Enterprise dataset batch imported and validated"),
     SECURITY_POLICY_ENFORCED("Security constraint or rate limit enforced");
 
     private final String description;

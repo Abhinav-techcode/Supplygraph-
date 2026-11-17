@@ -45,5 +45,45 @@ public class SemiconductorIndustryPack implements IndustryPackExtension {
                 "SC-SC-08-GEOPOLITICAL-RESTRICTION"
         );
     }
+
+    @Override
+    public List<com.supplygraph.industry.api.IndustryPolicy> getIndustryPolicies() {
+        return List.of(
+                new com.supplygraph.industry.api.IndustryPolicy("SEMI-POL-01", "Photolithography Gas Sourcing", "EUV photoresist and ultra-pure neon must maintain minimum 60-day strategic reserve", true),
+                new com.supplygraph.industry.api.IndustryPolicy("SEMI-POL-02", "Fab Cleanroom Particle Control", "Class 1 cleanroom particle excursion suspends wafer lot stepping immediately", true),
+                new com.supplygraph.industry.api.IndustryPolicy("SEMI-POL-03", "Die Yield Degradation Ceiling", "Yield fallout exceeding 8% on advanced nodes triggers automated engineering hold", true)
+        );
+    }
+
+    @Override
+    public List<String> getCriticalMaterials() {
+        return List.of("300mm Prime Silicon Substrates", "Extreme Ultraviolet (EUV) Photoresist", "Ultra-High Purity Neon Gas", "Copper Electroplating Precursor", "Palladium Leadframes");
+    }
+
+    @Override
+    public List<String> getQualityValidationRules() {
+        return List.of(
+                "Wafer bow/warp parameters must conform to SEMI M1 standard",
+                "Spectroscopic impurity verification for etching chemicals",
+                "EUV tool uptime and calibration drift logging"
+        );
+    }
+
+    @Override
+    public boolean isMaterialCompatible(String materialName, String contextDescription) {
+        if (materialName == null) return false;
+        if (contextDescription != null && contextDescription.toLowerCase().contains("300mm")) {
+            return !materialName.contains("200mm");
+        }
+        return true;
+    }
+
+    @Override
+    public String evaluateSupplierQualification(String supplierName, String country) {
+        if (supplierName != null && supplierName.toLowerCase().contains("unvalidated_fab")) {
+            return "NON_QUALIFIED_FOUNDRY";
+        }
+        return "QUALIFIED";
+    }
 }
 

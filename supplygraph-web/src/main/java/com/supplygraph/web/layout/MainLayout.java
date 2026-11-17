@@ -31,7 +31,7 @@ public class MainLayout extends AppLayout {
                 .set("margin", "0")
                 .set("color", "var(--lumo-primary-text-color)");
 
-        Span badge = new Span("Phase 6 :: Enterprise Security, Governance & Empirical Research");
+        Span badge = new Span("Phase 7 & 8 :: Industry Intelligence, Enterprise Integration & Decision Support");
         badge.getElement().getThemeList().add("badge success small");
         badge.getStyle().set("margin-left", "var(--lumo-space-s)");
 
@@ -59,10 +59,30 @@ public class MainLayout extends AppLayout {
         nav.addItem(new SideNavItem("Reassessments", "reassessments", VaadinIcon.REFRESH.create()));
         nav.addItem(new SideNavItem("Adaptive Replanning", "adaptive-replanning", VaadinIcon.CONNECT.create()));
         nav.addItem(new SideNavItem("Agent History", "agent-history", VaadinIcon.USER_CHECK.create()));
-        nav.addItem(new SideNavItem("Security Admin", "security-admin", VaadinIcon.SHIELD.create()));
+        nav.addItem(new SideNavItem("Data Integration", "data-integration", VaadinIcon.DATABASE.create()));
+        nav.addItem(new SideNavItem("Import History", "import-history", VaadinIcon.ARCHIVE.create()));
+        nav.addItem(new SideNavItem("Import Preview", "import-preview", VaadinIcon.FILE_SEARCH.create()));
+        nav.addItem(new SideNavItem("Data Quality", "data-quality", VaadinIcon.CHECK_SQUARE_O.create()));
+        nav.addItem(new SideNavItem("Supplier Intelligence", "supplier-intelligence", VaadinIcon.FACTORY.create()));
+        nav.addItem(new SideNavItem("Supplier Dependencies", "supplier-dependencies", VaadinIcon.CLUSTER.create()));
+        nav.addItem(new SideNavItem("Material Criticality", "material-criticality", VaadinIcon.CUBE.create()));
+        nav.addItem(new SideNavItem("Inventory Intelligence", "inventory-intelligence", VaadinIcon.STORAGE.create()));
+        nav.addItem(new SideNavItem("Industry Config", "industry-config", VaadinIcon.OPTIONS.create()));
+        nav.addItem(new SideNavItem("Resilience Analytics", "resilience-analytics", VaadinIcon.SHIELD.create()));
+        nav.addItem(new SideNavItem("Security Admin", "security-admin", VaadinIcon.LOCK.create()));
         nav.addItem(new SideNavItem("Audit Governance", "audit-log", VaadinIcon.DIPLOMA.create()));
-        nav.addItem(new SideNavItem("Data Provenance", "provenance", VaadinIcon.DATABASE.create()));
+        nav.addItem(new SideNavItem("Data Provenance", "provenance", VaadinIcon.CLUSTER.create()));
         nav.addItem(new SideNavItem("Benchmark Studio", "benchmark-studio", VaadinIcon.ACADEMY_CAP.create()));
+        nav.addItem(new SideNavItem("Explainable Recovery", "recommendations-explainable", VaadinIcon.LIGHTBULB.create()));
+        nav.addItem(new SideNavItem("Decision Provenance", "decision-provenance", VaadinIcon.SITEMAP.create()));
+        nav.addItem(new SideNavItem("What-If Workspace", "what-if-workspace", VaadinIcon.SLIDERS.create()));
+        nav.addItem(new SideNavItem("Pareto Optimization", "pareto-comparison", VaadinIcon.CHART_LINE.create()));
+        nav.addItem(new SideNavItem("Sensitivity Analysis", "sensitivity-analysis", VaadinIcon.DASHBOARD.create()));
+        nav.addItem(new SideNavItem("Advanced Resilience", "advanced-resilience", VaadinIcon.SHIELD.create()));
+        nav.addItem(new SideNavItem("Experiment Manager", "experiment-manager", VaadinIcon.ROCKET.create()));
+        nav.addItem(new SideNavItem("Benchmark Dashboard", "benchmark-dashboard", VaadinIcon.TABLE.create()));
+        nav.addItem(new SideNavItem("Statistical Results", "statistical-results", VaadinIcon.CALC.create()));
+        nav.addItem(new SideNavItem("Decision Intelligence", "decision-intelligence", VaadinIcon.EYE.create()));
         nav.addItem(new SideNavItem("System Health", "health", VaadinIcon.HEART.create()));
 
         Scroller scroller = new Scroller(nav);

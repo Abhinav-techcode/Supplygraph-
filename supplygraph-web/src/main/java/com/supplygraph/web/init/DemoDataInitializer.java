@@ -75,6 +75,17 @@ public class DemoDataInitializer implements CommandLineRunner {
     private final AuditGovernanceService auditGovernanceService;
     private final DataProvenanceService provenanceService;
     private final BenchmarkExperimentRunner benchmarkRunner;
+    private final com.supplygraph.application.integration.EnterpriseDataImportService importService;
+    private final com.supplygraph.application.quality.DataQualityEngineService qualityService;
+    private final com.supplygraph.application.intelligence.SupplierIntelligenceService supplierService;
+    private final com.supplygraph.application.intelligence.MaterialIntelligenceService materialService;
+    private final com.supplygraph.application.intelligence.SupplyChainResilienceService resilienceService;
+    private final com.supplygraph.application.explainability.ExplainableRecommendationService explainableRecommendationService;
+    private final com.supplygraph.application.provenance.DecisionProvenanceGraphService decisionProvenanceGraphService;
+    private final com.supplygraph.application.whatif.WhatIfAnalysisService whatIfAnalysisService;
+    private final com.supplygraph.application.pareto.MultiObjectiveParetoService multiObjectiveParetoService;
+    private final com.supplygraph.application.sensitivity.SensitivityAnalysisService sensitivityAnalysisService;
+    private final com.supplygraph.application.resilience.AdvancedResilienceAnalyticsService advancedResilienceAnalyticsService;
 
     public DemoDataInitializer(
             SpringDataWorkspaceRepository workspaceRepo,
@@ -88,7 +99,18 @@ public class DemoDataInitializer implements CommandLineRunner {
             UserProfileRepositoryPort userProfileRepo,
             AuditGovernanceService auditGovernanceService,
             DataProvenanceService provenanceService,
-            BenchmarkExperimentRunner benchmarkRunner
+            BenchmarkExperimentRunner benchmarkRunner,
+            com.supplygraph.application.integration.EnterpriseDataImportService importService,
+            com.supplygraph.application.quality.DataQualityEngineService qualityService,
+            com.supplygraph.application.intelligence.SupplierIntelligenceService supplierService,
+            com.supplygraph.application.intelligence.MaterialIntelligenceService materialService,
+            com.supplygraph.application.intelligence.SupplyChainResilienceService resilienceService,
+            com.supplygraph.application.explainability.ExplainableRecommendationService explainableRecommendationService,
+            com.supplygraph.application.provenance.DecisionProvenanceGraphService decisionProvenanceGraphService,
+            com.supplygraph.application.whatif.WhatIfAnalysisService whatIfAnalysisService,
+            com.supplygraph.application.pareto.MultiObjectiveParetoService multiObjectiveParetoService,
+            com.supplygraph.application.sensitivity.SensitivityAnalysisService sensitivityAnalysisService,
+            com.supplygraph.application.resilience.AdvancedResilienceAnalyticsService advancedResilienceAnalyticsService
     ) {
         this.workspaceRepo = workspaceRepo;
         this.digitalTwinRepo = digitalTwinRepo;
@@ -102,6 +124,17 @@ public class DemoDataInitializer implements CommandLineRunner {
         this.auditGovernanceService = auditGovernanceService;
         this.provenanceService = provenanceService;
         this.benchmarkRunner = benchmarkRunner;
+        this.importService = importService;
+        this.qualityService = qualityService;
+        this.supplierService = supplierService;
+        this.materialService = materialService;
+        this.resilienceService = resilienceService;
+        this.explainableRecommendationService = explainableRecommendationService;
+        this.decisionProvenanceGraphService = decisionProvenanceGraphService;
+        this.whatIfAnalysisService = whatIfAnalysisService;
+        this.multiObjectiveParetoService = multiObjectiveParetoService;
+        this.sensitivityAnalysisService = sensitivityAnalysisService;
+        this.advancedResilienceAnalyticsService = advancedResilienceAnalyticsService;
     }
 
     @Override
@@ -324,7 +357,80 @@ public class DemoDataInitializer implements CommandLineRunner {
                 3
         );
 
-        log.info("Demo initialization complete: Active disruption {} with cascading impact, recovery alternatives, monitoring rules, enterprise users, audit trail, and research benchmark.",
+        // 15. Seed Phase 7 Enterprise Integration, Quality & Intelligence
+        try {
+            String initialSupplierCsv = """
+                    supplier_id,name,location,lead_time
+                    FAB-MUNICH,Munich Semiconductor Fab,DEU,60
+                    CELL-GOTHENBURG,Gothenburg Battery Cell Gigafactory,SWE,45
+                    CHEM-LYON,Lyon Specialty Chemical Precursors,FRA,30
+                    HARNESS-SIBIU,Sibiu Automotive Wiring Systems,ROU,14
+                    """;
+            var job = importService.parseAndValidate(
+                    initialSupplierCsv.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                    com.supplygraph.domain.model.integration.ImportSourceType.CSV,
+                    com.supplygraph.domain.model.integration.DataCategory.SUPPLIER,
+                    "initial_supplier_master_2026.csv",
+                    "default-workspace",
+                    "USR-SCM-01"
+            );
+            importService.executeImport(job.id(), "default-workspace", "USR-SCM-01");
+
+            // Also seed for DEMO_WORKSPACE_ID
+            qualityService.evaluateWorkspaceQuality(DEMO_WORKSPACE_ID, twinState);
+            qualityService.evaluateWorkspaceQuality("default-workspace", twinState);
+            supplierService.computeSupplierRiskProfiles(DEMO_WORKSPACE_ID, twinState);
+            supplierService.computeSupplierRiskProfiles("default-workspace", twinState);
+            materialService.computeMaterialProfiles(DEMO_WORKSPACE_ID, twinState, BigDecimal.valueOf(30));
+            materialService.computeMaterialProfiles("default-workspace", twinState, BigDecimal.valueOf(30));
+            resilienceService.assessNetworkResilience(DEMO_WORKSPACE_ID, twinState);
+            resilienceService.assessNetworkResilience("default-workspace", twinState);
+
+            // 16. Seed Phase 8 Explainable Recommendations, Provenance Graph, What-If, Pareto, Sensitivity & Advanced Resilience
+            var candidateAlt = new com.supplygraph.domain.model.recovery.RecoveryPlanAlternative(
+                    com.supplygraph.domain.model.recovery.PlanAlternativeId.of("ALT-EXPEDITE-AIR"),
+                    "Emergency Air Freight & Secondary Buffer Reroute",
+                    "Expedites critical MCU-AUTO-32 wafers via charter air cargo while allocating 500 units from Frankfurt distribution hub.",
+                    BigDecimal.valueOf(64000.00),
+                    36.0,
+                    98.5,
+                    List.of(
+                            "Charter Lufthansa Cargo B77F from Munich to Stuttgart",
+                            "Release 500 units safety buffer from Frankfurt logistics hub",
+                            "Notify downstream assembly plants of restored production schedule"
+                    )
+            );
+            explainableRecommendationService.generateRecommendation(activeDisruption.id().value(), "V1.0", candidateAlt);
+
+            decisionProvenanceGraphService.buildAndSaveProvenanceGraph(DEMO_WORKSPACE_ID, activeDisruption.id().value(), "USR-SCM-01");
+            decisionProvenanceGraphService.buildAndSaveProvenanceGraph("default-workspace", activeDisruption.id().value(), "USR-SCM-01");
+
+            var whatIfConfig = com.supplygraph.domain.model.whatif.WhatIfScenarioConfig.of(
+                    com.supplygraph.domain.model.whatif.WhatIfScenarioId.of("WIF-AIR-01"),
+                    "Air Freight Surge + Safety Stock Multiplier",
+                    "Counterfactual simulation testing air freight expediting with 1.5x buffer capacity",
+                    "default-workspace",
+                    0.85,
+                    1.50,
+                    -3,
+                    "AIR",
+                    14,
+                    0.5,
+                    0.3,
+                    0.2
+            );
+            whatIfAnalysisService.executeScenario(whatIfConfig);
+
+            multiObjectiveParetoService.evaluateAlternatives(activeDisruption.id().value(), List.of(candidateAlt));
+            sensitivityAnalysisService.runSensitivitySuite(DEMO_WORKSPACE_ID, candidateAlt.id().value(), BigDecimal.valueOf(64000), 8.0, 98.0);
+            sensitivityAnalysisService.runSensitivitySuite("default-workspace", candidateAlt.id().value(), BigDecimal.valueOf(64000), 8.0, 98.0);
+            advancedResilienceAnalyticsService.evaluateWorkspaceResilience(DEMO_WORKSPACE_ID);
+            advancedResilienceAnalyticsService.evaluateWorkspaceResilience("default-workspace");
+        } catch (Exception ex) {
+            log.warn("Non-fatal: Phase 7/8 demo data seeding notice: {}", ex.getMessage());
+        }
+
+        log.info("Demo initialization complete: Active disruption {} with cascading impact, recovery alternatives, monitoring rules, enterprise users, audit trail, research benchmark, and decision intelligence.",
                 activeDisruption.id().value());
     }
 }

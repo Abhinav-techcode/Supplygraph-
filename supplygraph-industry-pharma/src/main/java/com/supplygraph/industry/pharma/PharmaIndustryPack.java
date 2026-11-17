@@ -45,5 +45,45 @@ public class PharmaIndustryPack implements IndustryPackExtension {
                 "PH-SC-08-WAREHOUSE-DISRUPTION"
         );
     }
+
+    @Override
+    public List<com.supplygraph.industry.api.IndustryPolicy> getIndustryPolicies() {
+        return List.of(
+                new com.supplygraph.industry.api.IndustryPolicy("PHA-POL-01", "Cold-Chain Integrity SLA", "Biologics and sterile APIs must maintain 2C-8C continuously; temperature excursion prompts quarantine", true),
+                new com.supplygraph.industry.api.IndustryPolicy("PHA-POL-02", "GMP Batch Traceability", "Active Pharmaceutical Ingredients must have certificate of analysis and full genealogy", true),
+                new com.supplygraph.industry.api.IndustryPolicy("PHA-POL-03", "Shelf-Life Buffer Threshold", "Materials with less than 90 days remaining shelf-life cannot be issued to formulation lines", true)
+        );
+    }
+
+    @Override
+    public List<String> getCriticalMaterials() {
+        return List.of("Semaglutide API", "Sterile Water for Injection", "Type-I Borosilicate Glass Vials", "Fluoropolymer Elastomeric Stoppers", "Monoclonal Antibody Bulk");
+    }
+
+    @Override
+    public List<String> getQualityValidationRules() {
+        return List.of(
+                "Lot expiration date must be in the future (minimum 180 days for raw materials)",
+                "Quality hold flag requires verified QA sign-off prior to reservation",
+                "Batch Certificate of Analysis (CoA) document hash validation"
+        );
+    }
+
+    @Override
+    public boolean isMaterialCompatible(String materialName, String contextDescription) {
+        if (materialName == null) return false;
+        if (contextDescription != null && contextDescription.toLowerCase().contains("cold_chain")) {
+            return !materialName.toLowerCase().contains("ambient_only");
+        }
+        return true;
+    }
+
+    @Override
+    public String evaluateSupplierQualification(String supplierName, String country) {
+        if (supplierName != null && supplierName.toLowerCase().contains("uninspected")) {
+            return "PROVISIONAL_PENDING_GMP_AUDIT";
+        }
+        return "QUALIFIED";
+    }
 }
 

@@ -210,6 +210,114 @@ class VaadinViewsTest {
     }
 
     @Test
+    @DisplayName("Should verify Phase 7 Enterprise Data Integration, Quality and Intelligence views")
+    void shouldVerifyPhase7ViewsRoutes() {
+        Route r1 = DataIntegrationCentreView.class.getAnnotation(Route.class);
+        assertThat(r1).isNotNull();
+        assertThat(r1.value()).isEqualTo("data-integration");
+        assertThat(r1.layout()).isEqualTo(MainLayout.class);
+
+        Route r2 = ImportHistoryView.class.getAnnotation(Route.class);
+        assertThat(r2).isNotNull();
+        assertThat(r2.value()).isEqualTo("import-history");
+        assertThat(r2.layout()).isEqualTo(MainLayout.class);
+
+        Route r3 = ImportValidationPreviewView.class.getAnnotation(Route.class);
+        assertThat(r3).isNotNull();
+        assertThat(r3.value()).isEqualTo("import-preview");
+        assertThat(r3.layout()).isEqualTo(MainLayout.class);
+
+        Route r4 = DataQualityDashboardView.class.getAnnotation(Route.class);
+        assertThat(r4).isNotNull();
+        assertThat(r4.value()).isEqualTo("data-quality");
+        assertThat(r4.layout()).isEqualTo(MainLayout.class);
+
+        Route r5 = SupplierIntelligenceView.class.getAnnotation(Route.class);
+        assertThat(r5).isNotNull();
+        assertThat(r5.value()).isEqualTo("supplier-intelligence");
+        assertThat(r5.layout()).isEqualTo(MainLayout.class);
+
+        Route r6 = SupplierDependencyExplorerView.class.getAnnotation(Route.class);
+        assertThat(r6).isNotNull();
+        assertThat(r6.value()).isEqualTo("supplier-dependencies");
+        assertThat(r6.layout()).isEqualTo(MainLayout.class);
+
+        Route r7 = MaterialCriticalityDashboardView.class.getAnnotation(Route.class);
+        assertThat(r7).isNotNull();
+        assertThat(r7.value()).isEqualTo("material-criticality");
+        assertThat(r7.layout()).isEqualTo(MainLayout.class);
+
+        Route r8 = InventoryIntelligenceView.class.getAnnotation(Route.class);
+        assertThat(r8).isNotNull();
+        assertThat(r8.value()).isEqualTo("inventory-intelligence");
+        assertThat(r8.layout()).isEqualTo(MainLayout.class);
+
+        Route r9 = IndustryConfigurationView.class.getAnnotation(Route.class);
+        assertThat(r9).isNotNull();
+        assertThat(r9.value()).isEqualTo("industry-config");
+        assertThat(r9.layout()).isEqualTo(MainLayout.class);
+
+        Route r10 = SupplyChainResilienceView.class.getAnnotation(Route.class);
+        assertThat(r10).isNotNull();
+        assertThat(r10.value()).isEqualTo("resilience-analytics");
+        assertThat(r10.layout()).isEqualTo(MainLayout.class);
+    }
+
+    @Test
+    @DisplayName("Should verify Phase 8 advanced decision intelligence & research view routes")
+    void shouldVerifyPhase8ViewsRoutes() {
+        Route r1 = ExplainableRecommendationCentreView.class.getAnnotation(Route.class);
+        assertThat(r1).isNotNull();
+        assertThat(r1.value()).isEqualTo("recommendations-explainable");
+        assertThat(r1.layout()).isEqualTo(MainLayout.class);
+
+        Route r2 = DecisionProvenanceExplorerView.class.getAnnotation(Route.class);
+        assertThat(r2).isNotNull();
+        assertThat(r2.value()).isEqualTo("decision-provenance");
+        assertThat(r2.layout()).isEqualTo(MainLayout.class);
+
+        Route r3 = WhatIfScenarioWorkspaceView.class.getAnnotation(Route.class);
+        assertThat(r3).isNotNull();
+        assertThat(r3.value()).isEqualTo("what-if-workspace");
+        assertThat(r3.layout()).isEqualTo(MainLayout.class);
+
+        Route r4 = MultiObjectiveComparisonView.class.getAnnotation(Route.class);
+        assertThat(r4).isNotNull();
+        assertThat(r4.value()).isEqualTo("pareto-comparison");
+        assertThat(r4.layout()).isEqualTo(MainLayout.class);
+
+        Route r5 = SensitivityAnalysisView.class.getAnnotation(Route.class);
+        assertThat(r5).isNotNull();
+        assertThat(r5.value()).isEqualTo("sensitivity-analysis");
+        assertThat(r5.layout()).isEqualTo(MainLayout.class);
+
+        Route r6 = AdvancedResilienceView.class.getAnnotation(Route.class);
+        assertThat(r6).isNotNull();
+        assertThat(r6.value()).isEqualTo("advanced-resilience");
+        assertThat(r6.layout()).isEqualTo(MainLayout.class);
+
+        Route r7 = ResearchExperimentManagerView.class.getAnnotation(Route.class);
+        assertThat(r7).isNotNull();
+        assertThat(r7.value()).isEqualTo("experiment-manager");
+        assertThat(r7.layout()).isEqualTo(MainLayout.class);
+
+        Route r8 = BenchmarkComparisonDashboardView.class.getAnnotation(Route.class);
+        assertThat(r8).isNotNull();
+        assertThat(r8.value()).isEqualTo("benchmark-dashboard");
+        assertThat(r8.layout()).isEqualTo(MainLayout.class);
+
+        Route r9 = StatisticalResultsView.class.getAnnotation(Route.class);
+        assertThat(r9).isNotNull();
+        assertThat(r9.value()).isEqualTo("statistical-results");
+        assertThat(r9.layout()).isEqualTo(MainLayout.class);
+
+        Route r10 = ExecutiveDecisionIntelligenceDashboardView.class.getAnnotation(Route.class);
+        assertThat(r10).isNotNull();
+        assertThat(r10.value()).isEqualTo("decision-intelligence");
+        assertThat(r10.layout()).isEqualTo(MainLayout.class);
+    }
+
+    @Test
     @DisplayName("Should instantiate MainLayout and verify navigation shell")
     void shouldInstantiateMainLayout() {
         MainLayout layout = new MainLayout();

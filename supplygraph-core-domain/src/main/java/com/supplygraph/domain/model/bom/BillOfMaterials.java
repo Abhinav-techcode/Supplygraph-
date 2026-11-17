@@ -111,6 +111,10 @@ public class BillOfMaterials {
         return entries;
     }
 
+    public Collection<Material> getAllMaterials() {
+        return materials.values();
+    }
+
     public int getMaterialCount() {
         return materials.size();
     }
