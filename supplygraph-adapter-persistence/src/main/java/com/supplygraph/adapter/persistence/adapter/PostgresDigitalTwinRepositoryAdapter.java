@@ -9,12 +9,15 @@ import com.supplygraph.domain.model.twin.StateVersion;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class PostgresDigitalTwinRepositoryAdapter implements DigitalTwinRepositoryPort {
 
     private final SpringDataDigitalTwinStateRepository repository;
+    private final Map<WorkspaceId, DigitalTwinState> stateCache = new ConcurrentHashMap<>();
 
     public PostgresDigitalTwinRepositoryAdapter(SpringDataDigitalTwinStateRepository repository) {
         this.repository = repository;
@@ -22,6 +25,7 @@ public class PostgresDigitalTwinRepositoryAdapter implements DigitalTwinReposito
 
     @Override
     public void save(DigitalTwinState state) {
+        stateCache.put(state.getWorkspaceId(), state);
         DigitalTwinStateJpaEntity entity = new DigitalTwinStateJpaEntity(
                 state.getWorkspaceId().value(),
                 state.getCurrentVersion().value(),
@@ -32,6 +36,10 @@ public class PostgresDigitalTwinRepositoryAdapter implements DigitalTwinReposito
 
     @Override
     public Optional<DigitalTwinState> findByWorkspaceId(WorkspaceId workspaceId) {
+        DigitalTwinState cached = stateCache.get(workspaceId);
+        if (cached != null) {
+            return Optional.of(cached);
+        }
         return repository.findById(workspaceId.value())
                 .map(entity -> new DigitalTwinState(
                         workspaceId,
@@ -43,7 +51,7 @@ public class PostgresDigitalTwinRepositoryAdapter implements DigitalTwinReposito
 
     @Override
     public boolean existsByWorkspaceId(WorkspaceId workspaceId) {
-        return repository.existsById(workspaceId.value());
+        return stateCache.containsKey(workspaceId) || repository.existsById(workspaceId.value());
     }
 }
 

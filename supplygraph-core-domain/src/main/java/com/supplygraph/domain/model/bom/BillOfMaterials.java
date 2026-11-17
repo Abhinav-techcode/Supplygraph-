@@ -111,6 +111,10 @@ public class BillOfMaterials {
         return entries;
     }
 
+    public int getMaterialCount() {
+        return materials.size();
+    }
+
     /**
      * Deterministic topological ordering of materials from leaf components to top-level products.
      */

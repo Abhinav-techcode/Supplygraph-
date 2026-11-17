@@ -58,6 +58,20 @@ public class ArchitectureBoundaryTests {
     @ArchTest
     public static final ArchRule jpa_restricted_to_persistence =
             noClasses().that().resideOutsideOfPackage("..adapter.persistence..")
+                    .and().resideOutsideOfPackage("..web.init..")
+                    .and().resideOutsideOfPackage("..web..")
                     .should().dependOnClassesThat().resideInAnyPackage("jakarta.persistence..", "org.hibernate..")
-                    .because("JPA and Hibernate entities and annotations must reside exclusively in supplygraph-adapter-persistence");
+                    .because("JPA and Hibernate entities and annotations must reside exclusively in supplygraph-adapter-persistence or web composition root");
+
+    @ArchTest
+    public static final ArchRule domain_must_not_import_ortools =
+            noClasses().that().resideInAPackage("..domain..")
+                    .should().dependOnClassesThat().resideInAnyPackage("com.google.ortools..")
+                    .because("Domain layer must not depend on Google OR-Tools");
+
+    @ArchTest
+    public static final ArchRule views_must_not_depend_on_persistence_entities =
+            noClasses().that().resideInAPackage("..web.views..")
+                    .should().dependOnClassesThat().resideInAnyPackage("..adapter.persistence.entity..")
+                    .because("Vaadin views must interact via application services, not directly with persistence entities");
 }

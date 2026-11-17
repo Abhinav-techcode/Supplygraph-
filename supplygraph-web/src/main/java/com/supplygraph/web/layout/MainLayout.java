@@ -31,7 +31,7 @@ public class MainLayout extends AppLayout {
                 .set("margin", "0")
                 .set("color", "var(--lumo-primary-text-color)");
 
-        Span badge = new Span("Platform Foundation :: Phase 1");
+        Span badge = new Span("Phase 4 :: Recovery Decision Centre");
         badge.getElement().getThemeList().add("badge success small");
         badge.getStyle().set("margin-left", "var(--lumo-space-s)");
 
@@ -46,6 +46,12 @@ public class MainLayout extends AppLayout {
     private void createDrawer() {
         SideNav nav = new SideNav();
         nav.addItem(new SideNavItem("Overview", "", VaadinIcon.DASHBOARD.create()));
+        nav.addItem(new SideNavItem("Disruptions", "disruptions", VaadinIcon.WARNING.create()));
+        nav.addItem(new SideNavItem("Impact Assessment", "impact", VaadinIcon.SEARCH.create()));
+        nav.addItem(new SideNavItem("Simulation", "simulation", VaadinIcon.PLAY_CIRCLE.create()));
+        nav.addItem(new SideNavItem("Monte Carlo", "monte-carlo", VaadinIcon.CHART_LINE.create()));
+        nav.addItem(new SideNavItem("Optimization", "optimization", VaadinIcon.SLIDERS.create()));
+        nav.addItem(new SideNavItem("Decision Centre", "decision-centre", VaadinIcon.CHECK_CIRCLE.create()));
         nav.addItem(new SideNavItem("System Health", "health", VaadinIcon.HEART.create()));
 
         Scroller scroller = new Scroller(nav);
