@@ -73,3 +73,4 @@ Strict architectural guardrails are maintained:
 - **Audited Human Approval Flow**:
   - Modal confirmation dialog capturing Decision-Maker Name, Reason, and Approval Timestamp.
   - Optimistic locking validation verifying snapshot freshness before committing state.
+

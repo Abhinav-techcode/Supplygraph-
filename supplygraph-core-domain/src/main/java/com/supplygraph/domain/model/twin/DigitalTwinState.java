@@ -174,6 +174,16 @@ public class DigitalTwinState {
     }
 
     /**
+     * Advances the digital twin state version monotonically.
+     */
+    public synchronized StateVersion advanceVersion(String reason) {
+        StateVersion fromVersion = this.currentVersion;
+        StateVersion toVersion = fromVersion.next();
+        this.currentVersion = toVersion;
+        return toVersion;
+    }
+
+    /**
      * Produces an immutable point-in-time snapshot.
      */
     public synchronized DigitalTwinSnapshot createSnapshot() {

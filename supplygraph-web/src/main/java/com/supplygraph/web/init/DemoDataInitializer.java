@@ -2,12 +2,22 @@ package com.supplygraph.web.init;
 
 import com.supplygraph.adapter.persistence.entity.WorkspaceJpaEntity;
 import com.supplygraph.adapter.persistence.repository.SpringDataWorkspaceRepository;
+import com.supplygraph.application.audit.AuditGovernanceService;
+import com.supplygraph.application.benchmark.BenchmarkExperimentRunner;
+import com.supplygraph.application.port.out.BenchmarkExperimentRepositoryPort;
 import com.supplygraph.application.port.out.DigitalTwinRepositoryPort;
 import com.supplygraph.application.port.out.InventoryLedgerRepositoryPort;
+import com.supplygraph.application.port.out.MonitoringRuleRepositoryPort;
+import com.supplygraph.application.port.out.UserProfileRepositoryPort;
+import com.supplygraph.application.provenance.DataProvenanceService;
 import com.supplygraph.application.service.DisruptionApplicationService;
 import com.supplygraph.application.service.ImpactAnalysisApplicationService;
+import com.supplygraph.application.service.OperationalEventIngestionService;
 import com.supplygraph.application.service.RecoveryPlanningApplicationService;
 import com.supplygraph.domain.model.WorkspaceId;
+import com.supplygraph.domain.model.audit.AuditAction;
+import com.supplygraph.domain.model.benchmark.BenchmarkBaseline;
+import com.supplygraph.domain.model.benchmark.BenchmarkScenarioType;
 import com.supplygraph.domain.model.bom.*;
 import com.supplygraph.domain.model.common.Quantity;
 import com.supplygraph.domain.model.common.UnitOfMeasure;
@@ -15,9 +25,20 @@ import com.supplygraph.domain.model.disruption.Disruption;
 import com.supplygraph.domain.model.disruption.DisruptionCategory;
 import com.supplygraph.domain.model.disruption.DisruptionImpactParameters;
 import com.supplygraph.domain.model.disruption.DisruptionSeverity;
+import com.supplygraph.domain.model.event.EventProvenance;
+import com.supplygraph.domain.model.event.EventSource;
+import com.supplygraph.domain.model.event.EventType;
+import com.supplygraph.domain.model.event.OperationalEvent;
 import com.supplygraph.domain.model.graph.*;
 import com.supplygraph.domain.model.inventory.BalanceCategory;
 import com.supplygraph.domain.model.inventory.InventoryAccountId;
+import com.supplygraph.domain.model.monitoring.MonitoringEvaluationTrigger;
+import com.supplygraph.domain.model.monitoring.MonitoringRule;
+import com.supplygraph.domain.model.monitoring.MonitoringSeverity;
+import com.supplygraph.domain.model.provenance.ProvenanceType;
+import com.supplygraph.domain.model.security.UserId;
+import com.supplygraph.domain.model.security.UserProfile;
+import com.supplygraph.domain.model.security.UserRole;
 import com.supplygraph.domain.model.twin.DigitalTwinState;
 import com.supplygraph.domain.model.twin.StateVersion;
 import org.slf4j.Logger;
@@ -33,8 +54,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Initializes authoritative demo digital twin and disruption data for interactive exploration
- * in the Vaadin Flow Recovery Decision Centre.
+ * Initializes authoritative demo digital twin, disruption, continuous intelligence, enterprise security,
+ * and provenance data for interactive exploration in SupplyGraph.
  */
 @Component
 public class DemoDataInitializer implements CommandLineRunner {
@@ -48,6 +69,12 @@ public class DemoDataInitializer implements CommandLineRunner {
     private final DisruptionApplicationService disruptionService;
     private final ImpactAnalysisApplicationService impactService;
     private final RecoveryPlanningApplicationService recoveryService;
+    private final MonitoringRuleRepositoryPort monitoringRuleRepo;
+    private final OperationalEventIngestionService eventIngestionService;
+    private final UserProfileRepositoryPort userProfileRepo;
+    private final AuditGovernanceService auditGovernanceService;
+    private final DataProvenanceService provenanceService;
+    private final BenchmarkExperimentRunner benchmarkRunner;
 
     public DemoDataInitializer(
             SpringDataWorkspaceRepository workspaceRepo,
@@ -55,7 +82,13 @@ public class DemoDataInitializer implements CommandLineRunner {
             InventoryLedgerRepositoryPort inventoryRepo,
             DisruptionApplicationService disruptionService,
             ImpactAnalysisApplicationService impactService,
-            RecoveryPlanningApplicationService recoveryService
+            RecoveryPlanningApplicationService recoveryService,
+            MonitoringRuleRepositoryPort monitoringRuleRepo,
+            OperationalEventIngestionService eventIngestionService,
+            UserProfileRepositoryPort userProfileRepo,
+            AuditGovernanceService auditGovernanceService,
+            DataProvenanceService provenanceService,
+            BenchmarkExperimentRunner benchmarkRunner
     ) {
         this.workspaceRepo = workspaceRepo;
         this.digitalTwinRepo = digitalTwinRepo;
@@ -63,6 +96,12 @@ public class DemoDataInitializer implements CommandLineRunner {
         this.disruptionService = disruptionService;
         this.impactService = impactService;
         this.recoveryService = recoveryService;
+        this.monitoringRuleRepo = monitoringRuleRepo;
+        this.eventIngestionService = eventIngestionService;
+        this.userProfileRepo = userProfileRepo;
+        this.auditGovernanceService = auditGovernanceService;
+        this.provenanceService = provenanceService;
+        this.benchmarkRunner = benchmarkRunner;
     }
 
     @Override
@@ -73,7 +112,7 @@ public class DemoDataInitializer implements CommandLineRunner {
             return;
         }
 
-        log.info("Seeding demo digital twin and recovery decision data for {}", DEMO_WORKSPACE_ID);
+        log.info("Seeding demo digital twin, recovery decision, and security data for {}", DEMO_WORKSPACE_ID);
 
         // 1. Workspace
         workspaceRepo.save(new WorkspaceJpaEntity(
@@ -185,7 +224,107 @@ public class DemoDataInitializer implements CommandLineRunner {
         // 8. Generate Default Recovery Alternatives
         recoveryService.generateAlternativePlans(activeDisruption.id(), wsId);
 
-        log.info("Demo initialization complete: Active disruption {} with cascading impact and 3 recovery alternatives.",
+        // 9. Seed Default Continuous Monitoring Rules
+        monitoringRuleRepo.save(MonitoringRule.of(
+                "RULE-SUP-DELAY", "Supplier Delivery Delay Threshold",
+                "Alerts when an inbound supplier shipment experiences transit delay exceeding 24 hours.",
+                "AUTOMOTIVE", MonitoringSeverity.HIGH, BigDecimal.valueOf(24),
+                MonitoringEvaluationTrigger.ON_EVENT, "SUPPLIER_DELAY_THRESHOLD"
+        ));
+        monitoringRuleRepo.save(MonitoringRule.of(
+                "RULE-CAP-DROP", "Operational Capacity Drop Threshold",
+                "Alerts when plant or vendor throughput capacity diminishes by 20% or more.",
+                "ALL", MonitoringSeverity.CRITICAL, BigDecimal.valueOf(20),
+                MonitoringEvaluationTrigger.ON_EVENT, "CAPACITY_DROP_THRESHOLD"
+        ));
+        monitoringRuleRepo.save(MonitoringRule.of(
+                "RULE-SAFE-STOCK", "Inventory Safety Stock Buffer Breach",
+                "Alerts when warehouse on-hand physical stock drops below minimum safety threshold (2,000 units).",
+                "AUTOMOTIVE", MonitoringSeverity.MEDIUM, BigDecimal.valueOf(2000),
+                MonitoringEvaluationTrigger.ON_EVENT, "INVENTORY_SAFETY_STOCK_BREACH"
+        ));
+        monitoringRuleRepo.save(MonitoringRule.of(
+                "RULE-QUAL-HOLD", "Quality Containment Hold Incident",
+                "Alerts immediately when incoming material batches are quarantined on quality hold.",
+                "ALL", MonitoringSeverity.CRITICAL, BigDecimal.ZERO,
+                MonitoringEvaluationTrigger.ON_EVENT, "QUALITY_HOLD_INCIDENT"
+        ));
+
+        // 10. Ingest Initial Seed Telemetry Events
+        OperationalEvent seedEvent1 = OperationalEvent.createIngested(
+                EventType.SUPPLIER_DELIVERY_DELAYED,
+                EventSource.EXTERNAL_INTEGRATION,
+                Instant.now().minus(Duration.ofHours(2)),
+                "FAB-MUNICH",
+                "NODE",
+                wsId,
+                Map.of("delayHours", "36", "carrier", "DHL_FREIGHT", "route", "LANE-MUNICH-STUTTGART"),
+                EventProvenance.imported("ERP_SAP", "BATCH-SEED-01", "system_telemetry"),
+                "SEED-EVT-01"
+        );
+        eventIngestionService.ingestEvent(seedEvent1);
+
+        OperationalEvent seedEvent2 = OperationalEvent.createIngested(
+                EventType.INVENTORY_LEVEL_CHANGED,
+                EventSource.INTERNAL_WORKFLOW,
+                Instant.now().minus(Duration.ofMinutes(45)),
+                "HUB-FRANKFURT",
+                "NODE",
+                wsId,
+                Map.of("onHandQuantity", "1500", "unit", "PIECES"),
+                EventProvenance.internal("warehouse_wms"),
+                "SEED-EVT-02"
+        );
+        eventIngestionService.ingestEvent(seedEvent2);
+
+        // 11. Seed Enterprise Users (RBAC)
+        userProfileRepo.save(UserProfile.create(
+                "USR-ADMIN-01", "admin", "admin@supplygraph.io",
+                "Enterprise System Administrator", UserRole.SYSTEM_ADMIN, Set.of(wsId)
+        ));
+        userProfileRepo.save(UserProfile.create(
+                "USR-SCM-01", "sc_manager", "scm@supplygraph.io",
+                "Lead Supply Chain Manager", UserRole.SUPPLY_CHAIN_MANAGER, Set.of(wsId)
+        ));
+        userProfileRepo.save(UserProfile.create(
+                "USR-ANALYST-01", "analyst", "analyst@supplygraph.io",
+                "Senior Operations Analyst", UserRole.ANALYST, Set.of(wsId)
+        ));
+
+        // 12. Seed Governance Audit Sign-Off
+        auditGovernanceService.logAction(
+                UserId.of("USR-SCM-01"),
+                wsId,
+                AuditAction.DISRUPTION_CREATED,
+                activeDisruption.id().value().toString(),
+                "v0",
+                "v1",
+                "Activated disruption incident following Bavaria cleanroom flooding notice",
+                "CONF-NONE"
+        );
+
+        // 13. Seed Data Provenance Records
+        provenanceService.registerProvenance(
+                wsId, "FAB-MUNICH", "SUPPLIER_FACILITY", ProvenanceType.REAL_IMPORTED,
+                "SAP-SUPPLIER-MASTER-2026", "v1",
+                Map.of("criticality", "TIER_1", "qualificationStatus", "CERTIFIED")
+        );
+        provenanceService.registerProvenance(
+                wsId, "MCU-AUTO-32", "MATERIAL", ProvenanceType.REAL_IMPORTED,
+                "PLM-TEAMCENTER-BOM-SYNC", "v1",
+                Map.of("rohsCompliant", "true", "automotiveGrade", "AEC-Q100")
+        );
+
+        // 14. Seed Initial Research Benchmark Trial
+        benchmarkRunner.runTrial(
+                "Baseline Comparative Trial on Munich Fab Outage",
+                BenchmarkScenarioType.SHARED_INVENTORY_CONTENTION,
+                BenchmarkBaseline.CONCURGUARD_SELECTIVE_REPLANNING,
+                42L,
+                3
+        );
+
+        log.info("Demo initialization complete: Active disruption {} with cascading impact, recovery alternatives, monitoring rules, enterprise users, audit trail, and research benchmark.",
                 activeDisruption.id().value());
     }
 }

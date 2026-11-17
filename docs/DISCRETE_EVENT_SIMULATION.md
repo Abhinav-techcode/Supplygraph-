@@ -58,3 +58,4 @@ The simulation produces an immutable `SimulationResult`:
 - `totalShortageQuantity`: Cumulative unfulfilled unit volume.
 - `maxDelaySeconds`: Maximum delivery lateness observed.
 - `status`: Execution state (`COMPLETED`, `TERMINATED_MAX_EVENTS`, `FAILED`).
+

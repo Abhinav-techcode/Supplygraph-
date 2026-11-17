@@ -59,3 +59,4 @@ $$w_{\text{cost}} + w_{\text{sla}} + w_{\text{co2}} = 1.0, \quad w_k \ge 0$$
 - `co2EmissionsKg`: Projected carbon expenditure.
 - `allocations`: Map of alternative IDs to recommended quantities.
 - `status`: Solver exit state (`OPTIMAL`, `FEASIBLE`, `INFEASIBLE`, `FEASIBLE_RELAXATION_FALLBACK`).
+

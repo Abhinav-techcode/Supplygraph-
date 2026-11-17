@@ -142,6 +142,74 @@ class VaadinViewsTest {
     }
 
     @Test
+    @DisplayName("Should verify Phase 5 continuous monitoring views routes and annotations")
+    void shouldVerifyPhase5ViewRoutes() {
+        Route r1 = OperationalEventMonitorView.class.getAnnotation(Route.class);
+        assertThat(r1).isNotNull();
+        assertThat(r1.value()).isEqualTo("events");
+        assertThat(r1.layout()).isEqualTo(MainLayout.class);
+
+        Route r2 = EventIngestionHistoryView.class.getAnnotation(Route.class);
+        assertThat(r2).isNotNull();
+        assertThat(r2.value()).isEqualTo("event-ingestion");
+        assertThat(r2.layout()).isEqualTo(MainLayout.class);
+
+        Route r3 = MonitoringRulesView.class.getAnnotation(Route.class);
+        assertThat(r3).isNotNull();
+        assertThat(r3.value()).isEqualTo("monitoring-rules");
+        assertThat(r3.layout()).isEqualTo(MainLayout.class);
+
+        Route r4 = RiskAlertCentreView.class.getAnnotation(Route.class);
+        assertThat(r4).isNotNull();
+        assertThat(r4.value()).isEqualTo("risk-alerts");
+        assertThat(r4.layout()).isEqualTo(MainLayout.class);
+
+        Route r5 = ImpactReassessmentHistoryView.class.getAnnotation(Route.class);
+        assertThat(r5).isNotNull();
+        assertThat(r5.value()).isEqualTo("reassessments");
+        assertThat(r5.layout()).isEqualTo(MainLayout.class);
+
+        Route r6 = AdaptiveReplanningMonitorView.class.getAnnotation(Route.class);
+        assertThat(r6).isNotNull();
+        assertThat(r6.value()).isEqualTo("adaptive-replanning");
+        assertThat(r6.layout()).isEqualTo(MainLayout.class);
+
+        Route r7 = AgentInvestigationHistoryView.class.getAnnotation(Route.class);
+        assertThat(r7).isNotNull();
+        assertThat(r7.value()).isEqualTo("agent-history");
+        assertThat(r7.layout()).isEqualTo(MainLayout.class);
+    }
+
+    @Test
+    @DisplayName("Should verify Phase 6 security, governance, provenance, and benchmark views routes")
+    void shouldVerifyPhase6ViewRoutes() {
+        Route r1 = SecurityAdminView.class.getAnnotation(Route.class);
+        assertThat(r1).isNotNull();
+        assertThat(r1.value()).isEqualTo("security-admin");
+        assertThat(r1.layout()).isEqualTo(MainLayout.class);
+
+        Route r2 = AuditGovernanceView.class.getAnnotation(Route.class);
+        assertThat(r2).isNotNull();
+        assertThat(r2.value()).isEqualTo("audit-log");
+        assertThat(r2.layout()).isEqualTo(MainLayout.class);
+
+        Route r3 = ProvenanceExplorerView.class.getAnnotation(Route.class);
+        assertThat(r3).isNotNull();
+        assertThat(r3.value()).isEqualTo("provenance");
+        assertThat(r3.layout()).isEqualTo(MainLayout.class);
+
+        Route r4 = BenchmarkStudioView.class.getAnnotation(Route.class);
+        assertThat(r4).isNotNull();
+        assertThat(r4.value()).isEqualTo("benchmark-studio");
+        assertThat(r4.layout()).isEqualTo(MainLayout.class);
+
+        Route r5 = HealthView.class.getAnnotation(Route.class);
+        assertThat(r5).isNotNull();
+        assertThat(r5.value()).isEqualTo("health");
+        assertThat(r5.layout()).isEqualTo(MainLayout.class);
+    }
+
+    @Test
     @DisplayName("Should instantiate MainLayout and verify navigation shell")
     void shouldInstantiateMainLayout() {
         MainLayout layout = new MainLayout();

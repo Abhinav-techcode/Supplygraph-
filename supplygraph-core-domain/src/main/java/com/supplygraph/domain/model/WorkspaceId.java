@@ -1,11 +1,12 @@
 package com.supplygraph.domain.model;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * Strongly typed identifier for a SupplyGraph workspace.
  */
-public record WorkspaceId(String value) {
+public record WorkspaceId(String value) implements Serializable {
     public WorkspaceId {
         Objects.requireNonNull(value, "WorkspaceId value must not be null");
         if (value.isBlank()) {

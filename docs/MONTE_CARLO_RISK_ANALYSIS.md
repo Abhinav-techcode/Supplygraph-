@@ -59,3 +59,4 @@ The output aggregates replication results into an immutable summary:
 - `slaComplianceRate`: Probability of meeting customer SLA deadlines.
 - `meanCost`, `p95Cost`: Economic exposure under stochastic conditions.
 - `individualRuns`: Detailed sample metrics per replication for histogram and percentile rendering.
+

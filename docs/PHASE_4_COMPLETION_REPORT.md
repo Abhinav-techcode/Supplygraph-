@@ -105,3 +105,4 @@ All 9 ArchUnit architecture rules pass:
 - JPA restricted to `supplygraph-adapter-persistence`.
 - Vaadin Flow restricted to `supplygraph-web`.
 - Web views strictly call application services with zero direct persistence access.
+
