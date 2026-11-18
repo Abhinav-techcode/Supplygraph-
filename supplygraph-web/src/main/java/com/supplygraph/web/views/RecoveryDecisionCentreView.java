@@ -283,7 +283,9 @@ public class RecoveryDecisionCentreView extends VerticalLayout {
         FormLayout form = new FormLayout();
 
         TextField approverField = new TextField("Executive Approver Identity");
-        approverField.setValue("VP_SUPPLY_CHAIN_OPERATIONS");
+        // The approver must be a known user so the approval stays traceable when the plan is later converted into an execution workflow.
+        approverField.setValue(com.supplygraph.application.security.SecurityContext.getCurrentUser() != null
+                ? com.supplygraph.application.security.SecurityContext.getCurrentUser().id().value() : "VP_SUPPLY_CHAIN_OPERATIONS");
         approverField.setRequired(true);
 
         TextArea rationaleField = new TextArea("Governance Rationale & Policy Reference");

@@ -27,7 +27,15 @@ public enum UserRole {
                     Permission.PLAN_REVIEW,
                     Permission.PLAN_APPROVE,
                     Permission.CONFIG_ADMIN,
-                    Permission.AUDIT_VIEW
+                    Permission.AUDIT_VIEW,
+                    Permission.CONNECTOR_MANAGE,
+                    Permission.CONNECTOR_EXECUTE,
+                    Permission.EVENT_REPLAY,
+                    Permission.DATA_RECONCILE,
+                    Permission.EXECUTION_CREATE,
+                    Permission.EXECUTION_APPROVE,
+                    Permission.EXECUTION_RUN,
+                    Permission.EXECUTION_RECONCILE
             )
     ),
     PROCUREMENT_MANAGER(
@@ -37,7 +45,8 @@ public enum UserRole {
                     Permission.IMPACT_ASSESS,
                     Permission.AGENT_INVESTIGATE,
                     Permission.PLAN_REVIEW,
-                    Permission.AUDIT_VIEW
+                    Permission.AUDIT_VIEW,
+                    Permission.EXECUTION_RUN
             )
     ),
     PRODUCTION_MANAGER(
@@ -47,7 +56,8 @@ public enum UserRole {
                     Permission.IMPACT_ASSESS,
                     Permission.AGENT_INVESTIGATE,
                     Permission.PLAN_REVIEW,
-                    Permission.AUDIT_VIEW
+                    Permission.AUDIT_VIEW,
+                    Permission.EXECUTION_RUN
             )
     ),
     LOGISTICS_MANAGER(
@@ -57,7 +67,8 @@ public enum UserRole {
                     Permission.IMPACT_ASSESS,
                     Permission.AGENT_INVESTIGATE,
                     Permission.PLAN_REVIEW,
-                    Permission.AUDIT_VIEW
+                    Permission.AUDIT_VIEW,
+                    Permission.EXECUTION_RUN
             )
     ),
     QUALITY_MANAGER(

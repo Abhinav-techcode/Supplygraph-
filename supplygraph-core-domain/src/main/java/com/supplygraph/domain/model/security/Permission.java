@@ -13,7 +13,17 @@ public enum Permission {
     PLAN_REVIEW("Examine candidate recovery alternatives and ConcurGuard arbitration results"),
     PLAN_APPROVE("Perform binding human sign-off on recovery plans (Requires human authorization)"),
     CONFIG_ADMIN("Modify operational monitoring rules, thresholds, and industry policy limits"),
-    AUDIT_VIEW("Inspect immutable audit logs, tamper-evident signatures, and provenance traces");
+    AUDIT_VIEW("Inspect immutable audit logs, tamper-evident signatures, and provenance traces"),
+    CONNECTOR_MANAGE("Register, configure, activate and deactivate enterprise connectors"),
+    CONNECTOR_EXECUTE("Trigger connector connectivity tests and synchronizations"),
+    EVENT_REPLAY("Replay dead-lettered integration events"),
+    DATA_RECONCILE("Resolve synchronization conflicts between external and internal values"),
+    EXECUTION_CREATE("Create execution workflows from approved recovery plans"),
+    EXECUTION_APPROVE("Approve or reject execution workflows"),
+    EXECUTION_APPROVE_SENSITIVE("Give the additional approval required for sensitive execution tasks"),
+    EXECUTION_RUN("Trigger, retry and cancel execution of approved workflows"),
+    EXECUTION_RECONCILE("Reconcile ambiguous execution outcomes and record observations"),
+    EXECUTION_COMPENSATE("Run compensating actions for completed execution tasks");
 
     private final String description;
 

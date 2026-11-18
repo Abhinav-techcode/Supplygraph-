@@ -28,6 +28,13 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+supplygraph:
+  outbox:
+    worker:
+      enabled: ${SUPPLYGRAPH_OUTBOX_WORKER_ENABLED:true}
+      interval-millis: 2000
+      batch-size: 50
+
 vaadin:
   launch-browser: false
 
@@ -35,7 +42,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
   endpoint:
     health:
       show-details: always

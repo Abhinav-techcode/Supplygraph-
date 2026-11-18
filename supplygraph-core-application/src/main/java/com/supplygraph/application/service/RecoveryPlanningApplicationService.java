@@ -178,9 +178,36 @@ public class RecoveryPlanningApplicationService {
         DigitalTwinState state = digitalTwinRepository.findByWorkspaceId(plan.workspaceId())
                 .orElseThrow(() -> new NoSuchElementException("Digital twin not found: " + plan.workspaceId().value()));
 
-        DigitalTwinSnapshot snapshot = state.createSnapshot();
+        Instant now = Instant.now();
+        List<Conflict> conflicts = detectConflicts(plan, state.createSnapshot());
 
-        // Convert plan actions into ActionIntents for ConcurGuard
+        boolean isValid = conflicts.isEmpty();
+        List<String> conflictIds = conflicts.stream()
+                .map(c -> c.id().value() + " :: " + c.explanation())
+                .toList();
+
+        RecoveryPlan validated = plan.markValidated(isValid, conflictIds, now);
+        if (isValid) {
+            validated = validated.markPendingApproval(now);
+        }
+
+        recoveryPlanRepository.save(validated);
+        return validated;
+    }
+
+    /**
+     * Read-only ConcurGuard re-evaluation of a plan against the CURRENT twin state. Does not change the plan.
+     * Used before converting an approved plan into an execution workflow.
+     */
+    @Transactional(readOnly = true)
+    public List<String> revalidateConflicts(RecoveryPlanId planId) {
+        RecoveryPlan plan = getPlan(planId);
+        DigitalTwinState state = digitalTwinRepository.findByWorkspaceId(plan.workspaceId())
+                .orElseThrow(() -> new NoSuchElementException("Digital twin not found: " + plan.workspaceId().value()));
+        return detectConflicts(plan, state.createSnapshot()).stream().map(c -> c.id().value() + " :: " + c.explanation()).toList();
+    }
+
+    private List<Conflict> detectConflicts(RecoveryPlan plan, DigitalTwinSnapshot snapshot) {
         List<ActionIntent> intents = new ArrayList<>();
         Instant now = Instant.now();
 
@@ -221,20 +248,7 @@ public class RecoveryPlanningApplicationService {
             intents.add(intent);
         }
 
-        List<Conflict> conflicts = concurGuardEngine.getConflictDetector().detectAllConflicts(intents, snapshot);
-
-        boolean isValid = conflicts.isEmpty();
-        List<String> conflictIds = conflicts.stream()
-                .map(c -> c.id().value() + " :: " + c.explanation())
-                .toList();
-
-        RecoveryPlan validated = plan.markValidated(isValid, conflictIds, now);
-        if (isValid) {
-            validated = validated.markPendingApproval(now);
-        }
-
-        recoveryPlanRepository.save(validated);
-        return validated;
+        return concurGuardEngine.getConflictDetector().detectAllConflicts(intents, snapshot);
     }
 
     @Transactional

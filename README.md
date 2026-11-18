@@ -8,7 +8,7 @@ SupplyGraph is a high-assurance, Java-first enterprise platform engineered to mo
 
 ## Architecture Overview
 
-SupplyGraph is structured as a **modular monolith** with clean hexagonal boundaries, strict dependency inversion, and zero cyclic dependencies across 12 decoupled Maven modules.
+SupplyGraph is structured as a **modular monolith** with clean hexagonal boundaries, strict dependency inversion, and zero cyclic dependencies across 13 decoupled Maven modules.
 
 ```mermaid
 graph TD
@@ -34,6 +34,14 @@ graph TD
     ADAPT_PERSIST --> DOMAIN
     ADAPT_AI --> APP
 ```
+
+## Phase 9 & 10 (Enterprise Integration Runtime, Governed Execution)
+
+* **Phase 9** adds a connector registry/lifecycle, PostgreSQL transactional outbox + inbox, HMAC-authenticated webhooks, an SSRF-guarded generic REST adapter, field-authority reconciliation and runtime operations views. New module: `supplygraph-adapter-integration`. See [docs/PHASE_9_ARCHITECTURE_AND_IMPLEMENTATION.md](docs/PHASE_9_ARCHITECTURE_AND_IMPLEMENTATION.md).
+* **Phase 10** adds governed execution: approved recovery plan -> validated task graph -> two-person approval -> bounded execution through adapters -> acknowledgement / reconciliation -> plan-versus-actual -> bounded, human-decided reassessment. See [docs/PHASE_10_ARCHITECTURE_AND_IMPLEMENTATION.md](docs/PHASE_10_ARCHITECTURE_AND_IMPLEMENTATION.md) and [docs/END_TO_END_EXECUTION_LIFECYCLE.md](docs/END_TO_END_EXECUTION_LIFECYCLE.md).
+* **What is real:** the generic REST connector adapter (verified against a local in-process test server only). **What is simulated:** the `sandbox` connector and the `sandbox-execution` adapter; everything they produce is labelled SIMULATED and never updates the digital twin. **Not implemented:** any vendor ERP/PLM/WMS/TMS/MES/QMS adapter and any LIVE execution adapter.
+* **No login system exists.** The UI acts as a configured operator (`supplygraph.ui.default-role`); `SUPPLYGRAPH_UI_DEMO_ROLE_SWITCHER=true` shows a demo role switcher (not authentication). Do not expose it on an untrusted network.
+* Build with **JDK 21** (JDK 26 breaks Mockito/ByteBuddy in this Spring Boot version): `JAVA_HOME=<jdk21> ./mvnw clean verify` (Docker required for the PostgreSQL Testcontainers tests). Research method: [docs/RESEARCH_METHODOLOGY_PHASE_9_10.md](docs/RESEARCH_METHODOLOGY_PHASE_9_10.md). Developer guides: [connectors](docs/CONNECTOR_DEVELOPER_GUIDE.md), [execution adapters](docs/EXECUTION_ADAPTER_DEVELOPER_GUIDE.md).
 
 ### Module Responsibilities
 

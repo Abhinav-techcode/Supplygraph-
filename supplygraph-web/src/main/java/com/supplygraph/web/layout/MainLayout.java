@@ -31,11 +31,30 @@ public class MainLayout extends AppLayout {
                 .set("margin", "0")
                 .set("color", "var(--lumo-primary-text-color)");
 
-        Span badge = new Span("Phase 7 & 8 :: Industry Intelligence, Enterprise Integration & Decision Support");
+        Span badge = new Span("Phase 9 & 10 :: Enterprise Integration Runtime & Governed Execution");
         badge.getElement().getThemeList().add("badge success small");
         badge.getStyle().set("margin-left", "var(--lumo-space-s)");
 
         HorizontalLayout header = new HorizontalLayout(toggle, title, badge);
+        if (Boolean.parseBoolean(System.getenv("SUPPLYGRAPH_UI_DEMO_ROLE_SWITCHER"))) {
+            // DEMO ONLY: there is no login system; this switches the session principal so separation of duties can be exercised.
+            com.vaadin.flow.component.combobox.ComboBox<com.supplygraph.domain.model.security.UserRole> roles =
+                    new com.vaadin.flow.component.combobox.ComboBox<>("", com.supplygraph.domain.model.security.UserRole.values());
+            roles.setAllowCustomValue(false);
+            roles.setWidth("16em");
+            com.supplygraph.domain.model.security.UserProfile current = com.supplygraph.application.security.SecurityContext.getCurrentUser();
+            if (current != null) roles.setValue(current.role());
+            roles.addValueChangeListener(e -> {
+                if (e.isFromClient() && e.getValue() != null) {
+                    com.vaadin.flow.server.VaadinSession.getCurrent().getSession().setAttribute(
+                            com.supplygraph.web.security.UiPrincipalFilter.SESSION_ATTRIBUTE, com.supplygraph.web.security.UiPrincipalFilter.principalFor(e.getValue()));
+                    com.vaadin.flow.component.UI.getCurrent().getPage().reload();
+                }
+            });
+            Span demo = new Span("DEMO role switcher — not authentication");
+            demo.getElement().getThemeList().add("badge error small");
+            header.add(demo, roles);
+        }
         header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
         header.setWidthFull();
         header.addClassNames("py-0", "px-m");
@@ -83,6 +102,32 @@ public class MainLayout extends AppLayout {
         nav.addItem(new SideNavItem("Benchmark Dashboard", "benchmark-dashboard", VaadinIcon.TABLE.create()));
         nav.addItem(new SideNavItem("Statistical Results", "statistical-results", VaadinIcon.CALC.create()));
         nav.addItem(new SideNavItem("Decision Intelligence", "decision-intelligence", VaadinIcon.EYE.create()));
+        SideNavItem integration = new SideNavItem("Enterprise Integration", "integration-centre", VaadinIcon.CONNECT_O.create());
+        integration.addItem(new SideNavItem("Connector Registry", "connectors"));
+        integration.addItem(new SideNavItem("Configuration", "connector-config"));
+        integration.addItem(new SideNavItem("Health Monitor", "connector-health"));
+        integration.addItem(new SideNavItem("Synchronization", "synchronization"));
+        integration.addItem(new SideNavItem("Sync History", "sync-history"));
+        integration.addItem(new SideNavItem("Event Delivery", "event-delivery"));
+        integration.addItem(new SideNavItem("Dead Letters", "dead-letters"));
+        integration.addItem(new SideNavItem("Event Replay", "event-replay"));
+        integration.addItem(new SideNavItem("Reconciliation", "reconciliation"));
+        integration.addItem(new SideNavItem("Security & Audit", "integration-security"));
+        integration.addItem(new SideNavItem("Runtime Operations", "runtime-operations"));
+        nav.addItem(integration);
+        SideNavItem execution = new SideNavItem("Governed Execution", "execution-centre", VaadinIcon.PLAY.create());
+        execution.addItem(new SideNavItem("Workflow Designer", "execution-designer"));
+        execution.addItem(new SideNavItem("Approvals", "execution-approvals"));
+        execution.addItem(new SideNavItem("Dependency Explorer", "task-dependencies"));
+        execution.addItem(new SideNavItem("Live Monitor", "execution-monitor"));
+        execution.addItem(new SideNavItem("Failures", "execution-failures"));
+        execution.addItem(new SideNavItem("Acknowledgements", "execution-acknowledgements"));
+        execution.addItem(new SideNavItem("Reconciliation", "execution-reconciliation"));
+        execution.addItem(new SideNavItem("Compensation", "execution-compensation"));
+        execution.addItem(new SideNavItem("Audit Timeline", "execution-timeline"));
+        execution.addItem(new SideNavItem("Plan vs Actual", "plan-vs-actual"));
+        execution.addItem(new SideNavItem("Closed-Loop Dashboard", "closed-loop"));
+        nav.addItem(execution);
         nav.addItem(new SideNavItem("System Health", "health", VaadinIcon.HEART.create()));
 
         Scroller scroller = new Scroller(nav);

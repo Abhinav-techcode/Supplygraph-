@@ -24,6 +24,7 @@
         <module>supplygraph-industry-automotive</module>
         <module>supplygraph-adapter-persistence</module>
         <module>supplygraph-adapter-ai</module>
+        <module>supplygraph-adapter-integration</module>
         <module>supplygraph-web</module>
     </modules>
 
@@ -165,6 +166,11 @@
             <dependency>
                 <groupId>com.supplygraph</groupId>
                 <artifactId>supplygraph-adapter-ai</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.supplygraph</groupId>
+                <artifactId>supplygraph-adapter-integration</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
