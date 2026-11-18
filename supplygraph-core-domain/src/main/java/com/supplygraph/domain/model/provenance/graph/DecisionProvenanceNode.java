@@ -36,3 +36,4 @@ public record DecisionProvenanceNode(
         return new DecisionProvenanceNode(id, type, label, entityReferenceId, timestamp, metadata);
     }
 }
+

@@ -83,7 +83,7 @@ public class WhatIfScenarioWorkspaceView extends VerticalLayout {
                         WhatIfScenarioId.generate(),
                         nameField.getValue(),
                         "User-configured counterfactual scenario",
-                        "default-workspace",
+                        "WS-AUTO-01",
                         capacityField.getValue(),
                         stockMultiplierField.getValue(),
                         leadTimeDeltaField.getValue().intValue(),
@@ -178,3 +178,4 @@ public class WhatIfScenarioWorkspaceView extends VerticalLayout {
         }
     }
 }
+

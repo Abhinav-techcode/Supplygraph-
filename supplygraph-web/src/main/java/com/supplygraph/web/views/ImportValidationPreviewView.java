@@ -62,7 +62,7 @@ public class ImportValidationPreviewView extends VerticalLayout {
         add(title, desc, searchRow, statusBadge, summaryText, failureGrid);
 
         // Preload first available job if any exists
-        var jobs = importService.listImportJobs("default-workspace");
+        var jobs = importService.listImportJobs("WS-AUTO-01");
         if (!jobs.isEmpty()) {
             jobIdField.setValue(jobs.get(0).id().value());
             loadJob(jobs.get(0).id().value());
@@ -91,3 +91,4 @@ public class ImportValidationPreviewView extends VerticalLayout {
         failureGrid.setItems(job.failures());
     }
 }
+

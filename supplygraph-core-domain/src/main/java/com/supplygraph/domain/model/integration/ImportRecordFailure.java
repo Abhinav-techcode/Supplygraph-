@@ -28,3 +28,4 @@ public record ImportRecordFailure(
         return new ImportRecordFailure(rowIndex, field, rejectedValue != null ? rejectedValue : "null", errorCode, message, suggestion);
     }
 }
+

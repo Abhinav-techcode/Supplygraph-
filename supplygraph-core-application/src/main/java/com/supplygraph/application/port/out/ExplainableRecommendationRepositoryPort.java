@@ -19,3 +19,4 @@ public interface ExplainableRecommendationRepositoryPort {
 
     List<ExplainableRecommendation> findAll();
 }
+

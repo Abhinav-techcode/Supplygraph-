@@ -10,3 +10,4 @@ import java.util.Optional;
 public interface SpringDataAdvancedResilienceRepository extends JpaRepository<AdvancedResilienceMetricsJpaEntity, String> {
     Optional<AdvancedResilienceMetricsJpaEntity> findTopByWorkspaceIdOrderByCalculatedAtDesc(String workspaceId);
 }
+

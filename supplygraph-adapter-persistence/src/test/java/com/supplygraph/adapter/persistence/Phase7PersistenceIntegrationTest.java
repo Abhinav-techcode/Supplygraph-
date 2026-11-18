@@ -200,3 +200,4 @@ class Phase7PersistenceIntegrationTest {
         assertThat(loaded.get().singlePointsOfFailureCount()).isEqualTo(2);
     }
 }
+

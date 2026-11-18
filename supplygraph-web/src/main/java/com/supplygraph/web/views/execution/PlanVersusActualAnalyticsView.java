@@ -53,6 +53,7 @@ public class PlanVersusActualAnalyticsView extends ExecutionViewBase {
             refresh();
         });
         body(selector, grid, explanation, new HorizontalLayout(metric, value, source, record, evaluate));
+        preselectLatest(selector);
     }
 
     private void refresh() {

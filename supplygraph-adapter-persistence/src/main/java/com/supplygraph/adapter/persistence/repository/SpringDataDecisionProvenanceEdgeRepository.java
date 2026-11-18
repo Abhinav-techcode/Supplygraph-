@@ -11,3 +11,4 @@ public interface SpringDataDecisionProvenanceEdgeRepository extends JpaRepositor
     List<DecisionProvenanceEdgeJpaEntity> findByDisruptionIdOrderByCreatedAtAsc(String disruptionId);
     List<DecisionProvenanceEdgeJpaEntity> findByWorkspaceIdOrderByCreatedAtAsc(String workspaceId);
 }
+

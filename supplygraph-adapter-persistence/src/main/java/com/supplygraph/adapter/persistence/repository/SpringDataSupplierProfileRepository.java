@@ -12,3 +12,4 @@ public interface SpringDataSupplierProfileRepository extends JpaRepository<Suppl
     List<SupplierRiskProfileJpaEntity> findByWorkspaceId(String workspaceId);
     Optional<SupplierRiskProfileJpaEntity> findByWorkspaceIdAndSupplierId(String workspaceId, String supplierId);
 }
+

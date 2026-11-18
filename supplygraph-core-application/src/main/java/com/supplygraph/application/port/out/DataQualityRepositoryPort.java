@@ -19,3 +19,4 @@ public interface DataQualityRepositoryPort {
 
     List<DataQualityReport> findHistoryByWorkspaceId(String workspaceId);
 }
+

@@ -99,3 +99,4 @@ public class IndustryConfigurationView extends VerticalLayout {
         }
     }
 }
+

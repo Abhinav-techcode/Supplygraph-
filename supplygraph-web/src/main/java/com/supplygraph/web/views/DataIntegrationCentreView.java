@@ -115,7 +115,7 @@ public class DataIntegrationCentreView extends VerticalLayout {
                     sourceSelect.getValue(),
                     categorySelect.getValue(),
                     filenameField.getValue(),
-                    "default-workspace",
+                    "WS-AUTO-01",
                     "USR-SCM-01"
             );
 
@@ -140,7 +140,7 @@ public class DataIntegrationCentreView extends VerticalLayout {
     private void handleExecute() {
         if (currentJob == null) return;
         try {
-            ImportJob completed = importService.executeImport(currentJob.id(), "default-workspace", "USR-SCM-01");
+            ImportJob completed = importService.executeImport(currentJob.id(), "WS-AUTO-01", "USR-SCM-01");
             executeBtn.setEnabled(false);
             Notification.show("Data Ingested Successfully! Ingested " + completed.acceptedRecords() + " records into Digital Twin", 5000, Notification.Position.TOP_CENTER)
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -209,3 +209,4 @@ public class DataIntegrationCentreView extends VerticalLayout {
         }
     }
 }
+

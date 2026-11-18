@@ -86,3 +86,4 @@ public class PostgresMaterialIntelligencePersistenceAdapter implements MaterialI
         );
     }
 }
+

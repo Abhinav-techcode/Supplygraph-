@@ -105,3 +105,4 @@ public class PostgresDataQualityPersistenceAdapter implements DataQualityReposit
         );
     }
 }
+

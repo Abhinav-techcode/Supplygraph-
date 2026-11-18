@@ -122,3 +122,4 @@ CREATE TABLE IF NOT EXISTS network_resilience_assessments (
 );
 
 CREATE INDEX IF NOT EXISTS idx_resilience_workspace ON network_resilience_assessments(workspace_id, assessed_at DESC);
+

@@ -60,3 +60,4 @@ public record DataQualityReport(
         return (int) findings.stream().filter(f -> f.severity() == DataQualitySeverity.WARNING).count();
     }
 }
+

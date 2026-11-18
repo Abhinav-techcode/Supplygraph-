@@ -119,7 +119,15 @@ class VaadinViewsTest {
     @Test
     @DisplayName("Should instantiate all 7 Phase 4 views and verify component hierarchy")
     void shouldInstantiateAllPhase4Views() {
-        HomeView homeView = new HomeView();
+        var graphService = org.mockito.Mockito.mock(com.supplygraph.application.graph.NetworkGraphViewService.class);
+        org.mockito.Mockito.when(graphService.build(org.mockito.ArgumentMatchers.any())).thenReturn(new com.supplygraph.application.graph.NetworkGraphView(
+                com.supplygraph.domain.model.WorkspaceId.of("WS-AUTO-01"), 0, java.util.List.of(), java.util.List.of(), java.util.List.of(), java.util.List.of(), java.time.Instant.now()));
+        HomeView homeView = new HomeView(org.mockito.Mockito.mock(com.supplygraph.application.service.DisruptionApplicationService.class),
+                org.mockito.Mockito.mock(com.supplygraph.application.service.ImpactAnalysisApplicationService.class),
+                org.mockito.Mockito.mock(com.supplygraph.application.service.SimulationApplicationService.class),
+                org.mockito.Mockito.mock(com.supplygraph.application.service.MonteCarloApplicationService.class),
+                org.mockito.Mockito.mock(com.supplygraph.application.service.OptimizationApplicationService.class),
+                org.mockito.Mockito.mock(com.supplygraph.application.service.RecoveryPlanningApplicationService.class), graphService);
         assertThat(homeView.getComponentCount()).isGreaterThanOrEqualTo(3);
 
         DisruptionsView disruptionsView = new DisruptionsView();

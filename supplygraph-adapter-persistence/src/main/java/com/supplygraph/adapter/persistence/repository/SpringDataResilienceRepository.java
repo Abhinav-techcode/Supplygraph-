@@ -12,3 +12,4 @@ public interface SpringDataResilienceRepository extends JpaRepository<NetworkRes
     Optional<NetworkResilienceAssessmentJpaEntity> findFirstByWorkspaceIdOrderByAssessedAtDesc(String workspaceId);
     List<NetworkResilienceAssessmentJpaEntity> findByWorkspaceIdOrderByAssessedAtDesc(String workspaceId);
 }
+

@@ -22,3 +22,4 @@ public record SensitivityTrialId(String value) implements Serializable {
         return new SensitivityTrialId("SEN-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
     }
 }
+

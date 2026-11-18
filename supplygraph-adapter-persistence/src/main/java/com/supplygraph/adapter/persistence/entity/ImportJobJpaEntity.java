@@ -102,3 +102,4 @@ public class ImportJobJpaEntity {
     public List<ImportJobFailureJpaEntity> getFailures() { return failures; }
     public void setFailures(List<ImportJobFailureJpaEntity> failures) { this.failures = failures; }
 }
+

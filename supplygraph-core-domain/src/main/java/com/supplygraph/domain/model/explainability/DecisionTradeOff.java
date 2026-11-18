@@ -24,3 +24,4 @@ public record DecisionTradeOff(
         return new DecisionTradeOff(dimension, optionAValue, optionBValue, description, relativeWeight);
     }
 }
+

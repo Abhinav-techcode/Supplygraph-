@@ -57,3 +57,4 @@ public class DecisionProvenanceNodeJpaEntity {
     public Instant getCreatedAt() { return createdAt; }
     public String getMetadataJson() { return metadataJson; }
 }
+

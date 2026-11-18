@@ -69,3 +69,4 @@ public record ParetoFrontier(
         return new ParetoFrontier(evaluationId, disruptionId, allMarked, frontier, Instant.now());
     }
 }
+

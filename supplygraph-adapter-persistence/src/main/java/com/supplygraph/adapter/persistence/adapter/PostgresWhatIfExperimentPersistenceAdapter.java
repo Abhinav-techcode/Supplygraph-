@@ -72,3 +72,4 @@ public class PostgresWhatIfExperimentPersistenceAdapter implements WhatIfExperim
         );
     }
 }
+

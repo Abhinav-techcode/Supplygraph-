@@ -10,3 +10,4 @@ import java.util.Optional;
 public interface SpringDataParetoEvaluationRepository extends JpaRepository<ParetoEvaluationJpaEntity, String> {
     Optional<ParetoEvaluationJpaEntity> findTopByDisruptionIdOrderByEvaluatedAtDesc(String disruptionId);
 }
+

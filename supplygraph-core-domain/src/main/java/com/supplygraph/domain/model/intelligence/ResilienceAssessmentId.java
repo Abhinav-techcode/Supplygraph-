@@ -29,3 +29,4 @@ public record ResilienceAssessmentId(String value) implements Serializable {
         return value;
     }
 }
+

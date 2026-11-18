@@ -87,3 +87,4 @@ public class PostgresSensitivityAnalysisPersistenceAdapter implements Sensitivit
         }
     }
 }
+

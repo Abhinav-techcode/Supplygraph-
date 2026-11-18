@@ -101,3 +101,4 @@ public class StatisticalResultsView extends VerticalLayout {
         significanceGrid.setItems(tests);
     }
 }
+

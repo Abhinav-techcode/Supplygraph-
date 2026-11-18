@@ -18,3 +18,4 @@ public interface SensitivityAnalysisRepositoryPort {
 
     List<SensitivityAnalysisReport> findAll();
 }
+

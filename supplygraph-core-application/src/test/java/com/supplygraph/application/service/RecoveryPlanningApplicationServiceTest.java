@@ -61,24 +61,46 @@ class RecoveryPlanningApplicationServiceTest {
         service = new RecoveryPlanningApplicationService(planRepo, disruptionRepo, twinRepo, assessmentRepo);
     }
 
+
+    /** A small real network: FAB (disrupted) and SUP-2 feed PLANT; WH holds buffer stock of CHIP. */
+    private DigitalTwinState realTwin() {
+        var fab = new com.supplygraph.domain.model.graph.Supplier(com.supplygraph.domain.model.graph.NodeId.of("FAB"), "Fab", "Munich", true, 2, Set.of(), 0.15);
+        var alt = new com.supplygraph.domain.model.graph.Supplier(com.supplygraph.domain.model.graph.NodeId.of("SUP-2"), "Alt", "Hsinchu", true, 2, Set.of(), 0.10);
+        var wh = new com.supplygraph.domain.model.graph.Warehouse(com.supplygraph.domain.model.graph.NodeId.of("WH"), "Warehouse", "Ulm", true, new java.math.BigDecimal("500"), false, false);
+        var plant = new com.supplygraph.domain.model.graph.ManufacturingSite(com.supplygraph.domain.model.graph.NodeId.of("PLANT"), "Plant", "Stuttgart", true, Set.of("L1"), "", 10);
+        java.util.function.BiFunction<String[], Integer, com.supplygraph.domain.model.graph.TransportationLane> lane = (n, h) -> new com.supplygraph.domain.model.graph.TransportationLane(
+                com.supplygraph.domain.model.graph.EdgeId.of(n[0]), com.supplygraph.domain.model.graph.NodeId.of(n[1]), com.supplygraph.domain.model.graph.NodeId.of(n[2]), com.supplygraph.domain.model.graph.TransportMode.ROAD, java.time.Duration.ofHours(h), java.math.BigDecimal.ONE, true);
+        var graph = new SupplyChainGraph(List.of(fab, alt, wh, plant), List.of(lane.apply(new String[]{"FAB-PLANT", "FAB", "PLANT"}, 6), lane.apply(new String[]{"ALT-PLANT", "SUP-2", "PLANT"}, 20), lane.apply(new String[]{"WH-PLANT", "WH", "PLANT"}, 5)));
+        DigitalTwinState s = new DigitalTwinState(ws, StateVersion.of(2L), graph, BillOfMaterials.empty());
+        var acct = com.supplygraph.domain.model.inventory.InventoryAccountId.of(com.supplygraph.domain.model.graph.NodeId.of("WH"), com.supplygraph.domain.model.bom.MaterialId.of("CHIP"), com.supplygraph.domain.model.inventory.BalanceCategory.ON_HAND_AVAILABLE);
+        var off = com.supplygraph.domain.model.inventory.InventoryAccountId.of(com.supplygraph.domain.model.graph.NodeId.of("WH"), com.supplygraph.domain.model.bom.MaterialId.of("CHIP"), com.supplygraph.domain.model.inventory.BalanceCategory.EXTERNAL_OFFSET);
+        var q = com.supplygraph.domain.model.common.Quantity.of(1000, com.supplygraph.domain.model.common.UnitOfMeasure.PIECE);
+        s.getInventoryLedger().postTransaction(new com.supplygraph.domain.model.inventory.InventoryTransaction(com.supplygraph.domain.model.inventory.TransactionId.generate(), Instant.now(), "SEED", "t",
+                List.of(new com.supplygraph.domain.model.inventory.InventoryPosting("a", acct, com.supplygraph.domain.model.inventory.PostingType.DEBIT, q),
+                        new com.supplygraph.domain.model.inventory.InventoryPosting("b", off, com.supplygraph.domain.model.inventory.PostingType.CREDIT, q))));
+        return s;
+    }
+
+    private Disruption realDisruption() {
+        Instant now = Instant.now();
+        return Disruption.createDraft(ws, "AUTOMOTIVE", "SHUTDOWN", "Fab outage", "d", DisruptionCategory.SUPPLIER_SHUTDOWN, DisruptionSeverity.CRITICAL,
+                Set.of(com.supplygraph.domain.model.graph.NodeId.of("FAB")), Set.of(), Set.of(com.supplygraph.domain.model.bom.MaterialId.of("CHIP")), now, now.plusSeconds(86400 * 2),
+                new DisruptionImpactParameters(java.math.BigDecimal.valueOf(100), 86400L * 2, 2, java.math.BigDecimal.valueOf(500), "PCS", java.util.Map.of()), "e");
+    }
+
     @Test
-    @DisplayName("Generate alternatives produces 3 candidate recovery plans and validates with ConcurGuard")
+    @DisplayName("Generate alternatives derives 2 candidate recovery plans from the twin and validates with ConcurGuard")
     void testMultiAlternativeGenerationAndValidation() {
         Instant now = Instant.now();
-        Disruption disruption = Disruption.createDraft(
-                ws, "PHARMACEUTICAL", "CONTAMINATION", "Cold Chain Excursion", "API spoiled",
-                DisruptionCategory.INVENTORY_CONTAMINATION, DisruptionSeverity.CRITICAL,
-                Set.of(), Set.of(), Set.of(),
-                now, now.plusSeconds(86400 * 5), DisruptionImpactParameters.empty(), "Temp logger"
-        );
-
-        DigitalTwinState twinState = new DigitalTwinState(ws, StateVersion.of(2L), SupplyChainGraph.empty(), BillOfMaterials.empty());
+        Disruption disruption = realDisruption();
+        DigitalTwinState twinState = realTwin();
 
         when(disruptionRepo.findById(disruption.id())).thenReturn(Optional.of(disruption));
         when(twinRepo.findByWorkspaceId(ws)).thenReturn(Optional.of(twinState));
 
         List<RecoveryPlan> alternatives = service.generateAlternativePlans(disruption.id(), ws);
-        assertThat(alternatives).hasSize(3);
+        assertThat(alternatives).hasSize(2);   // buffer release + alternative supplier; no stock at the plant, so no resequencing option
+        assertThat(alternatives).extracting(RecoveryPlan::planName).anyMatch(n -> n.contains("WH"));   // derived from the twin, not a template
 
         RecoveryPlan planAlpha = alternatives.get(0);
         assertThat(planAlpha.status()).isEqualTo(RecoveryPlanStatus.DRAFT);
@@ -98,15 +120,9 @@ class RecoveryPlanningApplicationServiceTest {
     @DisplayName("Stale plan cannot be approved if digital twin version has advanced")
     void testStalePlanApprovalRejected() {
         Instant now = Instant.now();
-        Disruption disruption = Disruption.createDraft(
-                ws, "PHARMACEUTICAL", "CONTAMINATION", "Cold Chain", "Desc",
-                DisruptionCategory.INVENTORY_CONTAMINATION, DisruptionSeverity.CRITICAL,
-                Set.of(), Set.of(), Set.of(),
-                now, now.plusSeconds(86400), DisruptionImpactParameters.empty(), "Log"
-        );
-
+        Disruption disruption = realDisruption();
         // Twin was v2 when plan created
-        DigitalTwinState twinState = new DigitalTwinState(ws, StateVersion.of(2L), SupplyChainGraph.empty(), BillOfMaterials.empty());
+        DigitalTwinState twinState = realTwin();
         when(disruptionRepo.findById(disruption.id())).thenReturn(Optional.of(disruption));
         when(twinRepo.findByWorkspaceId(ws)).thenReturn(Optional.of(twinState));
 

@@ -51,7 +51,8 @@ public class SupplierDependencyExplorerView extends VerticalLayout {
     }
 
     private void loadData() {
-        List<SupplierRiskProfile> profiles = supplierService.getProfiles("default-workspace");
+        List<SupplierRiskProfile> profiles = supplierService.getProfiles("WS-AUTO-01");
         dependencyGrid.setItems(profiles);
     }
 }
+

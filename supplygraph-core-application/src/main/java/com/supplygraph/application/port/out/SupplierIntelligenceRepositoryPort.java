@@ -16,3 +16,4 @@ public interface SupplierIntelligenceRepositoryPort {
 
     Optional<SupplierRiskProfile> findBySupplierId(String workspaceId, String supplierId);
 }
+

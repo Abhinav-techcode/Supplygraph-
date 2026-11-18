@@ -105,10 +105,10 @@ public class BenchmarkComparisonDashboardView extends VerticalLayout {
 
         keyFindingsLayout.removeAll();
         keyFindingsLayout.add(
-                createCard("ConcurGuard Precision", "98.2%", "vs 32.0% in uncoordinated baselines"),
+                createCard("ConcurGuard Precision", "No data", "Run a benchmark experiment to measure"),
                 createCard("Preserved Action Retention", "+348%", "Preserves non-conflicting actions without full rollback"),
-                createCard("Replanning Latency", "88 ms", "80% faster than full-graph restart (Baseline 3)"),
-                createCard("Cost Efficiency", "$64,000", "65% cost reduction vs uncoordinated recovery")
+                createCard("Replanning Latency", "No data", "Run a benchmark experiment to measure"),
+                createCard("Cost Efficiency", "No data", "Run a benchmark experiment to measure")
         );
     }
 
@@ -133,3 +133,4 @@ public class BenchmarkComparisonDashboardView extends VerticalLayout {
         return card;
     }
 }
+

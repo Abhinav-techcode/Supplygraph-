@@ -72,7 +72,7 @@ public class SensitivityAnalysisView extends VerticalLayout {
         if (sensitivityService == null) return;
 
         SensitivityAnalysisReport report = sensitivityService.runSensitivitySuite(
-                "default-workspace",
+                "WS-AUTO-01",
                 "ALT-AIR-EXPEDITED",
                 BigDecimal.valueOf(65000),
                 8.0,
@@ -98,3 +98,4 @@ public class SensitivityAnalysisView extends VerticalLayout {
         scorecardContainer.add(title, summary);
     }
 }
+

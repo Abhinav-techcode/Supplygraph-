@@ -15,3 +15,4 @@ public interface DecisionProvenanceRepositoryPort {
 
     Optional<DecisionProvenanceGraph> findByWorkspaceId(String workspaceId);
 }
+

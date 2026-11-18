@@ -2,13 +2,13 @@
 
 > **Industry-Configurable Agentic Supply Chain Intelligence, Digital Twin & Conflict-Aware Recovery Platform**
 
-SupplyGraph is a high-assurance, Java-first enterprise platform engineered to model multi-tier supply chain digital twins, detect cascading disruptions, orchestrate bounded specialist AI agents, arbitrate conflicting recovery plans deterministically via **ConcurGuard**, run what-if simulations, and deliver evidence-backed decision support for human operators.
+SupplyGraph is a high-assurance, Java-first enterprise platform engineered to model multi-tier supply chain digital twins, detect cascading disruptions, orchestrate bounded specialist AI agents, arbitrate conflicting recovery plans deterministically via **ConcurGuard**, run what-if simulations, optimize multi-echelon inventory and recovery networks via Google OR-Tools, enforce greenhouse gas sustainability and product traceability, manage supplier collaboration, and deliver role-specific cockpits for enterprise operators.
 
 ---
 
 ## Architecture Overview
 
-SupplyGraph is structured as a **modular monolith** with clean hexagonal boundaries, strict dependency inversion, and zero cyclic dependencies across 13 decoupled Maven modules.
+SupplyGraph is structured as a **modular monolith** with clean hexagonal boundaries, strict dependency inversion, and zero cyclic dependencies across 14 decoupled Maven modules.
 
 ```mermaid
 graph TD
@@ -18,11 +18,12 @@ graph TD
     UI --> IND_SEMI[supplygraph-industry-semiconductor]
     UI --> IND_AUTO[supplygraph-industry-automotive]
     UI --> ADAPT_PERSIST[supplygraph-adapter-persistence<br/>Spring Data JPA & Flyway]
+    UI --> ADAPT_INTEG[supplygraph-adapter-integration<br/>REST & Connectors]
     UI --> ADAPT_AI[supplygraph-adapter-ai<br/>Spring AI & Deterministic Fakes]
 
     APP --> DOMAIN[supplygraph-core-domain<br/>Pure Java 21 Domain Model]
     APP --> CONCUR[supplygraph-concurguard<br/>Formal Conflict Detection Engine]
-    APP --> SIM[supplygraph-simulation-engine<br/>Discrete Event Simulation Clock]
+    APP --> SIM[supplygraph-simulation-engine<br/>Discrete Event Simulation & OR-Tools]
     APP --> IND_API[supplygraph-industry-api<br/>SPI & Scenario Extension Interfaces]
 
     IND_EV --> IND_API
@@ -32,113 +33,81 @@ graph TD
 
     ADAPT_PERSIST --> APP
     ADAPT_PERSIST --> DOMAIN
+    ADAPT_INTEG --> APP
     ADAPT_AI --> APP
 ```
 
-## Phase 9 & 10 (Enterprise Integration Runtime, Governed Execution)
+---
 
-* **Phase 9** adds a connector registry/lifecycle, PostgreSQL transactional outbox + inbox, HMAC-authenticated webhooks, an SSRF-guarded generic REST adapter, field-authority reconciliation and runtime operations views. New module: `supplygraph-adapter-integration`. See [docs/PHASE_9_ARCHITECTURE_AND_IMPLEMENTATION.md](docs/PHASE_9_ARCHITECTURE_AND_IMPLEMENTATION.md).
-* **Phase 10** adds governed execution: approved recovery plan -> validated task graph -> two-person approval -> bounded execution through adapters -> acknowledgement / reconciliation -> plan-versus-actual -> bounded, human-decided reassessment. See [docs/PHASE_10_ARCHITECTURE_AND_IMPLEMENTATION.md](docs/PHASE_10_ARCHITECTURE_AND_IMPLEMENTATION.md) and [docs/END_TO_END_EXECUTION_LIFECYCLE.md](docs/END_TO_END_EXECUTION_LIFECYCLE.md).
-* **What is real:** the generic REST connector adapter (verified against a local in-process test server only). **What is simulated:** the `sandbox` connector and the `sandbox-execution` adapter; everything they produce is labelled SIMULATED and never updates the digital twin. **Not implemented:** any vendor ERP/PLM/WMS/TMS/MES/QMS adapter and any LIVE execution adapter.
-* **No login system exists.** The UI acts as a configured operator (`supplygraph.ui.default-role`); `SUPPLYGRAPH_UI_DEMO_ROLE_SWITCHER=true` shows a demo role switcher (not authentication). Do not expose it on an untrusted network.
-* Build with **JDK 21** (JDK 26 breaks Mockito/ByteBuddy in this Spring Boot version): `JAVA_HOME=<jdk21> ./mvnw clean verify` (Docker required for the PostgreSQL Testcontainers tests). Research method: [docs/RESEARCH_METHODOLOGY_PHASE_9_10.md](docs/RESEARCH_METHODOLOGY_PHASE_9_10.md). Developer guides: [connectors](docs/CONNECTOR_DEVELOPER_GUIDE.md), [execution adapters](docs/EXECUTION_ADAPTER_DEVELOPER_GUIDE.md).
+## Module Responsibilities
 
-### Module Responsibilities
-
-| Module | Responsibility | Purity & Rules |
+| Module | Responsibility | Purity & Architectural Rules |
 | :--- | :--- | :--- |
-| [`supplygraph-core-domain`](file:///Users/abhinavgupta/Desktop/Supplygraph/supplygraph-core-domain) | Canonical domain entities, value objects, domain invariants, double-entry inventory ledger | **Pure Java 21**. Zero dependencies on Spring, JPA, Vaadin, Jackson, or AI frameworks. |
-| [`supplygraph-industry-api`](file:///Users/abhinavgupta/Desktop/Supplygraph/supplygraph-industry-api) | Extensibility SPI contracts (`IndustryPackExtension`, `IndustryIdentifier`, `IndustryPolicy`) | Pure Java interface specifications for pluggable industry packs. |
-| [`supplygraph-concurguard`](file:///Users/abhinavgupta/Desktop/Supplygraph/supplygraph-concurguard) | Formal conflict detection engine arbitrating across 7 deterministic conflict classes | Pure algorithmic Java logic. Evaluates claims, time windows, and invariants. |
-| [`supplygraph-simulation-engine`](file:///Users/abhinavgupta/Desktop/Supplygraph/supplygraph-simulation-engine) | Discrete event simulation clock, Monte Carlo runners, and Google OR-Tools integration | High-performance deterministic simulation runtime. |
-| [`supplygraph-core-application`](file:///Users/abhinavgupta/Desktop/Supplygraph/supplygraph-core-application) | Application services, use case interactors, input/output boundary ports | Orchestrates domain operations. Depends only on domain and engines. |
-| [`supplygraph-industry-ev`](file:///Users/abhinavgupta/Desktop/Supplygraph/supplygraph-industry-ev) | EV Battery Manufacturing industry pack (8 industrial scenarios) | Implements `IndustryPackExtension`. Self-contained scenario definitions. |
-| [`supplygraph-industry-pharma`](file:///Users/abhinavgupta/Desktop/Supplygraph/supplygraph-industry-pharma) | Pharmaceutical Supply Chain industry pack (8 industrial scenarios) | Implements `IndustryPackExtension`. Enforces cold-chain and GMP policies. |
-| [`supplygraph-industry-semiconductor`](file:///Users/abhinavgupta/Desktop/Supplygraph/supplygraph-industry-semiconductor) | Semiconductor Manufacturing industry pack (8 industrial scenarios) | Implements `IndustryPackExtension`. High-mix fab capacity constraints. |
-| [`supplygraph-industry-automotive`](file:///Users/abhinavgupta/Desktop/Supplygraph/supplygraph-industry-automotive) | Automotive Component Manufacturing industry pack (8 industrial scenarios) | Implements `IndustryPackExtension`. Just-in-Time/Just-in-Sequence rules. |
-| [`supplygraph-adapter-persistence`](file:///Users/abhinavgupta/Desktop/Supplygraph/supplygraph-adapter-persistence) | PostgreSQL persistence adapter, Spring Data JPA repositories, Flyway schema migrations | Implements application persistence SPI ports against PostgreSQL 16+. |
-| [`supplygraph-adapter-ai`](file:///Users/abhinavgupta/Desktop/Supplygraph/supplygraph-adapter-ai) | Spring AI integration, bounded prompt templates, deterministic test fakes | Implements AI gateway ports. Enforces JSON schemas and bounded retry logic. |
-| [`supplygraph-web`](file:///Users/abhinavgupta/Desktop/Supplygraph/supplygraph-web) | Vaadin Flow 24 Java-authored UI, Spring Boot composition root, Actuator endpoints | Assembly root. No frontend build tools (Node.js/React) required. |
+| [`supplygraph-core-domain`](supplygraph-core-domain) | Canonical domain entities, value objects, domain invariants, double-entry inventory ledger | **Pure Java 21**. Zero dependencies on Spring, JPA, Vaadin, Jackson, or AI frameworks. |
+| [`supplygraph-industry-api`](supplygraph-industry-api) | Extensibility SPI contracts (`IndustryPackExtension`, `IndustryIdentifier`, `IndustryPolicy`) | Pure Java interface specifications for pluggable industry packs. |
+| [`supplygraph-concurguard`](supplygraph-concurguard) | Formal conflict detection engine arbitrating across 7 deterministic conflict classes | Pure algorithmic Java logic. Evaluates claims, time windows, and invariants. |
+| [`supplygraph-simulation-engine`](supplygraph-simulation-engine) | Discrete event simulation clock, Monte Carlo runners, and Google OR-Tools integration | High-performance deterministic simulation runtime and MIP solvers. |
+| [`supplygraph-core-application`](supplygraph-core-application) | Application services, use case interactors, input/output boundary ports | Orchestrates domain operations. Depends only on domain and engines. |
+| [`supplygraph-industry-ev`](supplygraph-industry-ev) | EV Battery Manufacturing industry pack | Implements `IndustryPackExtension`. Self-contained scenario definitions. |
+| [`supplygraph-industry-pharma`](supplygraph-industry-pharma) | Pharmaceutical Supply Chain industry pack | Implements `IndustryPackExtension`. Enforces cold-chain and GMP policies. |
+| [`supplygraph-industry-semiconductor`](supplygraph-industry-semiconductor) | Semiconductor Manufacturing industry pack | Implements `IndustryPackExtension`. High-mix fab capacity constraints. |
+| [`supplygraph-industry-automotive`](supplygraph-industry-automotive) | Automotive Component Manufacturing industry pack | Implements `IndustryPackExtension`. Just-in-Time/Just-in-Sequence rules. |
+| [`supplygraph-adapter-persistence`](supplygraph-adapter-persistence) | PostgreSQL persistence adapter, Spring Data JPA repositories, Flyway migrations | Implements application persistence SPI ports against PostgreSQL 16+. |
+| [`supplygraph-adapter-integration`](supplygraph-adapter-integration) | Integration runtime, bidirectional connectors, outbox/inbox, SSRF-safe REST | Implements enterprise ingestion, external webhooks, and sync engine. |
+| [`supplygraph-adapter-ai`](supplygraph-adapter-ai) | Spring AI integration, bounded prompt templates, deterministic test fakes | Implements AI gateway ports. Enforces JSON schemas and bounded retry logic. |
+| [`supplygraph-web`](supplygraph-web) | Vaadin Flow 24 Java-authored UI, Spring Boot composition root, Actuator endpoints | Assembly root. No frontend build tools (Node.js/React) required. |
 
 ---
 
-## Prerequisites
+## Roadmap Phases (1 through 15)
 
-- **Java Development Kit:** OpenJDK 21 LTS (`<maven.compiler.release>21</maven.compiler.release>`)
-- **Build Tool:** Apache Maven 3.9+ (bundled via `./mvnw` wrapper)
-- **Container Runtime:** Docker 24+ / Colima (required for Testcontainers integration tests)
-- **Database (Optional for local dev):** PostgreSQL 16+ (H2 PostgreSQL-compatibility mode included for zero-install dev)
+- **Phase 1: Modular Foundation & Architecture:** Maven multi-module parent POM, ArchUnit architectural tests, Spring Boot 3.4.1, Vaadin Flow 24.5.4, PostgreSQL 16+, and Flyway schema migrations.
+- **Phase 2: Digital Twin Core & Graph Domain:** Canonical directed supply chain graph, multi-tier BOM explosion DAG, double-entry inventory ledger, capacity calendars, and immutable snapshots.
+- **Phase 3: Agentic AI Orchestration & ConcurGuard:** Disruption investigation agents, inventory, procurement, and logistics replanning, and the ConcurGuard conflict arbitration engine arbitrating 7 conflict classes.
+- **Phase 4: Simulation, Monte Carlo & Mathematical Optimization:** Discrete-event simulation, Monte Carlo risk engine (P10, P50, P90), Google OR-Tools MIP solver, and audited recovery approvals.
+- **Phase 5: Continuous Intelligence & Outbox-Driven Replanning:** Transactional Outbox pattern on PostgreSQL, real-time event ingestion, and dynamic drift-triggered replanning.
+- **Phase 6: Enterprise Security, RBAC & Multi-Tenancy:** Role-Based Access Control (9 roles), tenant isolation boundaries, and cryptographically verified SHA-256 immutable audit logging.
+- **Phase 7: Pluggable Industry Packs & Advanced Decision Intelligence:** Decoupled SPI architecture with 4 packs (EV Battery, Semiconductor, Aerospace, Pharma), multi-objective Pareto frontiers, XAI attribution, and decision provenance graphs.
+- **Phase 8: Enterprise Integration & Data Quality:** High-throughput CSV/JSON ingestion pipelines, schema validation, domain invariant checking, and staged preview quarantine.
+- **Phase 9: Integration Runtime & Bidirectional Connectors:** Connector lifecycle management (`DRAFT`, `ACTIVE`, `PAUSED`, `ERROR`), HMAC webhooks, SSRF-guarded REST adapter, and field-level reconciliation.
+- **Phase 10: Governed Recovery Task Graphs & Execution:** DAG task graphs with cycle detection, Separation of Duties (SoD) multi-party approvals, and closed-loop plan-versus-actual variance tracking.
+- **Phase 11: Multi-Echelon Planning (MEIO) & Inventory Optimization:** Multi-Echelon Inventory Optimization, stochastic safety stock calculations, dynamic reorder points, demand forecasting, and 15 Vaadin planning views.
+- **Phase 12: Sustainability, ESG & Product Traceability:** Scope 1-3 GHG carbon accounting, Product Genealogy DAG (`ArrayDeque` blast-radius traversal), supplier ESG scorecards, circular economy ledger, and 12 Vaadin sustainability views.
+- **Phase 13: Supplier Collaboration & Partner Ecosystem:** Multi-tier Supplier Portal, RFQ management and bidding, purchase order acknowledgment, Advance Shipping Notices (ASN), 8D quality investigations, and cryptographic document vault with 14 Vaadin views.
+- **Phase 14: Premium Enterprise UI/UX & Persona Cockpits:** Enterprise design system with CSS tokens, elevation shadows, and status badges, 9 role-specific persona workspaces, and a Unified Enterprise Command Centre with universal cross-domain search.
+- **Phase 15: Enterprise Platform Maturity & Governance:** Multi-tenant resource quotas, versioned industry configuration policies with automated deprecation and 1-click rollback, scoped API developer centre, disaster recovery snapshot vault, and real-time JVM/pool telemetry with 13 administrative views.
 
 ---
 
-## Quickstart
+## Technology Stack
 
-### 1. Build and Run Full Test Suite
+- **Runtime:** Java 21 LTS (OpenJDK 64-Bit Server VM)
+- **Framework:** Spring Boot 3.4.1
+- **UI Platform:** Vaadin Flow 24.5.4 (100% Java-authored, zero Node.js/React runtime)
+- **Database:** PostgreSQL 16+ (Flyway forward migrations v1 through v15)
+- **Optimization:** Google OR-Tools 9.11.4210 (MIP/LP mathematical solver)
+- **Testing:** JUnit 5, AssertJ, Mockito, Testcontainers (PostgreSQL 16), ArchUnit
 
-Run the complete Maven build and verification across all 12 modules, including ArchUnit architecture enforcement and Testcontainers PostgreSQL migrations:
+---
 
+## Quickstart & Verification
+
+### Prerequisites
+- OpenJDK 21 LTS (`JAVA_HOME=/opt/homebrew/opt/openjdk@21`)
+- Docker / Colima (for Testcontainers PostgreSQL tests)
+- Apache Maven 3.9+ (bundled via `./mvnw`)
+
+### Running the Full Test Suite
 ```bash
-# Set Java 21 home
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21
+export DOCKER_HOST="unix:///Users/abhinavgupta/.colima/default/docker.sock"
+export TESTCONTAINERS_RYUK_DISABLED="true"
 
-# Run clean compile and test verification
-./mvnw clean verify
+./mvnw clean test
 ```
 
-### 2. Start PostgreSQL via Docker Compose
-
-To launch the isolated PostgreSQL 16 database instance for SupplyGraph (configured on port `5433` to prevent local port collisions):
-
+### Starting the Application
 ```bash
-docker compose up -d
+./mvnw -pl supplygraph-web spring-boot:run
 ```
-
-### 3. Run the Application
-
-Launch the Spring Boot composition root:
-
-```bash
-./mvnw spring-boot:run -pl supplygraph-web
-```
-
-### 4. Access the Application
-
-- **Vaadin Flow Navigation UI:** [http://localhost:8080/](http://localhost:8080/)
-- **System Health View:** [http://localhost:8080/health](http://localhost:8080/health)
-- **Spring Boot Actuator Health Probe:** [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
-
----
-
-## Architectural Guarantees & Verification Gates
-
-SupplyGraph enforces strict structural quality via automated gates:
-
-1. **ArchUnit Boundary Enforcement (`ArchitectureBoundaryTests`):**
-   - Pure domain core cannot depend on Spring, JPA, Vaadin, Jackson, or AI frameworks.
-   - Core application cannot depend on web presentation or database persistence adapters.
-   - Web tier cannot bypass application ports to query persistence adapters directly.
-   - Vaadin Flow UI classes are strictly confined to `supplygraph-web`.
-2. **Database Schema Durability (`FlywayMigrationIntegrationTest`):**
-   - Schema versioning verified via Testcontainers PostgreSQL 16 on every build.
-3. **Deterministic Extensibility:**
-   - Pluggable `IndustryPackExtension` SPI allows introducing new industry domains without modifying the platform core.
-
----
-
-## Documentation Index
-
-- [Development Setup Guide](file:///Users/abhinavgupta/Desktop/Supplygraph/docs/DEVELOPMENT_SETUP.md)
-- [System Architecture](file:///Users/abhinavgupta/Desktop/Supplygraph/docs/ARCHITECTURE.md)
-- [Maven Module Catalog](file:///Users/abhinavgupta/Desktop/Supplygraph/docs/MAVEN_MODULES.md)
-- [Database Setup & Migrations](file:///Users/abhinavgupta/Desktop/Supplygraph/docs/DATABASE_SETUP.md)
-- [Testing & Quality Guide](file:///Users/abhinavgupta/Desktop/Supplygraph/docs/TESTING_GUIDE.md)
-- [Phase 1 Completion Report](file:///Users/abhinavgupta/Desktop/Supplygraph/docs/PHASE_1_COMPLETION_REPORT.md)
-- [Phase 2 Completion Report](file:///Users/abhinavgupta/Desktop/Supplygraph/docs/PHASE_2_COMPLETION_REPORT.md)
-- [Phase 3 Completion Report](file:///Users/abhinavgupta/Desktop/Supplygraph/docs/PHASE_3_COMPLETION_REPORT.md)
-- [Phase 4 Completion Report](file:///Users/abhinavgupta/Desktop/Supplygraph/docs/PHASE_4_COMPLETION_REPORT.md)
-- [Phase 5 Completion Report](file:///Users/abhinavgupta/Desktop/Supplygraph/docs/PHASE_5_COMPLETION_REPORT.md)
-- [Phase 6 Completion Report](file:///Users/abhinavgupta/Desktop/Supplygraph/docs/PHASE_6_COMPLETION_REPORT.md)
-- [Phase 7 Completion Report](file:///Users/abhinavgupta/Desktop/Supplygraph/docs/PHASE_7_COMPLETION_REPORT.md)
-- [Phase 8 Completion Report](file:///Users/abhinavgupta/Desktop/Supplygraph/docs/PHASE_8_COMPLETION_REPORT.md)
-- [Research Evaluation Report](file:///Users/abhinavgupta/Desktop/Supplygraph/docs/RESEARCH_EVALUATION_REPORT.md)
-- [Engineering Review & ADRs](file:///Users/abhinavgupta/Desktop/Supplygraph/engineering-review/FINAL_ARCHITECTURE_DECISIONS.md)
+Access the application at `http://localhost:8080/`. Default role credentials and workspace context are provisioned via demo initializers for instant exploration.

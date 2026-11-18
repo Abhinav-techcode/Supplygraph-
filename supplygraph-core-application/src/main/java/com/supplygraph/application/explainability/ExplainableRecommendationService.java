@@ -175,7 +175,7 @@ public class ExplainableRecommendationService {
 
         auditGovernanceService.logAction(
                 UserId.of(authorizedUserId),
-                WorkspaceId.of(workspaceId != null ? workspaceId : "default-workspace"),
+                WorkspaceId.of(workspaceId != null ? workspaceId : "WS-AUTO-01"),
                 AuditAction.PLAN_APPROVED,
                 id.value(),
                 existing.stateVersion() != null ? existing.stateVersion() : "V1",
@@ -209,7 +209,7 @@ public class ExplainableRecommendationService {
 
         auditGovernanceService.logAction(
                 UserId.of(rejectingUserId),
-                WorkspaceId.of(workspaceId != null ? workspaceId : "default-workspace"),
+                WorkspaceId.of(workspaceId != null ? workspaceId : "WS-AUTO-01"),
                 AuditAction.PLAN_REJECTED,
                 id.value(),
                 existing.stateVersion() != null ? existing.stateVersion() : "V1",

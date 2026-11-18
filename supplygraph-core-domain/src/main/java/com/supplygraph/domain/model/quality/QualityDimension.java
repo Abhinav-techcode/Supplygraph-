@@ -29,3 +29,4 @@ public enum QualityDimension {
         return description;
     }
 }
+

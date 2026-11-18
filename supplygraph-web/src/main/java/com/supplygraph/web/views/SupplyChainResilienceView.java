@@ -95,7 +95,7 @@ public class SupplyChainResilienceView extends VerticalLayout {
     }
 
     private void loadLatest() {
-        Optional<NetworkResilienceAssessment> opt = resilienceService.getLatestAssessment("default-workspace");
+        Optional<NetworkResilienceAssessment> opt = resilienceService.getLatestAssessment("WS-AUTO-01");
         if (opt.isPresent()) {
             renderAssessment(opt.get());
         } else {
@@ -104,13 +104,13 @@ public class SupplyChainResilienceView extends VerticalLayout {
     }
 
     private void runAssessment() {
-        Optional<DigitalTwinState> stateOpt = digitalTwinRepository.findByWorkspaceId(WorkspaceId.of("default-workspace"));
+        Optional<DigitalTwinState> stateOpt = digitalTwinRepository.findByWorkspaceId(WorkspaceId.of("WS-AUTO-01"));
         if (stateOpt.isEmpty()) {
             Notification.show("Digital twin state not found", 3000, Notification.Position.MIDDLE);
             return;
         }
 
-        NetworkResilienceAssessment assessment = resilienceService.assessNetworkResilience("default-workspace", stateOpt.get());
+        NetworkResilienceAssessment assessment = resilienceService.assessNetworkResilience("WS-AUTO-01", stateOpt.get());
         renderAssessment(assessment);
         Notification.show("Resilience Assessment Updated: Index " + String.format("%.1f", assessment.overallResilienceIndex()) + "/100", 3000, Notification.Position.TOP_CENTER)
                 .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -138,3 +138,4 @@ public class SupplyChainResilienceView extends VerticalLayout {
         }
     }
 }
+

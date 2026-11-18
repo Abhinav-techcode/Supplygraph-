@@ -105,7 +105,7 @@ public class DecisionProvenanceExplorerView extends VerticalLayout {
     private void loadGraph(String disruptionId) {
         if (provenanceService == null) return;
         DecisionProvenanceGraph graph = provenanceService.findByRootDisruptionId(disruptionId)
-                .orElseGet(() -> provenanceService.buildAndSaveProvenanceGraph("default-workspace", disruptionId, "USR-SCM-01"));
+                .orElseGet(() -> provenanceService.buildAndSaveProvenanceGraph("WS-AUTO-01", disruptionId, "USR-SCM-01"));
 
         nodesGrid.setItems(graph.getAllNodes());
         edgesGrid.setItems(graph.edges());
@@ -115,3 +115,4 @@ public class DecisionProvenanceExplorerView extends VerticalLayout {
         }
     }
 }
+

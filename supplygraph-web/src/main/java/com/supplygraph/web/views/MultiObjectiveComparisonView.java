@@ -91,3 +91,4 @@ public class MultiObjectiveComparisonView extends VerticalLayout {
         frontierSummary.add(summaryTitle, desc);
     }
 }
+

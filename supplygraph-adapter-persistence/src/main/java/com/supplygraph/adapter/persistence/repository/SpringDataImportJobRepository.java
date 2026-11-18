@@ -10,3 +10,4 @@ import java.util.List;
 public interface SpringDataImportJobRepository extends JpaRepository<ImportJobJpaEntity, String> {
     List<ImportJobJpaEntity> findByWorkspaceIdOrderByCreatedAtDesc(String workspaceId);
 }
+

@@ -35,6 +35,7 @@ public class TaskDependencyExplorerView extends ExecutionViewBase {
         graphHolder.add(graph);
         graphHolder.getStyle().set("overflow", "auto");
         body(selector, summary, graphHolder, grid);
+        preselectLatest(selector);
     }
 
     private void show(ExecutionWorkflow selected) {
@@ -44,7 +45,9 @@ public class TaskDependencyExplorerView extends ExecutionViewBase {
         grid.setItems(w.tasks());
         summary.setText("Execution order: " + String.join(" → ", g.topologicalOrder()).replace(w.id() + "-", ""));
         graphHolder.removeAll();
-        graphHolder.add(new Html(svg(w)));
+        String b64 = java.util.Base64.getEncoder().encodeToString(svg(w).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        // An <img> with a data URI renders reliably; injecting raw <svg> through Html() creates non-SVG-namespaced elements.
+        graphHolder.add(new Html("<div><img alt='Task dependency graph' src='data:image/svg+xml;base64," + b64 + "'/></div>"));
     }
 
     /** Layered layout: a task's column is its longest predecessor chain. Pure server-side SVG, no JS stack. */

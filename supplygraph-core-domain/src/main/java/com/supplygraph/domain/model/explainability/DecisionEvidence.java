@@ -26,3 +26,4 @@ public record DecisionEvidence(
         return new DecisionEvidence(id, title, source, confidenceScore, timestamp, summary);
     }
 }
+

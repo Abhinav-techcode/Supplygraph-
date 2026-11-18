@@ -82,13 +82,13 @@ public class SupplierIntelligenceView extends VerticalLayout {
     }
 
     private void recomputeMetrics() {
-        Optional<DigitalTwinState> stateOpt = digitalTwinRepository.findByWorkspaceId(WorkspaceId.of("default-workspace"));
+        Optional<DigitalTwinState> stateOpt = digitalTwinRepository.findByWorkspaceId(WorkspaceId.of("WS-AUTO-01"));
         if (stateOpt.isEmpty()) {
             Notification.show("Digital twin state not found", 3000, Notification.Position.MIDDLE);
             return;
         }
 
-        List<SupplierRiskProfile> profiles = supplierService.computeSupplierRiskProfiles("default-workspace", stateOpt.get());
+        List<SupplierRiskProfile> profiles = supplierService.computeSupplierRiskProfiles("WS-AUTO-01", stateOpt.get());
         supplierGrid.setItems(profiles);
         updateSummary(profiles);
         Notification.show("Recomputed metrics for " + profiles.size() + " suppliers", 3000, Notification.Position.TOP_CENTER)
@@ -96,7 +96,7 @@ public class SupplierIntelligenceView extends VerticalLayout {
     }
 
     private void refreshData() {
-        List<SupplierRiskProfile> profiles = supplierService.getProfiles("default-workspace");
+        List<SupplierRiskProfile> profiles = supplierService.getProfiles("WS-AUTO-01");
         if (profiles.isEmpty()) {
             // Auto compute if not yet present
             recomputeMetrics();
@@ -120,3 +120,4 @@ public class SupplierIntelligenceView extends VerticalLayout {
                 " | Single-Source Feeder Dependencies: " + singleSource);
     }
 }
+

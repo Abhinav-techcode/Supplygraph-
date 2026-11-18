@@ -41,3 +41,4 @@ public enum SupplierMetricType {
         return higherIsBetter;
     }
 }
+

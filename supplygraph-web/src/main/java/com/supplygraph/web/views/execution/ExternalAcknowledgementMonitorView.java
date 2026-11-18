@@ -56,6 +56,8 @@ public class ExternalAcknowledgementMonitorView extends ExecutionViewBase {
         TextField ref = new TextField("Reference");
         TextField source = new TextField("Source system");
         TextField note = new TextField("Note");
+        ref.setValue(r.task().externalReference() == null ? "" : r.task().externalReference());
+        source.setValue(r.workflow().simulated() ? "sandbox (simulated target system)" : "");
         Button ok = new Button("Task completed", e -> { if (UiSupport.run("Acknowledgement recorded", () -> acks.record(r.task().id(), ref.getValue(), true, source.getValue(), note.getValue()))) { d.close(); refresh(); } });
         ok.addThemeName("primary");
         Button fail = new Button("Task failed", e -> { if (UiSupport.run("Failure acknowledgement recorded", () -> acks.record(r.task().id(), ref.getValue(), false, source.getValue(), note.getValue()))) { d.close(); refresh(); } });

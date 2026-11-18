@@ -22,3 +22,4 @@ public record ParetoSolutionId(String value) implements Serializable {
         return new ParetoSolutionId("PAR-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
     }
 }
+

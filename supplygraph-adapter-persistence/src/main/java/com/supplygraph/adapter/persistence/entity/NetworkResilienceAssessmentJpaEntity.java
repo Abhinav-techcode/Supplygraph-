@@ -65,3 +65,4 @@ public class NetworkResilienceAssessmentJpaEntity {
     public int getBottlenecksCount() { return bottlenecksCount; }
     public void setBottlenecksCount(int bottlenecksCount) { this.bottlenecksCount = bottlenecksCount; }
 }
+

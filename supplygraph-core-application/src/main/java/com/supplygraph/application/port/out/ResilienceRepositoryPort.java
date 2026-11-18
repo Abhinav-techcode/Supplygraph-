@@ -19,3 +19,4 @@ public interface ResilienceRepositoryPort {
 
     List<NetworkResilienceAssessment> findHistoryByWorkspaceId(String workspaceId);
 }
+

@@ -38,3 +38,4 @@ public record SupplierRiskProfile(
         return getMetric(type).map(SupplierIntelligenceMetric::value).orElse(defaultValue);
     }
 }
+

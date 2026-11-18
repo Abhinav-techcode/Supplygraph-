@@ -39,3 +39,4 @@ public class ParetoEvaluationJpaEntity {
     public String getFrontierSolutionsJson() { return frontierSolutionsJson; }
     public Instant getEvaluatedAt() { return evaluatedAt; }
 }
+

@@ -26,3 +26,4 @@ public enum ImportStatus {
         return this == COMPLETED || this == PARTIALLY_COMPLETED || this == REJECTED || this == FAILED;
     }
 }
+

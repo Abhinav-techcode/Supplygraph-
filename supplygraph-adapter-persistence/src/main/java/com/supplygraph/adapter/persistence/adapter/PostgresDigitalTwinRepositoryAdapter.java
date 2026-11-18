@@ -17,10 +17,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PostgresDigitalTwinRepositoryAdapter implements DigitalTwinRepositoryPort {
 
     private final SpringDataDigitalTwinStateRepository repository;
+    private final TwinGraphStore graphStore;
     private final Map<WorkspaceId, DigitalTwinState> stateCache = new ConcurrentHashMap<>();
 
-    public PostgresDigitalTwinRepositoryAdapter(SpringDataDigitalTwinStateRepository repository) {
+    public PostgresDigitalTwinRepositoryAdapter(SpringDataDigitalTwinStateRepository repository, TwinGraphStore graphStore) {
         this.repository = repository;
+        this.graphStore = graphStore;
     }
 
     @Override
@@ -32,6 +34,7 @@ public class PostgresDigitalTwinRepositoryAdapter implements DigitalTwinReposito
                 Instant.now()
         );
         repository.save(entity);
+        graphStore.save(state.getWorkspaceId(), state);   // durable: graph, BOM and inventory balances
     }
 
     @Override
@@ -40,13 +43,13 @@ public class PostgresDigitalTwinRepositoryAdapter implements DigitalTwinReposito
         if (cached != null) {
             return Optional.of(cached);
         }
-        return repository.findById(workspaceId.value())
-                .map(entity -> new DigitalTwinState(
-                        workspaceId,
-                        StateVersion.of(entity.getVersion()),
-                        null,
-                        null
-                ));
+        return repository.findById(workspaceId.value()).map(entity -> {
+            DigitalTwinState loaded = graphStore.hasGraph(workspaceId)
+                    ? graphStore.load(workspaceId, entity.getVersion())
+                    : new DigitalTwinState(workspaceId, StateVersion.of(entity.getVersion()), null, null);
+            stateCache.put(workspaceId, loaded);
+            return loaded;
+        });
     }
 
     @Override

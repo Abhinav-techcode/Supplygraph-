@@ -122,3 +122,4 @@ public class MultiObjectiveParetoService {
         return repository.findAll();
     }
 }
+

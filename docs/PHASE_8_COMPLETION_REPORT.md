@@ -136,3 +136,4 @@ Phase 8 completes the SupplyGraph enterprise decision intelligence platform and 
 - **Persistence Testing:** Real PostgreSQL 16 container via Testcontainers verifying all 7 Flyway schema migrations (`V1` through `V7`).
 - **Architectural Integrity:** ArchUnit tests verifying hexagonal and modular monolith layer boundaries.
 - **Build Status:** `./mvnw clean test` finished with **BUILD SUCCESS** in 42.168s.
+

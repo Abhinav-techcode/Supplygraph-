@@ -174,7 +174,7 @@ public class ExplainableRecommendationCentreView extends VerticalLayout {
                 return;
             }
             if (recommendationService != null) {
-                recommendationService.approveRecommendation(rec.id(), userField.getValue(), "default-workspace");
+                recommendationService.approveRecommendation(rec.id(), userField.getValue(), "WS-AUTO-01");
                 Notification.show("Recommendation approved by " + userField.getValue(), 3000, Notification.Position.TOP_CENTER)
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 refreshData();
@@ -208,7 +208,7 @@ public class ExplainableRecommendationCentreView extends VerticalLayout {
                 return;
             }
             if (recommendationService != null) {
-                recommendationService.rejectRecommendation(rec.id(), userField.getValue(), "default-workspace", reasonField.getValue());
+                recommendationService.rejectRecommendation(rec.id(), userField.getValue(), "WS-AUTO-01", reasonField.getValue());
                 Notification.show("Recommendation rejected", 3000, Notification.Position.TOP_CENTER)
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 refreshData();
@@ -232,3 +232,4 @@ public class ExplainableRecommendationCentreView extends VerticalLayout {
         }
     }
 }
+

@@ -57,3 +57,4 @@ public class DecisionProvenanceEdgeJpaEntity {
     public String getExplanation() { return explanation; }
     public Instant getCreatedAt() { return createdAt; }
 }
+

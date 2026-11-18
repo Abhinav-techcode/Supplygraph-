@@ -93,79 +93,18 @@ public class RecoveryPlanningApplicationService {
                 .orElse(null);
         ImpactAssessmentId assessmentId = assessment != null ? assessment.id() : ImpactAssessmentId.generate();
 
-        NodeId targetNode = disruption.affectedNodeIds().stream().findFirst().orElse(NodeId.of("HUB-CENTRAL"));
-        MaterialId targetMat = disruption.affectedMaterialIds().stream().findFirst().orElse(MaterialId.of("MATERIAL-A"));
-
-        // Alternative 1: Plan Alpha (Fast Expedited Buffer)
-        PlanAction a1 = new PlanAction(
-                "ACT-ALPHA-1",
-                PlanActionType.EMERGENCY_BUFFER_RELEASE,
-                "Release strategic reserve inventory at central distribution hub",
-                targetNode,
-                targetMat,
-                BigDecimal.valueOf(2500),
-                "KG",
-                BigDecimal.valueOf(45000),
-                18L,
-                Map.of("bufferLocation", "HUB-CENTRAL", "releaseAuthorization", "CRITICAL_SLA")
-        );
-        PlanComparisonMetrics m1 = new PlanComparisonMetrics(
-                BigDecimal.valueOf(45000), 1.5, 99.2, BigDecimal.ZERO, BigDecimal.valueOf(2500), 65.0, 0.15, 0.92
-        );
-        RecoveryPlan planAlpha = RecoveryPlan.createDraft(
-                disruptionId, workspaceId, state.getCurrentVersion(), assessmentId,
-                "Plan Alpha: Rapid Buffer Dispatch",
-                "Immediate mitigation utilizing on-hand safety buffer stocks to avert line stoppage.",
-                List.of(a1), m1
-        );
-
-        // Alternative 2: Plan Beta (Cost-Optimized Dual Sourcing)
-        PlanAction b1 = new PlanAction(
-                "ACT-BETA-1",
-                PlanActionType.ALTERNATIVE_SUPPLIER,
-                "Activate secondary qualified supplier contract",
-                NodeId.of("SUPPLIER-BACKUP-1"),
-                targetMat,
-                BigDecimal.valueOf(5000),
-                "KG",
-                BigDecimal.valueOf(78000),
-                48L,
-                Map.of("supplierId", "SUPPLIER-BACKUP-1", "pricingTier", "VOLUME_DISCOUNT")
-        );
-        PlanComparisonMetrics m2 = new PlanComparisonMetrics(
-                BigDecimal.valueOf(78000), 3.0, 96.5, BigDecimal.valueOf(200), BigDecimal.valueOf(5000), 80.0, 0.25, 0.88
-        );
-        RecoveryPlan planBeta = RecoveryPlan.createDraft(
-                disruptionId, workspaceId, state.getCurrentVersion(), assessmentId,
-                "Plan Beta: Secondary Sourcing Ramp",
-                "Medium-term resilience reallocating procurement contracts to qualified secondary suppliers.",
-                List.of(b1), m2
-        );
-
-        // Alternative 3: Plan Gamma (Production Rebalancing & Overtime)
-        PlanAction c1 = new PlanAction(
-                "ACT-GAMMA-1",
-                PlanActionType.PRODUCTION_RESCHEDULING,
-                "Rebalance production line sequence and authorize weekend overtime shift",
-                targetNode,
-                targetMat,
-                BigDecimal.valueOf(3500),
-                "KG",
-                BigDecimal.valueOf(32000),
-                72L,
-                Map.of("shiftPattern", "24x7_WEEKEND", "overtimeMultiplier", "1.5")
-        );
-        PlanComparisonMetrics m3 = new PlanComparisonMetrics(
-                BigDecimal.valueOf(32000), 4.5, 92.0, BigDecimal.valueOf(500), BigDecimal.valueOf(3500), 95.0, 0.35, 0.78
-        );
-        RecoveryPlan planGamma = RecoveryPlan.createDraft(
-                disruptionId, workspaceId, state.getCurrentVersion(), assessmentId,
-                "Plan Gamma: Internal Capacity Shift",
-                "Internal operational adjustment minimizing external procurement costs through overtime scheduling.",
-                List.of(c1), m3
-        );
-
-        List<RecoveryPlan> plans = List.of(planAlpha, planBeta, planGamma);
+        List<RecoveryOptionDeriver.Option> options = RecoveryOptionDeriver.derive(disruption, state);
+        if (options.isEmpty()) {
+            throw new IllegalStateException("No recovery option can be derived from the digital twin for this disruption: it needs affected facilities in the network, "
+                    + "a downstream facility with a known requirement, and either buffer stock or an alternative supplier reachable over undisrupted lanes.");
+        }
+        String[] labels = {"Alpha", "Beta", "Gamma"};
+        List<RecoveryPlan> plans = new ArrayList<>();
+        for (int i = 0; i < options.size(); i++) {
+            RecoveryOptionDeriver.Option o = options.get(i);
+            plans.add(RecoveryPlan.createDraft(disruptionId, workspaceId, state.getCurrentVersion(), assessmentId,
+                    "Plan " + labels[Math.min(i, 2)] + ": " + o.name(), o.description(), List.of(o.action()), o.metrics()));
+        }
         for (RecoveryPlan p : plans) {
             recoveryPlanRepository.save(p);
         }

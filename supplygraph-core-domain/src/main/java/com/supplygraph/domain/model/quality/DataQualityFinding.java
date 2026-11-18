@@ -42,3 +42,4 @@ public record DataQualityFinding(
         return new DataQualityFinding(ruleId, dimension, entityId, field, actualValue != null ? actualValue : "null", message, severity, remediation);
     }
 }
+

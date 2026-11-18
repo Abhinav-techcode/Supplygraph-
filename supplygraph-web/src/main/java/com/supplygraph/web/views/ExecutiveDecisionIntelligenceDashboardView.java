@@ -37,17 +37,17 @@ public class ExecutiveDecisionIntelligenceDashboardView extends VerticalLayout {
     private final VerticalLayout recommendationCard = new VerticalLayout();
     private final HorizontalLayout analyticsRow = new HorizontalLayout();
 
-    public ExecutiveDecisionIntelligenceDashboardView() {
-        this(null, null, null, null);
-    }
+    private final com.supplygraph.application.service.DisruptionApplicationService disruptionService;
 
     @Autowired
     public ExecutiveDecisionIntelligenceDashboardView(
             ExplainableRecommendationService recommendationService,
             MultiObjectiveParetoService paretoService,
             SensitivityAnalysisService sensitivityService,
-            AdvancedResilienceAnalyticsService resilienceService
+            AdvancedResilienceAnalyticsService resilienceService,
+            com.supplygraph.application.service.DisruptionApplicationService disruptionService
     ) {
+        this.disruptionService = disruptionService;
         this.recommendationService = recommendationService;
         this.paretoService = paretoService;
         this.sensitivityService = sensitivityService;
@@ -73,11 +73,14 @@ public class ExecutiveDecisionIntelligenceDashboardView extends VerticalLayout {
         analyticsRow.removeAll();
 
         // 1. Top Scorecard
+        var ws = com.supplygraph.domain.model.WorkspaceId.of(com.supplygraph.web.init.DemoDataInitializer.DEMO_WORKSPACE_ID);
+        var active = disruptionService.listDisruptions(ws).stream().filter(d -> d.status() == com.supplygraph.domain.model.disruption.DisruptionStatus.ACTIVE).toList();
+        var metrics = resilienceService.findLatestByWorkspaceId(ws.value());
         topScorecardLayout.add(
-                createCard("Active Disruption", "Port Congestion (Rotterdam)", "Severity: CRITICAL | Impact: $420k"),
-                createCard("Network Survival (TTS)", "16.5 Days", "Buffer inventory before stockout"),
-                createCard("Recovery Horizon (TTR)", "28.0 Days", "Mean restoration lead time"),
-                createCard("Composite Resilience", "72.5 / 100", "Fault-tolerant network rating")
+                createCard("Active Disruptions", String.valueOf(active.size()), active.isEmpty() ? "None active" : active.get(0).title() + (active.size() > 1 ? " (+" + (active.size() - 1) + " more)" : "")),
+                createCard("Time to Survive (TTS)", metrics.map(m -> String.format("%.1f days", m.timeToSurviveDays())).orElse("No assessment yet"), "Buffer inventory before stockout (latest assessment)"),
+                createCard("Time to Recover (TTR)", metrics.map(m -> String.format("%.1f days", m.timeToRecoverDays())).orElse("No assessment yet"), "Estimated restoration lead time (latest assessment)"),
+                createCard("Composite Resilience", metrics.map(m -> String.format("%.1f / 100", m.compositeResilienceScore())).orElse("No assessment yet"), "From the latest advanced resilience assessment")
         );
 
         // 2. Recommendation Card
@@ -125,7 +128,7 @@ public class ExecutiveDecisionIntelligenceDashboardView extends VerticalLayout {
         paretoPanel.setPadding(true);
 
         H4 paretoTitle = new H4("Multi-Objective Pareto Analysis");
-        Paragraph paretoDesc = new Paragraph("Optimization frontier identified 2 non-dominated recovery alternatives. Sub-optimal plans pruned via multi-dimensional Pareto dominance.");
+        Paragraph paretoDesc = new Paragraph("Compare recovery alternatives across cost, time, service level, risk and emissions; dominated alternatives are pruned.");
         Button viewParetoBtn = new Button("Inspect Pareto Trade-Offs", VaadinIcon.CHART_LINE.create(), e -> getUI().ifPresent(ui -> ui.navigate(MultiObjectiveComparisonView.class)));
         paretoPanel.add(paretoTitle, paretoDesc, viewParetoBtn);
 
@@ -136,7 +139,7 @@ public class ExecutiveDecisionIntelligenceDashboardView extends VerticalLayout {
         sensPanel.setPadding(true);
 
         H4 sensTitle = new H4("Sensitivity & Tail Robustness");
-        Paragraph sensDesc = new Paragraph("Plan Robustness Score: 85% (Resilient). Evaluated across 25 parameter perturbation trials (+/-10% to +/-50%).");
+        Paragraph sensDesc = new Paragraph("Perturb the plan's parameters and see how robust the recommendation is. Run a sensitivity suite to compute scores.");
         Button viewSensBtn = new Button("View Sensitivity Breakdown", VaadinIcon.SLIDERS.create(), e -> getUI().ifPresent(ui -> ui.navigate(SensitivityAnalysisView.class)));
         sensPanel.add(sensTitle, sensDesc, viewSensBtn);
 
@@ -164,3 +167,4 @@ public class ExecutiveDecisionIntelligenceDashboardView extends VerticalLayout {
         return card;
     }
 }
+

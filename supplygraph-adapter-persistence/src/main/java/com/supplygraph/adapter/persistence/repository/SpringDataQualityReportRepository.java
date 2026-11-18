@@ -12,3 +12,4 @@ public interface SpringDataQualityReportRepository extends JpaRepository<DataQua
     Optional<DataQualityReportJpaEntity> findFirstByWorkspaceIdOrderByEvaluatedAtDesc(String workspaceId);
     List<DataQualityReportJpaEntity> findByWorkspaceIdOrderByEvaluatedAtDesc(String workspaceId);
 }
+

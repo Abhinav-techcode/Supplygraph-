@@ -57,6 +57,7 @@ public class LiveExecutionMonitorView extends ExecutionViewBase {
         Button cancel = new Button("Cancel workflow", e -> withSelection(w -> { if (UiSupport.run("Workflow cancelled", () -> orchestration.cancel(w.id(), cancelReason.getValue()))) refresh(); }));
         cancel.addThemeName("error");
         body(new HorizontalLayout(selector, start, new Button("Refresh", e -> refresh())), status, tasks, new HorizontalLayout(cancelReason, cancel), attempts);
+        preselectLatest(selector);
     }
 
     private void withSelection(java.util.function.Consumer<ExecutionWorkflow> c) {

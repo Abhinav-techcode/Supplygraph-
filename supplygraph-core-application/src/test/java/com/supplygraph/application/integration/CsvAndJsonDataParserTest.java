@@ -87,3 +87,4 @@ class CsvAndJsonDataParserTest {
         assertThat(result.failures().get(0).errorCode()).isEqualTo("INVALID_JSON_STRUCTURE");
     }
 }
+

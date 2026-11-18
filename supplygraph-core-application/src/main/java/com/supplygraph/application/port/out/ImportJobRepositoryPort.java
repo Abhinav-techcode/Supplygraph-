@@ -17,3 +17,4 @@ public interface ImportJobRepositoryPort {
 
     List<ImportJob> findByWorkspaceId(String workspaceId);
 }
+

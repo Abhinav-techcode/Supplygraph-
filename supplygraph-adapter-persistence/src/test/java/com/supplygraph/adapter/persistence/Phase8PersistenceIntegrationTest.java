@@ -271,3 +271,4 @@ class Phase8PersistenceIntegrationTest {
         assertThat(found.get().nodeResilienceBreakdown()).hasSize(1);
     }
 }
+

@@ -17,4 +17,11 @@ abstract class IntegrationViewBase extends VerticalLayout {
     }
 
     protected void body(Component... components) { add(components); }
+
+    @Override
+    protected void onAttach(com.vaadin.flow.component.AttachEvent e) {
+        super.onAttach(e);
+        com.supplygraph.web.views.integration.GridUsability.actionsFirst(this);
+    }
+
 }

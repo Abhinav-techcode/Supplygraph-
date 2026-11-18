@@ -57,7 +57,12 @@ public class AgentInvestigationHistoryView extends VerticalLayout {
         grid.addComponentColumn(this::createOutcomeBadge).setHeader("Outcome").setAutoWidth(true);
         grid.addColumn(r -> r.timestamp().toString()).setHeader("Timestamp").setAutoWidth(true);
 
-        grid.setItems(getSeedRecords());
+        // Agent investigations are not recorded anywhere yet: the specialist agents are not invoked by the application, so this list is
+        // intentionally empty rather than showing sample rows.
+        grid.setItems(List.<AgentInvestigationRecord>of());
+        Span empty = new Span("No agent investigations have been recorded. The specialist agents are not yet connected to incident handling, so nothing appears here.");
+        empty.getStyle().set("color", "var(--lumo-secondary-text-color)");
+        add(empty);
 
         add(title, desc, new HorizontalLayout(workspaceFilter), grid);
     }
@@ -73,14 +78,4 @@ public class AgentInvestigationHistoryView extends VerticalLayout {
         }
         return badge;
     }
-
-    private List<AgentInvestigationRecord> getSeedRecords() {
-        return List.of(
-                new AgentInvestigationRecord("INV-001", "ProcurementAgent", "TIER_2_PROCUREMENT", "FAB-MUNICH", 3, 2, 0.94, "ARBITRATED_ALLOW", Instant.now().minusSeconds(3600)),
-                new AgentInvestigationRecord("INV-002", "LogisticsAgent", "FREIGHT_ROUTING", "LANE-MUNICH-STUTTGART", 2, 1, 0.88, "PRESERVED", Instant.now().minusSeconds(3500)),
-                new AgentInvestigationRecord("INV-003", "InventoryAgent", "SAFETY_STOCK_ALLOCATION", "HUB-FRANKFURT", 4, 2, 0.91, "ARBITRATED_ALLOW", Instant.now().minusSeconds(3400)),
-                new AgentInvestigationRecord("INV-004", "ProductionAgent", "LINE_CAPACITY_REBALANCE", "PLANT-STUTTGART", 3, 1, 0.85, "SELECTIVE_REPLAN", Instant.now().minusSeconds(1800))
-        );
-    }
 }
-

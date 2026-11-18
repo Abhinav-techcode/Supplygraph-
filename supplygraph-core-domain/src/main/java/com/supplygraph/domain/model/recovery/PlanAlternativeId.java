@@ -22,3 +22,4 @@ public record PlanAlternativeId(String value) implements Serializable {
         return new PlanAlternativeId("ALT-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
     }
 }
+

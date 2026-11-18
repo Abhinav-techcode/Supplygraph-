@@ -26,7 +26,7 @@ import java.util.Set;
 @Component
 public class UiPrincipalFilter extends OncePerRequestFilter {
     public static final String SESSION_ATTRIBUTE = "supplygraph.ui.principal";
-    public static final String WORKSPACE = "default-workspace";
+    public static final String WORKSPACE = "WS-AUTO-01";
 
     private final UserRole defaultRole;
     private final com.supplygraph.application.port.out.UserProfileRepositoryPort users;

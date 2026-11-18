@@ -73,7 +73,7 @@ public class ImportHistoryView extends VerticalLayout {
     }
 
     private void refreshData() {
-        List<ImportJob> jobs = importService.listImportJobs("default-workspace");
+        List<ImportJob> jobs = importService.listImportJobs("WS-AUTO-01");
         String term = searchField.getValue() != null ? searchField.getValue().trim().toLowerCase() : "";
         ImportStatus filter = statusFilter.getValue();
 
@@ -85,3 +85,4 @@ public class ImportHistoryView extends VerticalLayout {
         jobGrid.setItems(filtered);
     }
 }
+

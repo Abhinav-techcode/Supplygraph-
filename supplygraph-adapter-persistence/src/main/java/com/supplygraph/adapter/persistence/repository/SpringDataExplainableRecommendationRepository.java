@@ -10,3 +10,4 @@ import java.util.List;
 public interface SpringDataExplainableRecommendationRepository extends JpaRepository<ExplainableRecommendationJpaEntity, String> {
     List<ExplainableRecommendationJpaEntity> findByDisruptionId(String disruptionId);
 }
+

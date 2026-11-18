@@ -30,3 +30,4 @@ public record DecisionConstraint(
         return new DecisionConstraint(code, description, type, satisfied, violationImpact);
     }
 }
+

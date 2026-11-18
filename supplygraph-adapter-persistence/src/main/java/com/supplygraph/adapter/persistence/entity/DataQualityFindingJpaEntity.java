@@ -70,3 +70,4 @@ public class DataQualityFindingJpaEntity {
     public String getSuggestedRemediation() { return suggestedRemediation; }
     public void setSuggestedRemediation(String suggestedRemediation) { this.suggestedRemediation = suggestedRemediation; }
 }
+

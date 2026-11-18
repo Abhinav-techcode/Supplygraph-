@@ -46,7 +46,8 @@ public class InventoryIntelligenceView extends VerticalLayout {
     }
 
     private void loadBalances() {
-        List<MaterialIntelligenceProfile> profiles = materialService.getProfiles("default-workspace");
+        List<MaterialIntelligenceProfile> profiles = materialService.getProfiles("WS-AUTO-01");
         ledgerGrid.setItems(profiles);
     }
 }
+

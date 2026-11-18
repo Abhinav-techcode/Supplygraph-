@@ -22,3 +22,4 @@ public record RecommendationId(String value) implements Serializable {
         return new RecommendationId("REC-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
     }
 }
+

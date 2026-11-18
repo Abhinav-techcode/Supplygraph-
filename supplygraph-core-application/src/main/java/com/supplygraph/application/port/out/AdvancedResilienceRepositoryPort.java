@@ -16,3 +16,4 @@ public interface AdvancedResilienceRepositoryPort {
 
     List<AdvancedResilienceMetrics> findAll();
 }
+

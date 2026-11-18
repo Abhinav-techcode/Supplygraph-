@@ -27,3 +27,4 @@ public enum DataCategory {
         return description;
     }
 }
+

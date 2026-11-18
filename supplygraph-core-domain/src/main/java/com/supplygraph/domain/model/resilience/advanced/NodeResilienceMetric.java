@@ -31,3 +31,4 @@ public record NodeResilienceMetric(
         return new NodeResilienceMetric(nodeId, nodeName, localTTSDays, localTTRDays, alternatePathsCount, dependencyCriticality);
     }
 }
+

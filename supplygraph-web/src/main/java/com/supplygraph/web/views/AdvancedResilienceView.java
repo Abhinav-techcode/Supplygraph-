@@ -70,8 +70,8 @@ public class AdvancedResilienceView extends VerticalLayout {
     private void refreshData() {
         if (resilienceService == null) return;
 
-        AdvancedResilienceMetrics metrics = resilienceService.findLatestByWorkspaceId("default-workspace")
-                .orElseGet(() -> resilienceService.evaluateWorkspaceResilience("default-workspace"));
+        AdvancedResilienceMetrics metrics = resilienceService.findLatestByWorkspaceId("WS-AUTO-01")
+                .orElseGet(() -> resilienceService.evaluateWorkspaceResilience("WS-AUTO-01"));
 
         kpiCardsLayout.removeAll();
         kpiCardsLayout.add(
@@ -105,3 +105,4 @@ public class AdvancedResilienceView extends VerticalLayout {
         return card;
     }
 }
+

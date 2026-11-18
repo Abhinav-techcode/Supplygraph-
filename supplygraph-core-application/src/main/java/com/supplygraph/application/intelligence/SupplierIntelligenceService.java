@@ -67,24 +67,25 @@ public class SupplierIntelligenceService {
 
             // 1. Delivery Reliability (OTIF)
             double otifValue = isSingleSource ? 88.5 : 96.2;
-            metrics.add(SupplierIntelligenceMetric.measured(
+            // No delivery history is connected: this is a structural ESTIMATE, labelled as such (low confidence), never "measured".
+            metrics.add(SupplierIntelligenceMetric.estimated(
                     supplierId,
                     SupplierMetricType.DELIVERY_RELIABILITY,
                     otifValue,
-                    24,
-                    "Sum(OnTimeInFullOrders) / TotalDeliveredOrders * 100",
-                    "ENTERPRISE_ERP_PO_HISTORY"
+                    "Structural heuristic (no delivery history connected): single-source or high-fan-out suppliers assumed less reliable",
+                    0.2,
+                    "STRUCTURAL_HEURISTIC"
             ));
 
             // 2. Lead Time Variability
             double ltVariance = isSingleSource ? 6.5 : 1.8;
-            metrics.add(SupplierIntelligenceMetric.measured(
+            metrics.add(SupplierIntelligenceMetric.estimated(
                     supplierId,
                     SupplierMetricType.LEAD_TIME_VARIABILITY,
                     ltVariance,
-                    24,
-                    "StdDev(ActualDeliveryDate - PromisedDeliveryDate)",
-                    "WMS_RECEIVING_DOCK_LOGS"
+                    "Structural heuristic (no receiving logs connected)",
+                    0.2,
+                    "STRUCTURAL_HEURISTIC"
             ));
 
             // 3. Capacity Utilization
@@ -93,9 +94,9 @@ public class SupplierIntelligenceService {
                     supplierId,
                     SupplierMetricType.CAPACITY_UTILIZATION,
                     capUtil,
-                    "CurrentAllocatedVolume / MaximumRatedSupplierCapacity",
-                    0.85,
-                    "SUPPLIER_QUARTERLY_CAPACITY_DISCLOSURE"
+                    "Structural heuristic (no capacity disclosures connected)",
+                    0.2,
+                    "STRUCTURAL_HEURISTIC"
             ));
 
             // 4. Single Source Exposure
@@ -130,7 +131,7 @@ public class SupplierIntelligenceService {
             SupplierRiskProfile profile = new SupplierRiskProfile(
                     supplierId,
                     name,
-                    1, // Tier 1
+                    node instanceof com.supplygraph.domain.model.graph.Supplier sup ? sup.getTier() : 1,
                     country,
                     Math.round(boundedRisk * 100.0) / 100.0,
                     metrics,

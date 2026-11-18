@@ -12,3 +12,4 @@ public interface SpringDataMaterialProfileRepository extends JpaRepository<Mater
     List<MaterialIntelligenceProfileJpaEntity> findByWorkspaceId(String workspaceId);
     Optional<MaterialIntelligenceProfileJpaEntity> findByWorkspaceIdAndMaterialId(String workspaceId, String materialId);
 }
+

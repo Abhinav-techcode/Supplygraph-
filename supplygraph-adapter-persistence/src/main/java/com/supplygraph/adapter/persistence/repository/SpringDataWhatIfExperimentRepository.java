@@ -12,3 +12,4 @@ public interface SpringDataWhatIfExperimentRepository extends JpaRepository<What
     Optional<WhatIfExperimentJpaEntity> findTopByScenarioIdOrderByEvaluatedAtDesc(String scenarioId);
     List<WhatIfExperimentJpaEntity> findByScenarioIdOrderByEvaluatedAtDesc(String scenarioId);
 }
+

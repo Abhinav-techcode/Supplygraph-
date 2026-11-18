@@ -153,7 +153,7 @@ public class ImpactAssessmentView extends VerticalLayout {
 
         kpis.add(
                 createCard("Overall Blast Severity", a.overallSeverity().name(), "var(--lumo-error-color)"),
-                createCard("Total Financial Exposure", "$" + a.totalEstimatedCost().toPlainString(), "var(--lumo-primary-color)"),
+                createCard("Estimated Financial Exposure (assumes $85/unit baseline price)", "$" + a.totalEstimatedCost().toPlainString(), "var(--lumo-primary-color)"),
                 createCard("Impacted Graph Nodes", String.valueOf(a.nodeImpacts().size()), "var(--lumo-contrast-90pct)"),
                 createCard("Material Shortages", String.valueOf(a.materialShortages().size()), "var(--lumo-warning-color)")
         );

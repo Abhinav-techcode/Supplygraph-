@@ -156,41 +156,68 @@ public class DemoDataInitializer implements CommandLineRunner {
                 Instant.now()
         ));
 
-        // 2. Canonical Digital Twin Graph
-        Supplier tier2Fab = new Supplier(
-                NodeId.of("FAB-MUNICH"), "Munich Advanced Silicon Fab",
-                "Munich, DE", true, 2, Set.of("ISO9001", "IATF16949"), 0.15
-        );
-        Supplier tier1Supplier = new Supplier(
-                NodeId.of("SUP-KYOTO"), "Kyoto Microelectronics Corp",
-                "Kyoto, JP", true, 1, Set.of("ISO9001", "IATF16949"), 0.10
-        );
-        ManufacturingSite assemblyPlant = new ManufacturingSite(
-                NodeId.of("PLANT-STUTTGART"), "Stuttgart Powertrain Assembly",
-                "Stuttgart, DE", true, Set.of("LINE-POWERTRAIN-1", "LINE-POWERTRAIN-2"), "ISO-7", 500
-        );
-        Warehouse hub = new Warehouse(
-                NodeId.of("HUB-FRANKFURT"), "Frankfurt Global Logistics Hub",
-                "Frankfurt, DE", true, BigDecimal.valueOf(25000), false, false
+        // 2. Canonical Digital Twin Graph (18 Multi-Tier Nodes across 6 Columns)
+        // Column 0: Tier 3 Raw Materials & Mines
+        Supplier mineAtacama = new Supplier(NodeId.of("MINE-ATACAMA"), "Atacama Lithium Brine Operation", "Antofagasta, CL", true, 3, Set.of("ISO14001"), 0.05);
+        Supplier ingotDresden = new Supplier(NodeId.of("INGOT-DRESDEN"), "Dresden High-Purity Silicon Ingot", "Dresden, DE", true, 3, Set.of("ISO9001"), 0.08);
+        Supplier miningNorilsk = new Supplier(NodeId.of("MINING-NORILSK"), "Norilsk Nickel & Cobalt Complex", "Norilsk, RU", true, 3, Set.of("ISO9001"), 0.22);
+
+        // Column 1: Tier 2 Component & Material Fabs
+        Supplier tier2Fab = new Supplier(NodeId.of("FAB-MUNICH"), "Munich Advanced Silicon Fab", "Munich, DE", true, 2, Set.of("ISO9001", "IATF16949"), 0.15);
+        Supplier chemLyon = new Supplier(NodeId.of("CHEM-LYON"), "Lyon Cathode Precursor Synthesis", "Lyon, FR", true, 2, Set.of("ISO9001", "REACH"), 0.12);
+        Supplier cellGothenburg = new Supplier(NodeId.of("CELL-GOTHENBURG"), "Gothenburg Battery Cell Gigafactory", "Gothenburg, SE", true, 2, Set.of("ISO9001", "IATF16949"), 0.09);
+        Supplier fabHsinchu = new Supplier(NodeId.of("FAB-HSINCHU"), "Hsinchu Wafer Packaging & Test", "Hsinchu, TW", true, 2, Set.of("ISO9001", "IATF16949"), 0.11);
+
+        // Column 2: Tier 1 Subsystems
+        Supplier tier1Supplier = new Supplier(NodeId.of("SUP-KYOTO"), "Kyoto Microelectronics Corp", "Kyoto, JP", true, 1, Set.of("ISO9001", "IATF16949"), 0.10);
+        Supplier harnessSibiu = new Supplier(NodeId.of("HARNESS-SIBIU"), "Sibiu High-Voltage Wiring Systems", "Sibiu, RO", true, 1, Set.of("IATF16949"), 0.07);
+        Supplier moduleAustin = new Supplier(NodeId.of("MODULE-AUSTIN"), "Austin Power Electronics Inverters", "Austin, US", true, 1, Set.of("ISO9001", "IATF16949"), 0.06);
+        Supplier brakesBrescia = new Supplier(NodeId.of("BRAKES-BRESCIA"), "Brescia Electro-Hydraulic Braking", "Brescia, IT", true, 1, Set.of("IATF16949"), 0.08);
+
+        // Column 3: Logistics Hubs & Ports
+        Warehouse hub = new Warehouse(NodeId.of("HUB-FRANKFURT"), "Frankfurt Global Logistics Hub", "Frankfurt, DE", true, BigDecimal.valueOf(50000), false, false);
+        Warehouse portRotterdam = new Warehouse(NodeId.of("PORT-ROTTERDAM"), "Rotterdam Maritime Deepwater Port", "Rotterdam, NL", true, BigDecimal.valueOf(120000), true, true);
+        Warehouse hubChicago = new Warehouse(NodeId.of("HUB-CHICAGO"), "Chicago Midwest Rail & Freight Hub", "Chicago, US", true, BigDecimal.valueOf(45000), false, false);
+
+        // Column 4: Tier 0 Manufacturing Plants
+        ManufacturingSite assemblyPlant = new ManufacturingSite(NodeId.of("PLANT-STUTTGART"), "Stuttgart Powertrain Assembly", "Stuttgart, DE", true, Set.of("LINE-POWERTRAIN-1", "LINE-POWERTRAIN-2"), "ISO-7", 650);
+        ManufacturingSite assemblyBerlin = new ManufacturingSite(NodeId.of("ASSEMBLY-BERLIN"), "Berlin High-Voltage Integration", "Berlin, DE", true, Set.of("LINE-BATTERY-1", "LINE-PACK-2"), "ISO-8", 500);
+        ManufacturingSite plantDetroit = new ManufacturingSite(NodeId.of("PLANT-DETROIT"), "Detroit Electric Truck Complex", "Detroit, US", true, Set.of("LINE-TRUCK-1"), "ISO-8", 400);
+
+        // Column 5: Customer Delivery & Flagship OEM
+        Warehouse oemWolfsburg = new Warehouse(NodeId.of("OEM-WOLFSBURG"), "Wolfsburg Flagship Assembly Terminal", "Wolfsburg, DE", true, BigDecimal.valueOf(35000), false, false);
+
+        List<SupplyChainNode> allNodesList = List.of(
+                mineAtacama, ingotDresden, miningNorilsk,
+                tier2Fab, chemLyon, cellGothenburg, fabHsinchu,
+                tier1Supplier, harnessSibiu, moduleAustin, brakesBrescia,
+                hub, portRotterdam, hubChicago,
+                assemblyPlant, assemblyBerlin, plantDetroit,
+                oemWolfsburg
         );
 
-        TransportationLane lane1 = new TransportationLane(
-                EdgeId.of("LANE-MUNICH-STUTTGART"), NodeId.of("FAB-MUNICH"), NodeId.of("PLANT-STUTTGART"),
-                TransportMode.ROAD, Duration.ofHours(6), BigDecimal.valueOf(1200), true
-        );
-        TransportationLane lane2 = new TransportationLane(
-                EdgeId.of("LANE-KYOTO-FRA"), NodeId.of("SUP-KYOTO"), NodeId.of("HUB-FRANKFURT"),
-                TransportMode.AIR, Duration.ofHours(36), BigDecimal.valueOf(8500), true
-        );
-        TransportationLane lane3 = new TransportationLane(
-                EdgeId.of("LANE-FRA-STUTTGART"), NodeId.of("HUB-FRANKFURT"), NodeId.of("PLANT-STUTTGART"),
-                TransportMode.ROAD, Duration.ofHours(4), BigDecimal.valueOf(900), true
+        List<TransportationLane> allLanesList = List.of(
+                new TransportationLane(EdgeId.of("L-1"), NodeId.of("MINE-ATACAMA"), NodeId.of("CHEM-LYON"), TransportMode.OCEAN, Duration.ofHours(336), BigDecimal.valueOf(4200), true),
+                new TransportationLane(EdgeId.of("L-2"), NodeId.of("MINING-NORILSK"), NodeId.of("CHEM-LYON"), TransportMode.RAIL, Duration.ofHours(72), BigDecimal.valueOf(2100), true),
+                new TransportationLane(EdgeId.of("L-3"), NodeId.of("CHEM-LYON"), NodeId.of("CELL-GOTHENBURG"), TransportMode.ROAD, Duration.ofHours(24), BigDecimal.valueOf(1400), true),
+                new TransportationLane(EdgeId.of("L-4"), NodeId.of("INGOT-DRESDEN"), NodeId.of("FAB-MUNICH"), TransportMode.ROAD, Duration.ofHours(5), BigDecimal.valueOf(800), true),
+                new TransportationLane(EdgeId.of("LANE-MUNICH-STUTTGART"), NodeId.of("FAB-MUNICH"), NodeId.of("PLANT-STUTTGART"), TransportMode.ROAD, Duration.ofHours(6), BigDecimal.valueOf(1200), true),
+                new TransportationLane(EdgeId.of("L-6"), NodeId.of("FAB-MUNICH"), NodeId.of("HUB-FRANKFURT"), TransportMode.RAIL, Duration.ofHours(4), BigDecimal.valueOf(650), true),
+                new TransportationLane(EdgeId.of("L-7"), NodeId.of("FAB-HSINCHU"), NodeId.of("HUB-FRANKFURT"), TransportMode.AIR, Duration.ofHours(28), BigDecimal.valueOf(7800), true),
+                new TransportationLane(EdgeId.of("LANE-KYOTO-FRA"), NodeId.of("SUP-KYOTO"), NodeId.of("HUB-FRANKFURT"), TransportMode.AIR, Duration.ofHours(36), BigDecimal.valueOf(8500), true),
+                new TransportationLane(EdgeId.of("L-9"), NodeId.of("HARNESS-SIBIU"), NodeId.of("PLANT-STUTTGART"), TransportMode.ROAD, Duration.ofHours(18), BigDecimal.valueOf(1900), true),
+                new TransportationLane(EdgeId.of("L-10"), NodeId.of("BRAKES-BRESCIA"), NodeId.of("PLANT-STUTTGART"), TransportMode.ROAD, Duration.ofHours(7), BigDecimal.valueOf(950), true),
+                new TransportationLane(EdgeId.of("L-11"), NodeId.of("CELL-GOTHENBURG"), NodeId.of("ASSEMBLY-BERLIN"), TransportMode.ROAD, Duration.ofHours(14), BigDecimal.valueOf(1600), true),
+                new TransportationLane(EdgeId.of("L-12"), NodeId.of("MODULE-AUSTIN"), NodeId.of("HUB-CHICAGO"), TransportMode.RAIL, Duration.ofHours(28), BigDecimal.valueOf(1750), true),
+                new TransportationLane(EdgeId.of("L-13"), NodeId.of("HUB-CHICAGO"), NodeId.of("PLANT-DETROIT"), TransportMode.ROAD, Duration.ofHours(6), BigDecimal.valueOf(700), true),
+                new TransportationLane(EdgeId.of("LANE-FRA-STUTTGART"), NodeId.of("HUB-FRANKFURT"), NodeId.of("PLANT-STUTTGART"), TransportMode.ROAD, Duration.ofHours(4), BigDecimal.valueOf(900), true),
+                new TransportationLane(EdgeId.of("L-15"), NodeId.of("PORT-ROTTERDAM"), NodeId.of("HUB-FRANKFURT"), TransportMode.RAIL, Duration.ofHours(8), BigDecimal.valueOf(1100), true),
+                new TransportationLane(EdgeId.of("L-16"), NodeId.of("PORT-ROTTERDAM"), NodeId.of("ASSEMBLY-BERLIN"), TransportMode.ROAD, Duration.ofHours(9), BigDecimal.valueOf(1300), true),
+                new TransportationLane(EdgeId.of("L-17"), NodeId.of("PLANT-STUTTGART"), NodeId.of("OEM-WOLFSBURG"), TransportMode.RAIL, Duration.ofHours(8), BigDecimal.valueOf(1500), true),
+                new TransportationLane(EdgeId.of("L-18"), NodeId.of("ASSEMBLY-BERLIN"), NodeId.of("OEM-WOLFSBURG"), TransportMode.ROAD, Duration.ofHours(3), BigDecimal.valueOf(600), true)
         );
 
-        SupplyChainGraph graph = new SupplyChainGraph(
-                List.of(tier2Fab, tier1Supplier, assemblyPlant, hub),
-                List.of(lane1, lane2, lane3)
-        );
+        SupplyChainGraph graph = new SupplyChainGraph(allNodesList, allLanesList);
 
         // 3. Multi-tier BOM
         com.supplygraph.domain.model.bom.Component mcu = new com.supplygraph.domain.model.bom.Component(
@@ -225,6 +252,21 @@ public class DemoDataInitializer implements CommandLineRunner {
                 InventoryAccountId.of(NodeId.of("HUB-FRANKFURT"), MaterialId.of("MCU-AUTO-32"), BalanceCategory.ON_HAND_AVAILABLE),
                 Quantity.of(BigDecimal.valueOf(1500), UnitOfMeasure.PIECE)
         );
+        inventoryRepo.updateBalance(
+                wsId,
+                InventoryAccountId.of(NodeId.of("FAB-MUNICH"), MaterialId.of("MCU-AUTO-32"), BalanceCategory.ON_HAND_AVAILABLE),
+                Quantity.of(BigDecimal.valueOf(4200), UnitOfMeasure.PIECE)
+        );
+        inventoryRepo.updateBalance(
+                wsId,
+                InventoryAccountId.of(NodeId.of("PORT-ROTTERDAM"), MaterialId.of("MCU-AUTO-32"), BalanceCategory.ON_HAND_AVAILABLE),
+                Quantity.of(BigDecimal.valueOf(65000), UnitOfMeasure.PIECE)
+        );
+        inventoryRepo.updateBalance(
+                wsId,
+                InventoryAccountId.of(NodeId.of("CELL-GOTHENBURG"), MaterialId.of("MCU-AUTO-32"), BalanceCategory.ON_HAND_AVAILABLE),
+                Quantity.of(BigDecimal.valueOf(32000), UnitOfMeasure.PIECE)
+        );
 
         // 6. Active Disruption Incident
         Disruption disruption = disruptionService.createDraft(
@@ -256,6 +298,33 @@ public class DemoDataInitializer implements CommandLineRunner {
 
         // 8. Generate Default Recovery Alternatives
         recoveryService.generateAlternativePlans(activeDisruption.id(), wsId);
+
+        // 8b. Second Active Disruption (Rotterdam Maritime Port Strike)
+        Disruption disruptionRotterdam = disruptionService.createDraft(
+                wsId, "AUTOMOTIVE", "LOGISTICS_PORT_CONGESTION",
+                "Rotterdam Maritime Deepwater Port Strike & Backlog",
+                "Stevedore labor dispute and terminal automation failure halting deepwater container vessel offloading and rail dispatch.",
+                DisruptionCategory.LOGISTICS_HUB_CLOSURE,
+                DisruptionSeverity.CRITICAL,
+                Set.of(NodeId.of("PORT-ROTTERDAM")),
+                Set.of(EdgeId.of("L-15")),
+                Set.of(MaterialId.of("MCU-AUTO-32")),
+                Instant.now(),
+                Instant.now().plus(Duration.ofDays(14)),
+                new DisruptionImpactParameters(
+                        BigDecimal.valueOf(85),
+                        86400L * 14,
+                        14,
+                        BigDecimal.valueOf(18000),
+                        "PIECES",
+                        Map.of("impactedBerths", "4")
+                ),
+                "Port of Rotterdam Authority declaration of commercial force majeure."
+        );
+        disruptionService.validateDisruption(disruptionRotterdam.id());
+        Disruption activeDisruptionRotterdam = disruptionService.activateDisruption(disruptionRotterdam.id());
+        impactService.analyzeCascadingImpact(activeDisruptionRotterdam.id(), wsId);
+        recoveryService.generateAlternativePlans(activeDisruptionRotterdam.id(), wsId);
 
         // 9. Seed Default Continuous Monitoring Rules
         monitoringRuleRepo.save(MonitoringRule.of(
@@ -371,20 +440,16 @@ public class DemoDataInitializer implements CommandLineRunner {
                     com.supplygraph.domain.model.integration.ImportSourceType.CSV,
                     com.supplygraph.domain.model.integration.DataCategory.SUPPLIER,
                     "initial_supplier_master_2026.csv",
-                    "default-workspace",
+                    "WS-AUTO-01",
                     "USR-SCM-01"
             );
-            importService.executeImport(job.id(), "default-workspace", "USR-SCM-01");
+            importService.executeImport(job.id(), "WS-AUTO-01", "USR-SCM-01");
 
             // Also seed for DEMO_WORKSPACE_ID
             qualityService.evaluateWorkspaceQuality(DEMO_WORKSPACE_ID, twinState);
-            qualityService.evaluateWorkspaceQuality("default-workspace", twinState);
             supplierService.computeSupplierRiskProfiles(DEMO_WORKSPACE_ID, twinState);
-            supplierService.computeSupplierRiskProfiles("default-workspace", twinState);
             materialService.computeMaterialProfiles(DEMO_WORKSPACE_ID, twinState, BigDecimal.valueOf(30));
-            materialService.computeMaterialProfiles("default-workspace", twinState, BigDecimal.valueOf(30));
             resilienceService.assessNetworkResilience(DEMO_WORKSPACE_ID, twinState);
-            resilienceService.assessNetworkResilience("default-workspace", twinState);
 
             // 16. Seed Phase 8 Explainable Recommendations, Provenance Graph, What-If, Pareto, Sensitivity & Advanced Resilience
             var candidateAlt = new com.supplygraph.domain.model.recovery.RecoveryPlanAlternative(
@@ -403,13 +468,12 @@ public class DemoDataInitializer implements CommandLineRunner {
             explainableRecommendationService.generateRecommendation(activeDisruption.id().value(), "V1.0", candidateAlt);
 
             decisionProvenanceGraphService.buildAndSaveProvenanceGraph(DEMO_WORKSPACE_ID, activeDisruption.id().value(), "USR-SCM-01");
-            decisionProvenanceGraphService.buildAndSaveProvenanceGraph("default-workspace", activeDisruption.id().value(), "USR-SCM-01");
 
             var whatIfConfig = com.supplygraph.domain.model.whatif.WhatIfScenarioConfig.of(
                     com.supplygraph.domain.model.whatif.WhatIfScenarioId.of("WIF-AIR-01"),
                     "Air Freight Surge + Safety Stock Multiplier",
                     "Counterfactual simulation testing air freight expediting with 1.5x buffer capacity",
-                    "default-workspace",
+                    "WS-AUTO-01",
                     0.85,
                     1.50,
                     -3,
@@ -423,9 +487,7 @@ public class DemoDataInitializer implements CommandLineRunner {
 
             multiObjectiveParetoService.evaluateAlternatives(activeDisruption.id().value(), List.of(candidateAlt));
             sensitivityAnalysisService.runSensitivitySuite(DEMO_WORKSPACE_ID, candidateAlt.id().value(), BigDecimal.valueOf(64000), 8.0, 98.0);
-            sensitivityAnalysisService.runSensitivitySuite("default-workspace", candidateAlt.id().value(), BigDecimal.valueOf(64000), 8.0, 98.0);
             advancedResilienceAnalyticsService.evaluateWorkspaceResilience(DEMO_WORKSPACE_ID);
-            advancedResilienceAnalyticsService.evaluateWorkspaceResilience("default-workspace");
         } catch (Exception ex) {
             log.warn("Non-fatal: Phase 7/8 demo data seeding notice: {}", ex.getMessage());
         }

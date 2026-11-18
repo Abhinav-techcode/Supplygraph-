@@ -90,13 +90,13 @@ public class MaterialCriticalityDashboardView extends VerticalLayout {
     }
 
     private void recomputeProfiles() {
-        Optional<DigitalTwinState> stateOpt = digitalTwinRepository.findByWorkspaceId(WorkspaceId.of("default-workspace"));
+        Optional<DigitalTwinState> stateOpt = digitalTwinRepository.findByWorkspaceId(WorkspaceId.of("WS-AUTO-01"));
         if (stateOpt.isEmpty()) {
             Notification.show("Digital twin state not found", 3000, Notification.Position.MIDDLE);
             return;
         }
 
-        List<MaterialIntelligenceProfile> profiles = materialService.computeMaterialProfiles("default-workspace", stateOpt.get(), BigDecimal.valueOf(30));
+        List<MaterialIntelligenceProfile> profiles = materialService.computeMaterialProfiles("WS-AUTO-01", stateOpt.get(), BigDecimal.valueOf(30));
         materialGrid.setItems(profiles);
         updateSummary(profiles);
         Notification.show("Recomputed runways for " + profiles.size() + " materials", 3000, Notification.Position.TOP_CENTER)
@@ -104,7 +104,7 @@ public class MaterialCriticalityDashboardView extends VerticalLayout {
     }
 
     private void refreshData() {
-        List<MaterialIntelligenceProfile> profiles = materialService.getProfiles("default-workspace");
+        List<MaterialIntelligenceProfile> profiles = materialService.getProfiles("WS-AUTO-01");
         if (profiles.isEmpty()) {
             recomputeProfiles();
             return;
@@ -130,3 +130,4 @@ public class MaterialCriticalityDashboardView extends VerticalLayout {
                 " | Materials with Runway < Lead Time: " + stockoutRisk);
     }
 }
+

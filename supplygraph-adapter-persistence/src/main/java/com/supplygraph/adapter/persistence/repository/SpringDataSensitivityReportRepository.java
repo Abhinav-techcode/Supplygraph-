@@ -10,3 +10,4 @@ import java.util.List;
 public interface SpringDataSensitivityReportRepository extends JpaRepository<SensitivityReportJpaEntity, String> {
     List<SensitivityReportJpaEntity> findByWorkspaceIdOrderByGeneratedAtDesc(String workspaceId);
 }
+

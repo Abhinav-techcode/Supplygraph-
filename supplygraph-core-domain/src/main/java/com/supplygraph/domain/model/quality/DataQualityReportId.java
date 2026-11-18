@@ -29,3 +29,4 @@ public record DataQualityReportId(String value) implements Serializable {
         return value;
     }
 }
+

@@ -28,12 +28,25 @@ abstract class ExecutionViewBase extends VerticalLayout {
 
     protected void body(Component... c) { add(c); }
 
+    @Override
+    protected void onAttach(com.vaadin.flow.component.AttachEvent e) {
+        super.onAttach(e);
+        com.supplygraph.web.views.integration.GridUsability.actionsFirst(this);
+    }
+
+
     protected ComboBox<ExecutionWorkflow> workflowSelector(String label) {
         ComboBox<ExecutionWorkflow> box = new ComboBox<>(label);
         box.setItemLabelGenerator(ExecutionViewBase::label);
         box.setWidth("42em");
         box.setItems(loadWorkflows());
         return box;
+    }
+
+    /** Picks the most recent workflow so the page shows data immediately instead of an empty selector. */
+    protected void preselectLatest(ComboBox<ExecutionWorkflow> box) {
+        List<ExecutionWorkflow> items = loadWorkflows();
+        if (!items.isEmpty()) box.setValue(items.get(0));
     }
 
     protected List<ExecutionWorkflow> loadWorkflows() { return UiSupport.call(() -> queries.list(UiSupport.workspace(), 200), List.<ExecutionWorkflow>of()); }

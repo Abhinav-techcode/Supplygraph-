@@ -73,3 +73,4 @@ public class PostgresSupplierIntelligencePersistenceAdapter implements SupplierI
         );
     }
 }
+

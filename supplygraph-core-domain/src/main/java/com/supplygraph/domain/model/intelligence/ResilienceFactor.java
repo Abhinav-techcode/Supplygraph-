@@ -27,3 +27,4 @@ public record ResilienceFactor(
         return new ResilienceFactor(factorName, boundedScore, weight, contribution, explanation);
     }
 }
+

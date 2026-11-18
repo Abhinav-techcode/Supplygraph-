@@ -61,3 +61,4 @@ public class DataQualityReportJpaEntity {
     public List<DataQualityFindingJpaEntity> getFindings() { return findings; }
     public void setFindings(List<DataQualityFindingJpaEntity> findings) { this.findings = findings; }
 }
+

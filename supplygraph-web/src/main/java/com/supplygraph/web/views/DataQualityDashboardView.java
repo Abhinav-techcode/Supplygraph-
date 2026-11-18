@@ -89,18 +89,18 @@ public class DataQualityDashboardView extends VerticalLayout {
     }
 
     private void loadLatest() {
-        Optional<DataQualityReport> opt = qualityService.getLatestReport("default-workspace");
+        Optional<DataQualityReport> opt = qualityService.getLatestReport("WS-AUTO-01");
         opt.ifPresent(this::renderReport);
     }
 
     private void runAudit() {
-        Optional<DigitalTwinState> stateOpt = digitalTwinRepository.findByWorkspaceId(WorkspaceId.of("default-workspace"));
+        Optional<DigitalTwinState> stateOpt = digitalTwinRepository.findByWorkspaceId(WorkspaceId.of("WS-AUTO-01"));
         if (stateOpt.isEmpty()) {
             Notification.show("Digital twin state not initialized", 3000, Notification.Position.MIDDLE);
             return;
         }
 
-        DataQualityReport report = qualityService.evaluateWorkspaceQuality("default-workspace", stateOpt.get());
+        DataQualityReport report = qualityService.evaluateWorkspaceQuality("WS-AUTO-01", stateOpt.get());
         renderReport(report);
         Notification.show("Audit Complete: Score " + String.format("%.1f", report.overallScore()) + "/100", 4000, Notification.Position.TOP_CENTER)
                 .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -137,3 +137,4 @@ public class DataQualityDashboardView extends VerticalLayout {
         findingsGrid.setItems(report.findings());
     }
 }
+

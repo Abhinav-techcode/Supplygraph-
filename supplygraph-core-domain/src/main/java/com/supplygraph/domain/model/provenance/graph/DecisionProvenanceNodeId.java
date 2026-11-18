@@ -22,3 +22,4 @@ public record DecisionProvenanceNodeId(String value) implements Serializable {
         return new DecisionProvenanceNodeId("DPN-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
     }
 }
+

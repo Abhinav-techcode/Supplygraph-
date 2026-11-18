@@ -3,6 +3,7 @@ package com.supplygraph.web.views;
 import com.supplygraph.application.service.*;
 import com.supplygraph.domain.model.WorkspaceId;
 import com.supplygraph.domain.model.disruption.Disruption;
+import com.supplygraph.web.components.DigitalTwinNetworkGraphComponent;
 import com.supplygraph.web.init.DemoDataInitializer;
 import com.supplygraph.web.layout.MainLayout;
 import com.vaadin.flow.component.UI;
@@ -38,19 +39,19 @@ public class HomeView extends VerticalLayout {
     private final OptimizationApplicationService optimizationService;
     private final RecoveryPlanningApplicationService recoveryService;
 
-    public HomeView() {
-        this(null, null, null, null, null, null);
-    }
+    private final com.supplygraph.application.graph.NetworkGraphViewService graphService;
 
     @Autowired
     public HomeView(
-            @Autowired(required = false) DisruptionApplicationService disruptionService,
-            @Autowired(required = false) ImpactAnalysisApplicationService impactService,
-            @Autowired(required = false) SimulationApplicationService simulationService,
-            @Autowired(required = false) MonteCarloApplicationService monteCarloService,
-            @Autowired(required = false) OptimizationApplicationService optimizationService,
-            @Autowired(required = false) RecoveryPlanningApplicationService recoveryService
+            DisruptionApplicationService disruptionService,
+            ImpactAnalysisApplicationService impactService,
+            SimulationApplicationService simulationService,
+            MonteCarloApplicationService monteCarloService,
+            OptimizationApplicationService optimizationService,
+            RecoveryPlanningApplicationService recoveryService,
+            com.supplygraph.application.graph.NetworkGraphViewService graphService
     ) {
+        this.graphService = graphService;
         this.disruptionService = disruptionService;
         this.impactService = impactService;
         this.simulationService = simulationService;
@@ -65,9 +66,9 @@ public class HomeView extends VerticalLayout {
 
         buildHeader();
         buildKpiRow();
+        buildDigitalTwinGraphSection();
         buildQuickActions();
         buildRecentDisruptionsSection();
-        buildArchitectureSection();
     }
 
     private void buildHeader() {
@@ -87,12 +88,12 @@ public class HomeView extends VerticalLayout {
     private void buildKpiRow() {
         WorkspaceId wsId = WorkspaceId.of(DemoDataInitializer.DEMO_WORKSPACE_ID);
 
-        long activeDisruptions = disruptionService != null ? disruptionService.countActiveDisruptions(wsId) : 1;
-        long impactAssessments = impactService != null ? impactService.listImpactAssessments(wsId).size() : 1;
-        long simulationRuns = simulationService != null ? simulationService.listSimulationRuns(wsId).size() : 0;
-        long monteCarloRuns = monteCarloService != null ? monteCarloService.listAnalysisRuns(wsId).size() : 0;
-        long optimizationRuns = optimizationService != null ? optimizationService.listOptimizationRuns(wsId).size() : 0;
-        long pendingApprovals = recoveryService != null ? recoveryService.countPendingApprovals(wsId) : 3;
+        long activeDisruptions = disruptionService.countActiveDisruptions(wsId);
+        long impactAssessments = impactService.listImpactAssessments(wsId).size();
+        long simulationRuns = simulationService.listSimulationRuns(wsId).size();
+        long monteCarloRuns = monteCarloService.listAnalysisRuns(wsId).size();
+        long optimizationRuns = optimizationService.listOptimizationRuns(wsId).size();
+        long pendingApprovals = recoveryService.countPendingApprovals(wsId);
 
         HorizontalLayout kpiLayout = new HorizontalLayout();
         kpiLayout.setWidthFull();
@@ -143,6 +144,35 @@ public class HomeView extends VerticalLayout {
         return card;
     }
 
+    private void buildDigitalTwinGraphSection() {
+        VerticalLayout section = new VerticalLayout();
+        section.setPadding(false);
+        section.setSpacing(true);
+        section.setWidthFull();
+        section.getStyle()
+                .set("background", "var(--lumo-base-color)")
+                .set("border", "1px solid var(--lumo-contrast-10pct)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-l)")
+                .set("margin-top", "var(--lumo-space-m)");
+
+        H3 title = new H3("Supply chain network");
+        title.getStyle().set("margin-top", "0").set("margin-bottom", "var(--lumo-space-xs)");
+
+        Paragraph desc = new Paragraph(
+                "The network below is drawn from the persisted digital twin: facilities are placed by their position in the supply flow "
+                        + "(left = upstream, right = downstream) and disrupted facilities and lanes come from the active disruptions. "
+                        + "Select a facility to see its capacity, inventory, connections and what is downstream of it."
+        );
+        desc.getStyle().set("color", "var(--lumo-secondary-text-color)").set("margin-bottom", "var(--lumo-space-s)");
+
+        DigitalTwinNetworkGraphComponent graph = new DigitalTwinNetworkGraphComponent(
+                graphService.build(WorkspaceId.of(DemoDataInitializer.DEMO_WORKSPACE_ID)));
+
+        section.add(title, desc, graph);
+        add(section);
+    }
+
     private void buildQuickActions() {
         HorizontalLayout actions = new HorizontalLayout();
         actions.setSpacing(true);
@@ -181,13 +211,11 @@ public class HomeView extends VerticalLayout {
                 .set("padding", "var(--lumo-space-l)")
                 .set("margin-top", "var(--lumo-space-m)");
 
-        H3 title = new H3("Active Disruption Incidents");
+        H3 title = new H3("Disruption incidents");
         title.getStyle().set("margin-top", "0");
 
         WorkspaceId wsId = WorkspaceId.of(DemoDataInitializer.DEMO_WORKSPACE_ID);
-        List<Disruption> disruptions = disruptionService != null
-                ? disruptionService.listDisruptions(wsId)
-                : List.of();
+        List<Disruption> disruptions = disruptionService.listDisruptions(wsId);
 
         Grid<Disruption> grid = new Grid<>(Disruption.class, false);
         grid.addColumn(Disruption::title).setHeader("Title").setAutoWidth(true).setFlexGrow(2);
@@ -217,30 +245,5 @@ public class HomeView extends VerticalLayout {
 
         section.add(title, grid);
         add(section);
-    }
-
-    private void buildArchitectureSection() {
-        VerticalLayout card = new VerticalLayout();
-        card.getStyle()
-                .set("background", "var(--lumo-base-color)")
-                .set("border", "1px solid var(--lumo-contrast-10pct)")
-                .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("padding", "var(--lumo-space-l)")
-                .set("margin-top", "var(--lumo-space-m)");
-
-        H3 title = new H3("Phase 4 Operational Capabilities");
-        title.getStyle().set("margin-top", "0");
-
-        Paragraph modules = new Paragraph(
-                "• Discrete-Event Simulation Engine: Deterministic, event-priority chronological event dispatching.\n"
-                        + "• Monte Carlo Uncertainty Engine: Seeded pseudo-random variate generation across Normal, Triangular, and Uniform distributions.\n"
-                        + "• Google OR-Tools Optimizer: Mixed-Integer Programming (MPSolver GLOP/SCIP) with deterministic pure-Java relaxation fallback.\n"
-                        + "• ConcurGuard Semantic Arbitration: Multi-agent resource conflict detection, exclusivity checks, and stale-state protection.\n"
-                        + "• Recovery Decision Centre: Human-in-the-loop executive governance and immutable audited approvals."
-        );
-        modules.getStyle().set("white-space", "pre-line").set("color", "var(--lumo-secondary-text-color)");
-
-        card.add(title, modules);
-        add(card);
     }
 }

@@ -80,3 +80,4 @@ public final class JsonDataParser {
         return new ParseResult(records, failures);
     }
 }
+

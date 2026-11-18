@@ -16,3 +16,4 @@ public interface MaterialIntelligenceRepositoryPort {
 
     Optional<MaterialIntelligenceProfile> findByMaterialId(String workspaceId, String materialId);
 }
+

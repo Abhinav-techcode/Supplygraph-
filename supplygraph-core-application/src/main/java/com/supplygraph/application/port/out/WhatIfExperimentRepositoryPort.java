@@ -17,3 +17,4 @@ public interface WhatIfExperimentRepositoryPort {
 
     List<WhatIfComparisonResult> findAll();
 }
+

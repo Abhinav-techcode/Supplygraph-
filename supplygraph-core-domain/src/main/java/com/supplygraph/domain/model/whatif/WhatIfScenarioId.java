@@ -22,3 +22,4 @@ public record WhatIfScenarioId(String value) implements Serializable {
         return new WhatIfScenarioId("WIF-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
     }
 }
+

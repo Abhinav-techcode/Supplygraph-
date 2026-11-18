@@ -18,3 +18,4 @@ public interface ParetoEvaluationRepositoryPort {
 
     List<ParetoFrontier> findAll();
 }
+

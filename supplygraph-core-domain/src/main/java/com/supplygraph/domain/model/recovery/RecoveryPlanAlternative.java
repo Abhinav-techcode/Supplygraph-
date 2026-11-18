@@ -37,3 +37,4 @@ public record RecoveryPlanAlternative(
         return new RecoveryPlanAlternative(id, name, description, expectedCost, timeToRecoverHours, serviceLevelRestoration, actions);
     }
 }
+

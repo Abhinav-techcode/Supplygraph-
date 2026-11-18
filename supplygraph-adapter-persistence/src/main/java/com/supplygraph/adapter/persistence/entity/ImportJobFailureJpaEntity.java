@@ -58,3 +58,4 @@ public class ImportJobFailureJpaEntity {
     public String getSuggestedCorrection() { return suggestedCorrection; }
     public void setSuggestedCorrection(String suggestedCorrection) { this.suggestedCorrection = suggestedCorrection; }
 }
+

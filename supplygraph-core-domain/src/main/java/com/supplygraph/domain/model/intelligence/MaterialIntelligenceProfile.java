@@ -60,3 +60,4 @@ public record MaterialIntelligenceProfile(
         return inventoryRunwayDays.compareTo(BigDecimal.valueOf(leadTimeDays)) < 0;
     }
 }
+

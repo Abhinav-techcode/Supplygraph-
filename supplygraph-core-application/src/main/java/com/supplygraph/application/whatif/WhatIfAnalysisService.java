@@ -116,3 +116,4 @@ public class WhatIfAnalysisService {
         return repository.findByScenarioId(scenarioId);
     }
 }
+
