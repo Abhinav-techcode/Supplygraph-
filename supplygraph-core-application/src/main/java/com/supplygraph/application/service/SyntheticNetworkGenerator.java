@@ -13,7 +13,7 @@ import java.util.*;
  */
 @Component
 public class SyntheticNetworkGenerator {
-    public enum Industry { AUTOMOTIVE, ELECTRONICS, PHARMACEUTICAL }
+    public enum Industry { AUTOMOTIVE, ELECTRONICS, PHARMACEUTICAL, AEROSPACE, FOOD_BEVERAGE, APPAREL, MEDICAL_DEVICES, SOLAR_ENERGY, CHEMICALS, HEAVY_MACHINERY }
     public enum Region { EUROPE, NORTH_AMERICA, ASIA, GLOBAL }
     public enum Size { SMALL(3, 1, 2, 1), MEDIUM(6, 2, 3, 2), LARGE(10, 3, 4, 3);
         final int suppliers, plants, hubs, warehouses;
@@ -53,24 +53,36 @@ public class SyntheticNetworkGenerator {
             case AUTOMOTIVE -> new Spec("EV-DRIVETRAIN", List.of("STEEL-COIL", "BATTERY-CELL", "WIRING-HARNESS", "ECU-CHIP"), List.of("Metals", "Cells", "Wiring", "Semiconductors"), "electric drivetrains");
             case ELECTRONICS -> new Spec("SMARTPHONE", List.of("DISPLAY-PANEL", "SOC-CHIP", "BATTERY-CELL", "CASING"), List.of("Displays", "Microelectronics", "Cells", "Plastics"), "smartphones");
             case PHARMACEUTICAL -> new Spec("TABLET-PACK", List.of("API-POWDER", "EXCIPIENT", "BLISTER-FOIL", "CARTON"), List.of("Chemicals", "Excipients", "Packaging", "Print"), "tablet packs");
+            case AEROSPACE -> new Spec("AIRCRAFT-WING", List.of("TITANIUM-FORGING", "CARBON-FIBRE", "AVIONICS-UNIT", "FASTENERS"), List.of("Forgings", "Composites", "Avionics", "Fasteners"), "aircraft wing assemblies");
+            case FOOD_BEVERAGE -> new Spec("PACKAGED-MEAL", List.of("GRAIN", "DAIRY", "PACKAGING-FILM", "FLAVOURING"), List.of("Agriculture", "Dairy", "Packaging", "Ingredients"), "packaged meals");
+            case APPAREL -> new Spec("JACKET", List.of("COTTON-FABRIC", "ZIPPER", "DYE", "LABEL-TRIM"), List.of("Textiles", "Hardware", "Dyeing", "Trims"), "jackets");
+            case MEDICAL_DEVICES -> new Spec("INFUSION-PUMP", List.of("PRECISION-MOTOR", "MEDICAL-PLASTIC", "CIRCUIT-BOARD", "STERILE-PACK"), List.of("Motors", "Plastics", "Electronics", "Sterile Packaging"), "infusion pumps");
+            case SOLAR_ENERGY -> new Spec("SOLAR-MODULE", List.of("POLYSILICON", "GLASS-SHEET", "ALUMINIUM-FRAME", "JUNCTION-BOX"), List.of("Silicon", "Glass", "Aluminium", "Electricals"), "solar modules");
+            case CHEMICALS -> new Spec("SPECIALTY-POLYMER", List.of("ETHYLENE", "CATALYST", "ADDITIVE-PACK", "DRUM"), List.of("Feedstock", "Catalysts", "Additives", "Containers"), "specialty polymers");
+            case HEAVY_MACHINERY -> new Spec("EXCAVATOR", List.of("STEEL-PLATE", "HYDRAULIC-PUMP", "ENGINE-BLOCK", "TRACK-LINK"), List.of("Steel", "Hydraulics", "Engines", "Undercarriage"), "excavators");
         };
     }
 
-    public Dataset generate(Industry industry, Region region, Size size, long seed) {
+    public Dataset generate(Industry industry, Region region, Size size, long seed) { return generate(industry, region, size, seed, ""); }
+
+    /** idPrefix (for example "AERO-") is put in front of every facility and material id so several industries can share one workspace without clashing. */
+    public Dataset generate(Industry industry, Region region, Size size, long seed, String idPrefix) {
+        final String px = idPrefix == null ? "" : idPrefix;
         if (industry == null || region == null || size == null) throw new ValidationException("Choose an industry, a region and a size.");
         int needed = size.suppliers + size.plants + size.hubs + size.warehouses;
         List<City> pool = new ArrayList<>(CITIES.stream().filter(c -> region == Region.GLOBAL || c.region() == region).toList());
         if (pool.size() < needed) throw new ValidationException("Region " + region + " has only " + pool.size() + " cities; this size needs " + needed + ". Pick GLOBAL or a smaller size.");
         Random rnd = new Random(seed);
         Collections.shuffle(pool, rnd);
-        Spec spec = spec(industry);
+        Spec spec0 = spec(industry);
+        Spec spec = new Spec(px + spec0.product(), spec0.parts().stream().map(x -> px + x).toList(), spec0.supplierSuffix(), spec0.productLabel());
         int at = 0;
         List<Fac> sup = new ArrayList<>(), plants = new ArrayList<>(), hubs = new ArrayList<>(), whs = new ArrayList<>();
         for (int k = 0; k < size.suppliers; k++) { City c = pool.get(at++); String part = spec.parts().get(k % spec.parts().size());
-            sup.add(new Fac("SUP-" + code(c) + "-" + (k + 1), c.name() + " " + spec.supplierSuffix().get(k % spec.supplierSuffix().size()), "SUPPLIER", c, 1 + k % 2, "", part)); }
-        for (int k = 0; k < size.hubs; k++) { City c = pool.get(at++); hubs.add(new Fac("HUB-" + code(c), c.name() + " Logistics Hub", "LOGISTICS_HUB", c, 0, String.valueOf(300 + rnd.nextInt(600)), null)); }
-        for (int k = 0; k < size.plants; k++) { City c = pool.get(at++); plants.add(new Fac("PLANT-" + code(c), c.name() + " Assembly Plant", "MANUFACTURING_SITE", c, 0, String.valueOf(30 + rnd.nextInt(90)), null)); }
-        for (int k = 0; k < size.warehouses; k++) { City c = pool.get(at++); whs.add(new Fac("WH-" + code(c), c.name() + " Distribution Centre", "WAREHOUSE", c, 0, String.valueOf(5000 + rnd.nextInt(25000)), null)); }
+            sup.add(new Fac(px + "SUP-" + code(c) + "-" + (k + 1), c.name() + " " + spec.supplierSuffix().get(k % spec.supplierSuffix().size()), "SUPPLIER", c, 1 + k % 2, "", part)); }
+        for (int k = 0; k < size.hubs; k++) { City c = pool.get(at++); hubs.add(new Fac(px + "HUB-" + code(c), c.name() + " Logistics Hub", "LOGISTICS_HUB", c, 0, String.valueOf(300 + rnd.nextInt(600)), null)); }
+        for (int k = 0; k < size.plants; k++) { City c = pool.get(at++); plants.add(new Fac(px + "PLANT-" + code(c), c.name() + " Assembly Plant", "MANUFACTURING_SITE", c, 0, String.valueOf(30 + rnd.nextInt(90)), null)); }
+        for (int k = 0; k < size.warehouses; k++) { City c = pool.get(at++); whs.add(new Fac(px + "WH-" + code(c), c.name() + " Distribution Centre", "WAREHOUSE", c, 0, String.valueOf(5000 + rnd.nextInt(25000)), null)); }
 
         StringBuilder fac = new StringBuilder("id,name,type,location,tier,capacity\n");
         for (List<Fac> l : List.of(sup, hubs, plants, whs)) for (Fac f : l)

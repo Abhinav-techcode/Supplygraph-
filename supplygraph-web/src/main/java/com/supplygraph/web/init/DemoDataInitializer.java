@@ -231,11 +231,42 @@ public class DemoDataInitializer implements CommandLineRunner {
         seedDemoData(false);
     }
 
+        // 5c. Nine more industries beside the automotive chain, so the twin spans ten supply chains. Each is generated (real cities, invented companies and stock) and its ids carry a prefix so they never clash.
+    private void addIndustryNetworks(WorkspaceId wsId) {
+        if (networkImport != null && networkGenerator != null) {
+            record Extra(com.supplygraph.application.service.SyntheticNetworkGenerator.Industry industry, String prefix, long seed) {}
+            List<Extra> extras = List.of(
+                    new Extra(com.supplygraph.application.service.SyntheticNetworkGenerator.Industry.ELECTRONICS, "ELEC-", 11L),
+                    new Extra(com.supplygraph.application.service.SyntheticNetworkGenerator.Industry.PHARMACEUTICAL, "PHAR-", 12L),
+                    new Extra(com.supplygraph.application.service.SyntheticNetworkGenerator.Industry.AEROSPACE, "AERO-", 13L),
+                    new Extra(com.supplygraph.application.service.SyntheticNetworkGenerator.Industry.FOOD_BEVERAGE, "FOOD-", 14L),
+                    new Extra(com.supplygraph.application.service.SyntheticNetworkGenerator.Industry.APPAREL, "APPA-", 15L),
+                    new Extra(com.supplygraph.application.service.SyntheticNetworkGenerator.Industry.MEDICAL_DEVICES, "MEDI-", 16L),
+                    new Extra(com.supplygraph.application.service.SyntheticNetworkGenerator.Industry.SOLAR_ENERGY, "SOLR-", 17L),
+                    new Extra(com.supplygraph.application.service.SyntheticNetworkGenerator.Industry.CHEMICALS, "POLY-", 18L),
+                    new Extra(com.supplygraph.application.service.SyntheticNetworkGenerator.Industry.HEAVY_MACHINERY, "HEAV-", 19L));
+            var present = digitalTwinRepo.findByWorkspaceId(wsId).map(t -> t.getGraph().getAllNodes().stream().map(n -> n.getId().value()).toList()).orElse(List.of());
+            for (Extra x : extras) {
+                if (present.stream().anyMatch(id -> id.startsWith(x.prefix()))) continue;   // already added on an earlier start
+                try {
+                    var g = networkGenerator.generate(x.industry(), com.supplygraph.application.service.SyntheticNetworkGenerator.Region.GLOBAL,
+                            com.supplygraph.application.service.SyntheticNetworkGenerator.Size.MEDIUM, x.seed(), x.prefix());
+                    var r = networkImport.importCsv(wsId, g.facilities(), g.lanes(), g.stock(), g.bom(), false, true);
+                    if (!r.errors().isEmpty()) log.warn("{} network was not added: {}", x.industry(), r.errors());
+                    else log.info("{} network added: twin now v{}. {}", x.industry(), r.twinVersion(), g.summary());
+                } catch (RuntimeException ex) {
+                    log.warn("{} network skipped: {}", x.industry(), ex.getMessage());
+                }
+            }
+        }
+    }
+
     public synchronized void seedDemoData(boolean force) {
         WorkspaceId wsId = WorkspaceId.of(DEMO_WORKSPACE_ID);
         boolean alreadySeeded = !force && demandPlanningService != null && !demandPlanningService.listForecasts(wsId).isEmpty();
         if (alreadySeeded) {
             log.info("Demo workspace {} already fully seeded with planning and operations data", DEMO_WORKSPACE_ID);
+            addIndustryNetworks(wsId);   // adds any industry networks that an earlier version of the seeder did not have
             return;
         }
 
@@ -385,6 +416,8 @@ public class DemoDataInitializer implements CommandLineRunner {
             if (!merged.errors().isEmpty()) log.warn("Large network was not added: {}", merged.errors());
             else log.info("Large network added: twin now has v{} with generated facilities. {}", merged.twinVersion(), gen.summary());
         }
+
+        addIndustryNetworks(wsId);
 
         // 6. Active Disruption Incident
         Disruption activeDisruption;
