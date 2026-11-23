@@ -155,7 +155,7 @@ class Phase10EndToEndIntegrationTest {
         assertThat(queries.attempts(workflowId)).allSatisfy(a -> assertThat(a.simulated()).isTrue());
         assertThat(queries.evidence(workflowId)).allSatisfy(e -> assertThat(e.simulated()).isTrue());
         // concurrency: a second start must not run the workflow again
-        assertThatThrownBy(() -> orchestration.start(workflowId)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> orchestration.start(workflowId)).isInstanceOf(com.supplygraph.domain.error.InvalidStateException.class);
     }
 
     @Test @Order(4) void acknowledgementsDriveCompletionIdempotentlyAndSimulatedEvidenceNeverTouchesTheTwin() {
@@ -275,7 +275,7 @@ class Phase10EndToEndIntegrationTest {
         as(sysadmin); w = approvals.approve(w.id(), WorkflowApproval.Scope.SENSITIVE_TASKS, "second");     // capacity reassignment is sensitive
         String id = w.id();
         ExecutorService pool = Executors.newFixedThreadPool(2);
-        Callable<Boolean> run = () -> { SecurityContext.setCurrentUser(logistics); try { orchestration.start(id); return true; } catch (IllegalStateException e) { return false; } finally { SecurityContext.clear(); } };
+        Callable<Boolean> run = () -> { SecurityContext.setCurrentUser(logistics); try { orchestration.start(id); return true; } catch (com.supplygraph.domain.error.InvalidStateException e) { return false; } finally { SecurityContext.clear(); } };
         List<Future<Boolean>> results = pool.invokeAll(List.of(run, run));
         pool.shutdown();
         long winners = results.stream().filter(f -> { try { return f.get(); } catch (Exception e) { return false; } }).count();

@@ -77,7 +77,7 @@ public class PlanningApprovalHandoffView extends PlanningViewBase {
                 );
                 Notification.show("Plan " + approved.scenarioId().value() + " APPROVED and released! Audit recorded.", 4000, Notification.Position.TOP_END);
                 getUI().ifPresent(ui -> ui.navigate("planning"));
-            } catch (SecurityException secEx) {
+            } catch (com.supplygraph.domain.error.AccessDeniedException secEx) {
                 Notification.show("Access Denied: " + secEx.getMessage(), 4000, Notification.Position.MIDDLE);
             } catch (Exception ex) {
                 Notification.show("Approval failed: " + ex.getMessage(), 4000, Notification.Position.MIDDLE);

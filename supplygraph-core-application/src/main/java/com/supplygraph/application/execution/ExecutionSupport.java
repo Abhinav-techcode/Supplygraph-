@@ -1,5 +1,7 @@
 package com.supplygraph.application.execution;
 
+import com.supplygraph.domain.error.ValidationException;
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.audit.AuditGovernanceService;
 import com.supplygraph.application.port.out.*;
 import com.supplygraph.application.security.SecurityContext;
@@ -32,7 +34,7 @@ public class ExecutionSupport {
 
     /** Loads a workflow and enforces workspace access plus the permission against the workflow's own workspace. */
     public ExecutionWorkflow load(String id, Permission permission) {
-        ExecutionWorkflow w = workflows.findById(id).orElseThrow(() -> new NoSuchElementException("Execution workflow not found: " + id));
+        ExecutionWorkflow w = workflows.findById(id).orElseThrow(() -> new ResourceNotFoundException("Execution workflow not found: " + id));
         if (permission == null) guard.enforceWorkspaceAccess(w.workspaceId()); else guard.enforceWorkspaceAndPermission(w.workspaceId(), permission);
         return w;
     }
@@ -40,7 +42,7 @@ public class ExecutionSupport {
     public ExecutionWorkflow save(ExecutionWorkflow w) { return workflows.save(w); }
 
     /** Reloads without permission checks; callers must have authorized already. */
-    public ExecutionWorkflow reload(String id) { return workflows.findById(id).orElseThrow(() -> new NoSuchElementException("Execution workflow not found: " + id)); }
+    public ExecutionWorkflow reload(String id) { return workflows.findById(id).orElseThrow(() -> new ResourceNotFoundException("Execution workflow not found: " + id)); }
 
     private final ConcurrentHashMap<String, ReentrantLock> locks = new ConcurrentHashMap<>();
 
@@ -53,7 +55,7 @@ public class ExecutionSupport {
 
     public static String workflowIdOf(String taskId) {
         int i = taskId.lastIndexOf("-T");
-        if (i <= 0) throw new IllegalArgumentException("Malformed task id: " + taskId);
+        if (i <= 0) throw new ValidationException("Malformed task id: " + taskId);
         return taskId.substring(0, i);
     }
 

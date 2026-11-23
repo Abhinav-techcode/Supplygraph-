@@ -1,5 +1,6 @@
 package com.supplygraph.web.views.execution;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.execution.ExecutionOrchestrationService;
 import com.supplygraph.application.execution.ExecutionQueryService;
 import com.supplygraph.domain.model.execution.*;
@@ -61,7 +62,7 @@ public class LiveExecutionMonitorView extends ExecutionViewBase {
     }
 
     private void withSelection(java.util.function.Consumer<ExecutionWorkflow> c) {
-        if (selector.getValue() == null) { UiSupport.error(new IllegalArgumentException("Select a workflow first")); return; }
+        if (selector.getValue() == null) { UiSupport.error(new ValidationException("Select a workflow first")); return; }
         c.accept(selector.getValue());
     }
 

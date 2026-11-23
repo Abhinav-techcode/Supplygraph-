@@ -102,27 +102,41 @@ class WhatIfAndParetoAndSensitivityTest {
     }
 
     @Test
-    @DisplayName("AdvancedResilienceAnalyticsService should compute TTS, TTR, and composite resilience")
-    void testAdvancedResilienceAnalytics() {
+    @DisplayName("Resilience is read from the twin: an empty network yields no invented figures")
+    void testAdvancedResilienceAnalyticsEmptyTwin() {
         AdvancedResilienceRepositoryPort repo = mock(AdvancedResilienceRepositoryPort.class);
         DigitalTwinRepositoryPort twinRepo = mock(DigitalTwinRepositoryPort.class);
-
-        SupplyChainGraph graph = new SupplyChainGraph(List.of(), List.of());
-        DigitalTwinState state = new DigitalTwinState(
-                WorkspaceId.of("WS-RES"),
-                StateVersion.initial(),
-                graph,
-                com.supplygraph.domain.model.bom.BillOfMaterials.empty()
-        );
+        DigitalTwinState state = new DigitalTwinState(WorkspaceId.of("WS-RES"), StateVersion.initial(), new SupplyChainGraph(List.of(), List.of()), com.supplygraph.domain.model.bom.BillOfMaterials.empty());
         when(twinRepo.findByWorkspaceId(WorkspaceId.of("WS-RES"))).thenReturn(Optional.of(state));
 
-        AdvancedResilienceAnalyticsService service = new AdvancedResilienceAnalyticsService(repo, twinRepo);
-        AdvancedResilienceMetrics metrics = service.evaluateWorkspaceResilience("WS-RES");
+        AdvancedResilienceMetrics metrics = new AdvancedResilienceAnalyticsService(repo, twinRepo).evaluateWorkspaceResilience("WS-RES");
 
-        assertThat(metrics).isNotNull();
-        assertThat(metrics.timeToSurviveDays()).isGreaterThan(0.0);
-        assertThat(metrics.timeToRecoverDays()).isGreaterThan(0.0);
-        assertThat(metrics.compositeResilienceScore()).isBetween(0.0, 100.0);
+        assertThat(metrics.nodeResilienceBreakdown()).isEmpty();
+        assertThat(metrics.timeToSurviveDays()).isEqualTo(AdvancedResilienceAnalyticsService.NOT_MEASURED);
+        assertThat(metrics.timeToRecoverDays()).isEqualTo(AdvancedResilienceAnalyticsService.NOT_MEASURED);
+        assertThat(metrics.bottleneckNodeCount()).isZero();
         verify(repo, times(1)).save(any(AdvancedResilienceMetrics.class));
+    }
+
+    @Test
+    @DisplayName("A supplier -> hub -> plant chain has two single points of failure; time to recover is never invented")
+    void testAdvancedResilienceAnalyticsChain() {
+        AdvancedResilienceRepositoryPort repo = mock(AdvancedResilienceRepositoryPort.class);
+        DigitalTwinRepositoryPort twinRepo = mock(DigitalTwinRepositoryPort.class);
+        var graph = new SupplyChainGraph(
+                List.of(new com.supplygraph.domain.model.graph.Supplier(com.supplygraph.domain.model.graph.NodeId.of("S"), "S", "X", true, 1, java.util.Set.of(), 0.1),
+                        new com.supplygraph.domain.model.graph.LogisticsHub(com.supplygraph.domain.model.graph.NodeId.of("H"), "H", "X", true, true, 100, java.util.Set.of("ROAD")),
+                        new com.supplygraph.domain.model.graph.ManufacturingSite(com.supplygraph.domain.model.graph.NodeId.of("P"), "P", "X", true, java.util.Set.of("L1"), "NONE", 40)),
+                List.of(new com.supplygraph.domain.model.graph.TransportationLane(com.supplygraph.domain.model.graph.EdgeId.of("A"), com.supplygraph.domain.model.graph.NodeId.of("S"), com.supplygraph.domain.model.graph.NodeId.of("H"), com.supplygraph.domain.model.graph.TransportMode.ROAD, java.time.Duration.ofHours(5), BigDecimal.ONE, true),
+                        new com.supplygraph.domain.model.graph.TransportationLane(com.supplygraph.domain.model.graph.EdgeId.of("B"), com.supplygraph.domain.model.graph.NodeId.of("H"), com.supplygraph.domain.model.graph.NodeId.of("P"), com.supplygraph.domain.model.graph.TransportMode.ROAD, java.time.Duration.ofHours(5), BigDecimal.ONE, true)));
+        when(twinRepo.findByWorkspaceId(WorkspaceId.of("WS-RES"))).thenReturn(Optional.of(new DigitalTwinState(WorkspaceId.of("WS-RES"), StateVersion.initial(), graph, com.supplygraph.domain.model.bom.BillOfMaterials.empty())));
+
+        AdvancedResilienceMetrics m = new AdvancedResilienceAnalyticsService(repo, twinRepo).evaluateWorkspaceResilience("WS-RES");
+
+        assertThat(m.bottleneckNodeCount()).isEqualTo(2);
+        assertThat(m.timeToRecoverDays()).isEqualTo(AdvancedResilienceAnalyticsService.NOT_MEASURED);
+        assertThat(m.timeToSurviveDays()).isEqualTo(0.0);   // the plant holds no stock
+        assertThat(m.compositeResilienceScore()).isEqualTo(33.3);
+        assertThat(m.nodeResilienceBreakdown().stream().filter(n -> n.nodeId().equals("S")).findFirst().orElseThrow().dependencyCriticality()).isEqualTo(1.0);
     }
 }

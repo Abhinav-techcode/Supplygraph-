@@ -1,5 +1,8 @@
 package com.supplygraph.application.service;
 
+import com.supplygraph.domain.error.ConflictException;
+import com.supplygraph.domain.error.ValidationException;
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.port.out.DigitalTwinRepositoryPort;
 import com.supplygraph.application.port.out.DisruptionRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
@@ -125,7 +128,7 @@ public class DisruptionApplicationService {
     ) {
         Disruption disruption = getDisruption(id);
         if (disruption.version() != expectedVersion) {
-            throw new IllegalStateException("Optimistic concurrency conflict on disruption " + id.value()
+            throw new ConflictException("Optimistic concurrency conflict on disruption " + id.value()
                     + ": expected version " + expectedVersion + " but was " + disruption.version());
         }
 
@@ -149,7 +152,7 @@ public class DisruptionApplicationService {
     @Transactional(readOnly = true)
     public Disruption getDisruption(DisruptionId id) {
         return disruptionRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Disruption not found: " + id.value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Disruption not found: " + id.value()));
     }
 
     @Transactional(readOnly = true)
@@ -217,7 +220,7 @@ public class DisruptionApplicationService {
         if (nodeIds != null && snapshot.graph() != null && snapshot.graph().getNodeCount() > 0) {
             for (NodeId nid : nodeIds) {
                 if (!snapshot.graph().containsNode(nid)) {
-                    throw new IllegalArgumentException("Unknown node referenced in disruption: " + nid.value());
+                    throw new ValidationException("Unknown node referenced in disruption: " + nid.value());
                 }
             }
         }
@@ -225,7 +228,7 @@ public class DisruptionApplicationService {
         if (laneIds != null && snapshot.graph() != null && snapshot.graph().getLaneCount() > 0) {
             for (EdgeId eid : laneIds) {
                 if (snapshot.graph().findLane(eid).isEmpty()) {
-                    throw new IllegalArgumentException("Unknown transportation lane referenced in disruption: " + eid.value());
+                    throw new ValidationException("Unknown transportation lane referenced in disruption: " + eid.value());
                 }
             }
         }
@@ -233,7 +236,7 @@ public class DisruptionApplicationService {
         if (materialIds != null && snapshot.bom() != null && snapshot.bom().getMaterialCount() > 0) {
             for (MaterialId mid : materialIds) {
                 if (snapshot.bom().findMaterial(mid).isEmpty()) {
-                    throw new IllegalArgumentException("Unknown material referenced in disruption: " + mid.value());
+                    throw new ValidationException("Unknown material referenced in disruption: " + mid.value());
                 }
             }
         }

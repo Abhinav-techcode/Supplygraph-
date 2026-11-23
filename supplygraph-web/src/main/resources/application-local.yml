@@ -15,3 +15,12 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
 
+
+supplygraph:
+  auth:
+    required: true
+    seed-demo-users: true        # local only: creates demo accounts so you can sign in
+    show-demo-accounts: true     # local only: lists them on the sign-in page
+    demo-password: Demo!2026
+  ui:
+    demo-role-switcher: false

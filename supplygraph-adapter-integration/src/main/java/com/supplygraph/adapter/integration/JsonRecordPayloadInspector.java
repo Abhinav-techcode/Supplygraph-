@@ -1,5 +1,7 @@
 package com.supplygraph.adapter.integration;
 
+import com.supplygraph.domain.error.SecurityViolationException;
+import com.supplygraph.domain.error.ValidationException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.supplygraph.application.connector.ExternalRecord;
@@ -26,10 +28,10 @@ public class JsonRecordPayloadInspector implements RecordPayloadInspector {
 
     private JsonNode array(byte[] body) {
         JsonNode root;
-        try { root = mapper.readTree(body); } catch (IOException e) { throw new IllegalArgumentException("Malformed JSON"); }
+        try { root = mapper.readTree(body); } catch (IOException e) { throw new ValidationException("Malformed JSON"); }
         JsonNode array = root == null ? null : root.isArray() ? root : root.path("records");
-        if (array == null || !array.isArray()) throw new IllegalArgumentException("Expected a JSON array or {\"records\": [...]}");
-        if (array.size() > MAX_RECORDS) throw new IllegalArgumentException("Too many records (max " + MAX_RECORDS + ")");
+        if (array == null || !array.isArray()) throw new ValidationException("Expected a JSON array or {\"records\": [...]}");
+        if (array.size() > MAX_RECORDS) throw new ValidationException("Too many records (max " + MAX_RECORDS + ")");
         return array;
     }
 

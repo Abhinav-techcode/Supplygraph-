@@ -1,5 +1,6 @@
 package com.supplygraph.adapter.persistence.adapter;
 
+import com.supplygraph.domain.error.StorageFailureException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,7 +57,7 @@ public class PostgresTraceabilityPersistenceAdapter implements TraceabilityRepos
 
             dagRepository.save(entity);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to persist genealogy DAG for workspace: " + workspaceId.value(), e);
+            throw new StorageFailureException("Failed to persist genealogy DAG for workspace: " + workspaceId.value(), e);
         }
     }
 
@@ -73,8 +74,8 @@ public class PostgresTraceabilityPersistenceAdapter implements TraceabilityRepos
                 edges.forEach(dag::addEdge);
                 return dag;
             } catch (Exception e) {
-                throw new RuntimeException("Failed to deserialize genealogy DAG for workspace: " + workspaceId.value(), e);
-            }
+            throw new StorageFailureException("Failed to deserialize genealogy DAG for workspace: " + workspaceId.value(), e);
+        }
         });
     }
 

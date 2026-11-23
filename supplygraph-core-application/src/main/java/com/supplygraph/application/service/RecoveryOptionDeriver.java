@@ -57,14 +57,16 @@ public final class RecoveryOptionDeriver {
         List<Option> options = new ArrayList<>();
 
         // Option 1: buffer stock from the best-placed holder.
-        NodeId bestHolder = null;
-        Path bestPath = null;
+        List<Map.Entry<NodeId, Path>> holders = new ArrayList<>();
         for (Map.Entry<NodeId, Double> e : onHand.entrySet()) {
             if (hit.contains(e.getKey()) || e.getValue() <= 0 || e.getKey().equals(need)) continue;
             Path p = fastest(g, e.getKey(), need, hit, blockedLanes);
-            if (p != null && (bestPath == null || p.hours() < bestPath.hours())) { bestHolder = e.getKey(); bestPath = p; }
+            if (p != null) holders.add(Map.entry(e.getKey(), p));
         }
-        if (bestHolder != null) {
+        holders.sort(Comparator.comparingDouble((Map.Entry<NodeId, Path> e) -> e.getValue().hours()).thenComparing(e -> e.getKey().value()));
+        for (Map.Entry<NodeId, Path> holder : holders.subList(0, Math.min(2, holders.size()))) {   // the two best-placed holders are both offered as options
+            NodeId bestHolder = holder.getKey();
+            Path bestPath = holder.getValue();
             double qty = Math.min(required, onHand.get(bestHolder));
             double coverage = qty / required;
             BigDecimal cost = money(bestPath.costPerKg());
@@ -81,14 +83,16 @@ public final class RecoveryOptionDeriver {
         }
 
         // Option 2: alternative supplier with a usable path and no disruption.
-        NodeId bestSupplier = null;
-        Path supplierPath = null;
+        List<Map.Entry<NodeId, Path>> suppliers = new ArrayList<>();
         for (SupplyChainNode n : g.getAllNodes()) {
             if (n.getType() != NodeType.SUPPLIER || !n.isActive() || hit.contains(n.getId())) continue;
             Path p = fastest(g, n.getId(), need, hit, blockedLanes);
-            if (p != null && (supplierPath == null || p.hours() < supplierPath.hours())) { bestSupplier = n.getId(); supplierPath = p; }
+            if (p != null) suppliers.add(Map.entry(n.getId(), p));
         }
-        if (bestSupplier != null) {
+        suppliers.sort(Comparator.comparingDouble((Map.Entry<NodeId, Path> e) -> e.getValue().hours()).thenComparing(e -> e.getKey().value()));
+        for (Map.Entry<NodeId, Path> cand : suppliers.subList(0, Math.min(2, suppliers.size()))) {   // the two fastest alternative suppliers are both offered
+            NodeId bestSupplier = cand.getKey();
+            Path supplierPath = cand.getValue();
             Supplier sup = (Supplier) g.getNode(bestSupplier);
             Material m = twin.getBom().getAllMaterials().stream().filter(x -> x.getId().equals(material)).findFirst().orElse(null);   // material may be absent from the BOM
             int leadDays = m instanceof Component c ? c.getProcurementLeadTimeDays() : 0;

@@ -1,5 +1,6 @@
 package com.supplygraph.application.connector;
 
+import com.supplygraph.domain.error.SecurityViolationException;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
@@ -28,6 +29,6 @@ class OutboundUrlGuardTest {
         assertThatThrownBy(() -> guard.check(URI.create("http://example.com/x"), List.of("example.com"))).hasMessageContaining("scheme");
         assertThatThrownBy(() -> guard.check(URI.create("https://u:p@example.com/x"), List.of("example.com"))).hasMessageContaining("Credentials");
         assertThatThrownBy(() -> guard.check(URI.create("https://127.0.0.1/x"), List.of("127.0.0.1"))).hasMessageContaining("publicly routable");
-        assertThatThrownBy(() -> guard.check(URI.create("https://169.254.169.254/latest"), List.of("169.254.169.254"))).isInstanceOf(SecurityException.class);
+        assertThatThrownBy(() -> guard.check(URI.create("https://169.254.169.254/latest"), List.of("169.254.169.254"))).isInstanceOf(SecurityViolationException.class);
     }
 }

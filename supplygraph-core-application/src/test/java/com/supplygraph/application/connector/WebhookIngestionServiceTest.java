@@ -38,7 +38,7 @@ class WebhookIngestionServiceTest {
         outbox = mock(OutboxService.class);
         InboxService inbox = new InboxService((ws, c, id, now) -> seen.add(ws.value() + c + id));
         RecordPayloadInspector inspector = new RecordPayloadInspector() {
-            public Inspection inspect(byte[] b) { if (b.length < 3) throw new IllegalArgumentException("bad"); return new Inspection(2, 2); }
+            public Inspection inspect(byte[] b) { if (b.length < 3) throw new com.supplygraph.domain.error.ValidationException("bad"); return new Inspection(2, 2); }
             public List<ExternalRecord> parse(byte[] b) { return List.of(); }
         };
         service = new WebhookIngestionService(repo, executions, ref -> Optional.of(secret), inspector, inbox, outbox);

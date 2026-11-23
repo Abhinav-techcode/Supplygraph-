@@ -1,5 +1,7 @@
 package com.supplygraph.application.service;
 
+import com.supplygraph.domain.error.ConflictException;
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.port.out.DigitalTwinRepositoryPort;
 import com.supplygraph.application.port.out.DisruptionRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
@@ -72,7 +74,7 @@ class DisruptionApplicationServiceTest {
                 DisruptionCategory.QUALITY_REJECTION, DisruptionSeverity.MEDIUM,
                 Set.of(NodeId.of("NON_EXISTENT_NODE")), Set.of(), Set.of(),
                 now, end, DisruptionImpactParameters.empty(), "Audit"
-        )).isInstanceOf(IllegalArgumentException.class)
+        )).isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Unknown node referenced");
 
         // Known node succeeds
@@ -109,7 +111,7 @@ class DisruptionApplicationServiceTest {
         assertThatThrownBy(() -> service.updateDisruption(
                 d.id(), 0L, "Conflict Title", "Desc", DisruptionSeverity.CRITICAL,
                 null, null, null, null, null, null
-        )).isInstanceOf(IllegalStateException.class)
+        )).isInstanceOf(ConflictException.class)
                 .hasMessageContaining("Optimistic concurrency conflict");
     }
 }

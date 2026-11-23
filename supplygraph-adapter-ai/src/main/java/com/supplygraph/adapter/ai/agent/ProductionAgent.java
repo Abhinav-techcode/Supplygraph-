@@ -1,114 +1,39 @@
 package com.supplygraph.adapter.ai.agent;
 
-import com.supplygraph.application.agent.AgentInvestigationContext;
-import com.supplygraph.application.agent.AgentProposal;
-import com.supplygraph.application.agent.AgentRole;
+import com.supplygraph.application.agent.*;
 import com.supplygraph.application.tool.ToolExecutionBoundary;
-import com.supplygraph.concurguard.model.ActionIntent;
+import com.supplygraph.application.tool.ToolExecutionResult;
 import com.supplygraph.concurguard.model.ActionType;
-import com.supplygraph.concurguard.model.CapacityClaim;
-import com.supplygraph.concurguard.model.IntentId;
-import com.supplygraph.concurguard.replanning.ReplanningScope;
-import com.supplygraph.domain.model.capacity.CapacityWindow;
-import com.supplygraph.domain.model.capacity.ResourceId;
-import com.supplygraph.domain.model.common.Quantity;
-import com.supplygraph.domain.model.common.UnitOfMeasure;
+import com.supplygraph.domain.model.bom.MaterialId;
+import com.supplygraph.domain.model.graph.*;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-/**
- * Specialized Production Agent: schedules plant assembly lines, cleanrooms, and manufacturing capacity.
- */
-public class ProductionAgent extends BaseSpecializedAgent {
-
-    public ProductionAgent() {
-        super(AgentRole.PRODUCTION, Set.of("query_capacity", "query_bom"));
-    }
+/** Re-sequences production at the exposed site to protect output while stock lasts. */
+public class ProductionAgent extends InsightAgent {
+    public ProductionAgent() { super(AgentRole.PRODUCTION, Set.of("query_capacity", "query_bom")); }
 
     @Override
-    public AgentProposal investigate(AgentInvestigationContext context, ToolExecutionBoundary toolBoundary) {
-        String primaryNode = context.incident().affectedNodeIds().stream().findFirst().orElse("PLANT-1");
-        ResourceId resourceId = ResourceId.of("LINE-" + primaryNode);
-
-        Instant now = Instant.now();
-        CapacityWindow window = CapacityWindow.of(now.plusSeconds(86400), now.plusSeconds(86400 * 3));
-
-        // Attempt capacity query tool call
-        try {
-            toolBoundary.execute(new com.supplygraph.application.tool.ToolExecutionRequest(
-                    "query_capacity",
-                    identity(),
-                    context.incident().workspaceId(),
-                    Map.of("resourceId", resourceId.value())
-            ));
-        } catch (Exception ignored) {
-            // Graceful fallback if calendar not initialized
-        }
-
-        CapacityClaim capacityClaim = CapacityClaim.of(
-                resourceId,
-                Quantity.of(500, UnitOfMeasure.PIECE),
-                window
-        );
-
-        ActionIntent intent = ActionIntent.builder()
-                .id(IntentId.of("INT-PROD-" + context.incident().incidentId().substring(0, Math.min(8, context.incident().incidentId().length()))))
-                .agentId(role().agentId())
-                .actionType(ActionType.RESERVE_CAPACITY)
-                .targetEntityId(resourceId.value())
-                .expectedStateVersion(context.snapshot().version())
-                .timeWindow(window)
-                .capacityClaim(capacityClaim)
-                .riskScore(0.35)
-                .build();
-
-        return AgentProposal.of(
-                "PROP-PROD-1",
-                role(),
-                intent,
-                List.of("Production throughput profile evaluated for plant " + primaryNode, "Changeover window reserved"),
-                List.of("Line 1 tooling available"),
-                0.88,
-                List.of("Requires 4-hour setup changeover")
-        );
-    }
-
-    @Override
-    public AgentProposal replan(AgentInvestigationContext context, ReplanningScope scope, ToolExecutionBoundary toolBoundary) {
-        String primaryNode = context.incident().affectedNodeIds().stream().findFirst().orElse("PLANT-1");
-        ResourceId altResource = ResourceId.of("LINE-BACKUP-" + primaryNode);
-
-        Instant now = Instant.now().plusSeconds(86400 * 3);
-        CapacityWindow window = CapacityWindow.of(now, now.plusSeconds(86400 * 5));
-
-        CapacityClaim capacityClaim = CapacityClaim.of(
-                altResource,
-                Quantity.of(500, UnitOfMeasure.PIECE),
-                window
-        );
-
-        ActionIntent revisedIntent = ActionIntent.builder()
-                .id(IntentId.of("INT-PROD-REV-" + scope.iteration()))
-                .agentId(role().agentId())
-                .actionType(ActionType.RESERVE_CAPACITY)
-                .targetEntityId(altResource.value())
-                .expectedStateVersion(context.snapshot().version())
-                .timeWindow(window)
-                .capacityClaim(capacityClaim)
-                .riskScore(0.15)
-                .build();
-
-        return AgentProposal.of(
-                "PROP-PROD-REV-" + scope.iteration(),
-                role(),
-                revisedIntent,
-                List.of("Replanned to secondary manufacturing line to resolve capacity collision"),
-                List.of("Line 2 cleanroom certified"),
-                0.92,
-                List.of("Slightly lower throughput rate")
-        );
+    protected Draft analyse(TwinInsights ins, AgentInvestigationContext ctx, ToolExecutionBoundary b, int rank) {
+        List<String> ev = new ArrayList<>();
+        Optional<NodeId> site = ins.exposedSite();
+        Optional<MaterialId> mat = ins.material();
+        if (site.isEmpty()) return Draft.advisory(List.of("No downstream production site is exposed."), List.of(), List.of(), 0.0, "GLOBAL");
+        String s = site.get().value();
+        double perHour = ins.throughputPerHour(site.get());
+        ToolExecutionResult cap = tool(b, ctx, "query_capacity", Map.of("nodeId", s));
+        double facts = 1 + (perHour > 0 ? 1 : 0) + (mat.isPresent() ? 1 : 0);
+        ev.add(s + " is the most exposed production site" + (perHour > 0 ? " (nominal throughput " + n0(perHour) + " units/h)." : " (throughput unknown in the twin)."));
+        double onHandAtSite = mat.map(m -> ins.onHand(site.get(), m)).orElse(0.0);
+        OptionalDouble tts = mat.isPresent() ? ins.timeToSurviveDays(mat.get()) : OptionalDouble.empty();
+        double downtimeDays = Math.max(1.0, ctx.incident().estimatedDowntimeHours() / 24.0);
+        double risk = 0.3;
+        if (tts.isPresent()) { facts++; ev.add("Own stock lasts " + n1(tts.getAsDouble()) + " days against a " + n1(downtimeDays) + "-day outage."); risk = clamp(1 - tts.getAsDouble() / downtimeDays); }
+        ev.add(cap != null ? "Capacity calendar tool answered for " + s + "." : "Capacity calendar not available for " + s + ".");
+        double dayOutput = perHour * 24;
+        double qty = Math.min(dayOutput, onHandAtSite > 0 ? onHandAtSite : dayOutput);
+        return new Draft(ActionType.SPLIT_PRODUCTION_BATCH, s, s, qty, onHandAtSite > 0 && mat.isPresent() ? "INVENTORY" : "NONE", mat.map(MaterialId::value).orElse(null), s, ev,
+                List.of("Variants that do not use the short material can be sequenced first."), List.of("Variant mix is not modelled; the quantity is one day of nominal output."),
+                facts / 4.0, risk, s);
     }
 }

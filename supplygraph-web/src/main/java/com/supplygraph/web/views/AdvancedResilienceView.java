@@ -34,9 +34,9 @@ public class AdvancedResilienceView extends VerticalLayout {
         setSpacing(true);
 
         H2 header = new H2("Advanced Supply Chain Resilience & Redundancy Analytics");
-        Paragraph subtitle = new Paragraph("Quantifies operational survival horizons (Time-to-Survive, TTS), recovery restoration duration (Time-to-Recover, TTR), single-point bottleneck exposure, and multi-echelon path redundancy.");
+        Paragraph subtitle = new Paragraph("Read from the digital twin: how long each manufacturing site can run from its own stock, which facilities are the only supplier of something downstream, and how much of the network depends on each facility. Figures the twin cannot supply are shown as \"not measured\".");
 
-        Button refreshBtn = new Button("Recalculate Network Resilience", VaadinIcon.REFRESH.create(), e -> refreshData());
+        Button refreshBtn = new Button("Recalculate Network Resilience", VaadinIcon.REFRESH.create(), e -> { resilienceService.evaluateWorkspaceResilience("WS-AUTO-01"); refreshData(); });
 
         kpiCardsLayout.setWidthFull();
 
@@ -50,9 +50,9 @@ public class AdvancedResilienceView extends VerticalLayout {
         nodeGrid.setHeight("350px");
         nodeGrid.addColumn(NodeResilienceMetric::nodeId).setHeader("Node ID").setAutoWidth(true);
         nodeGrid.addColumn(NodeResilienceMetric::nodeName).setHeader("Facility / Supplier Name").setAutoWidth(true);
-        nodeGrid.addColumn(n -> n.localTTSDays() + " days").setHeader("Local TTS (Survival)").setAutoWidth(true);
-        nodeGrid.addColumn(n -> n.localTTRDays() + " days").setHeader("Local TTR (Recovery)").setAutoWidth(true);
-        nodeGrid.addColumn(NodeResilienceMetric::alternatePathsCount).setHeader("Redundant Paths").setAutoWidth(true);
+        nodeGrid.addColumn(n -> days(n.localTTSDays())).setHeader("Days of own stock").setAutoWidth(true);
+        nodeGrid.addColumn(n -> days(n.localTTRDays())).setHeader("Recovery time").setAutoWidth(true);
+        nodeGrid.addColumn(NodeResilienceMetric::alternatePathsCount).setHeader("Lanes in + out").setAutoWidth(true);
 
         nodeGrid.addComponentColumn(n -> {
             Span badge = new Span(String.format("%.0f%%", n.dependencyCriticality() * 100));
@@ -64,7 +64,7 @@ public class AdvancedResilienceView extends VerticalLayout {
                 badge.getElement().getThemeList().add("badge success");
             }
             return badge;
-        }).setHeader("Criticality Index").setAutoWidth(true);
+        }).setHeader("Share of network downstream").setAutoWidth(true);
     }
 
     private void refreshData() {
@@ -75,14 +75,16 @@ public class AdvancedResilienceView extends VerticalLayout {
 
         kpiCardsLayout.removeAll();
         kpiCardsLayout.add(
-                createCard("Time-to-Survive (TTS)", String.format("%.1f Days", metrics.timeToSurviveDays()), "Network operational buffer before stockout"),
-                createCard("Time-to-Recover (TTR)", String.format("%.1f Days", metrics.timeToRecoverDays()), "Mean duration to restore full operational capacity"),
-                createCard("Critical Exposure", String.format("%.0f%%", metrics.criticalSupplierExposureIndex() * 100), metrics.bottleneckNodeCount() + " single-path bottlenecks identified"),
-                createCard("Resilience Index", String.format("%.1f / 100", metrics.compositeResilienceScore()), "Composite network fault-tolerance rating")
+                createCard("Time-to-Survive (TTS)", days(metrics.timeToSurviveDays()), "Average days a manufacturing site can run from its own stock at its stated throughput"),
+                createCard("Time-to-Recover (TTR)", days(metrics.timeToRecoverDays()), "Recovery times are not recorded in the digital twin, so none is shown"),
+                createCard("Critical Exposure", String.format("%.0f%%", metrics.criticalSupplierExposureIndex() * 100), metrics.bottleneckNodeCount() + " facilities are the only supplier of something downstream"),
+                createCard("Structural resilience", String.format("%.0f / 100", metrics.compositeResilienceScore()), "100 minus the share of facilities that are single points of failure")
         );
 
         nodeGrid.setItems(metrics.nodeResilienceBreakdown());
     }
+
+    private static String days(double v) { return v < 0 ? "not measured" : String.format("%.1f days", v); }
 
     private VerticalLayout createCard(String title, String value, String sub) {
         VerticalLayout card = new VerticalLayout();

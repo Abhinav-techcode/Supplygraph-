@@ -1,5 +1,7 @@
 package com.supplygraph.application.explainability;
 
+import com.supplygraph.domain.error.ConflictException;
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.audit.AuditGovernanceService;
 import com.supplygraph.application.port.out.ExplainableRecommendationRepositoryPort;
 import com.supplygraph.application.port.out.RecoveryPlanRepositoryPort;
@@ -52,91 +54,25 @@ public class ExplainableRecommendationService {
 
         RecommendationId id = RecommendationId.generate();
 
-        List<DecisionEvidence> evidence = List.of(
-                DecisionEvidence.of(
-                        "EVID-01",
-                        "Continuous Telemetry Signal",
-                        "IoT Port Sensor & AIS Vessel Tracking",
-                        0.94,
-                        Instant.now(),
-                        "Automated telemetry confirmed 14-day harbor congestion delay with zero berthing slots available."
-                ),
-                DecisionEvidence.of(
-                        "EVID-02",
-                        "Simulation Model Convergence",
-                        "Discrete-Event Supply Chain Simulator",
-                        0.91,
-                        Instant.now(),
-                        "1,000 discrete simulation cycles projected recovery completion within " + alternative.timeToRecoverHours() + " hours."
-                ),
-                DecisionEvidence.of(
-                        "EVID-03",
-                        "ConcurGuard Arbitration Log",
-                        "Conflict-Aware Selective Replanning Engine",
-                        0.98,
-                        Instant.now(),
-                        "ConcurGuard verified zero resource locks, inventory double-allocations, or policy violations."
-                )
-        );
+        // Only facts that the recovery option itself states are recorded. A confidence of -1 means "not measured": no score is invented.
+        List<DecisionEvidence> evidence = List.of(DecisionEvidence.of(
+                "EVID-OPTION", "Figures stated by the recovery option", "Recovery option derived from the digital twin", DecisionEvidence.NOT_MEASURED, Instant.now(),
+                "Cost " + alternative.expectedCost() + " USD, recovery in " + String.format("%.1f", alternative.timeToRecoverHours()) + " hours, service level "
+                        + String.format("%.1f", alternative.serviceLevelRestoration()) + "%. Twin version " + (stateVersion != null ? stateVersion : "unknown") + "."));
 
-        List<DecisionConstraint> constraints = List.of(
-                DecisionConstraint.of(
-                        "CONST-CAP-01",
-                        "Tier-1 Supplier Weekly Capacity Limit (Max 5,000 units/week)",
-                        DecisionConstraint.ConstraintType.HARD,
-                        true,
-                        "Satisfied: Expedited volume is 3,200 units, well within qualified supplier throughput."
-                ),
-                DecisionConstraint.of(
-                        "CONST-BUDGET-01",
-                        "Recovery Budget Ceiling ($150,000)",
-                        DecisionConstraint.ConstraintType.SOFT,
-                        alternative.expectedCost().compareTo(BigDecimal.valueOf(150000)) <= 0,
-                        "Within tolerance: Alternative cost is " + alternative.expectedCost() + " USD."
-                ),
-                DecisionConstraint.of(
-                        "CONST-REG-01",
-                        "Dual-Source Regulatory Compliance & Cold-Chain Qualification",
-                        DecisionConstraint.ConstraintType.REGULATORY_POLICY,
-                        true,
-                        "Satisfied: Secondary supplier holds active ISO-9001 and IATF-16949 certifications."
-                )
-        );
+        // No budget ceilings, supplier limits or certifications are assumed: the twin does not hold them, so no constraint is claimed as satisfied.
+        List<DecisionConstraint> constraints = List.of();
+        List<DecisionTradeOff> tradeOffs = List.of();
+        Map<String, String> uncertainty = Map.of("Not assessed", "No risk analysis is attached to this recommendation. Run the simulation and Monte Carlo analysis for risk figures.");
 
-        List<DecisionTradeOff> tradeOffs = List.of(
-                DecisionTradeOff.of(
-                        "Cost vs. Time-to-Recover",
-                        "$" + alternative.expectedCost() + " premium",
-                        alternative.timeToRecoverHours() + " hours recovery",
-                        "Expedited air/rail logistics incurs immediate cost premium but protects 98% on-time OEM delivery.",
-                        0.85
-                ),
-                DecisionTradeOff.of(
-                        "Inventory Burn vs. Buffer Protection",
-                        "20% buffer utilized",
-                        "80% safety buffer preserved",
-                        "Utilizes limited regional buffer without risking secondary product line stockouts.",
-                        0.75
-                )
-        );
-
-        Map<String, String> uncertainty = Map.of(
-                "Monte Carlo VaR 95%", "Cost variance bounded between -5% and +12% under stochastic transit delays.",
-                "Supplier Yield Risk", "Historical batch yield rate is 97.4% with low standard deviation (0.02)."
-        );
-
-        List<String> primaryActions = alternative.actions() != null ? alternative.actions() : List.of(
-                "Reroute critical shipment via air freight",
-                "Reallocate 500 units from central distribution center",
-                "Notify downstream assembly plants of revised ETA"
-        );
+        List<String> primaryActions = alternative.actions();
 
         ExplainableRecommendation recommendation = ExplainableRecommendation.createPending(
                 id,
                 disruptionId,
                 stateVersion != null ? stateVersion : "V1",
                 "Recommended Recovery: " + alternative.name(),
-                "Evidence-backed recovery plan prioritizing high-confidence supplier rerouting with minimal cost expansion.",
+                alternative.description() == null ? "" : alternative.description(),
                 primaryActions,
                 alternative.expectedCost(),
                 alternative.timeToRecoverHours(),
@@ -163,10 +99,10 @@ public class ExplainableRecommendationService {
     ) {
         Objects.requireNonNull(authorizedUserId, "Authorizing human user must be specified");
         ExplainableRecommendation existing = recommendationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Recommendation not found: " + id.value()));
+                .orElseThrow(() -> new ValidationException("Recommendation not found: " + id.value()));
 
         if (existing.approved()) {
-            throw new IllegalStateException("Recommendation is already approved: " + id.value());
+            throw new ConflictException("Recommendation is already approved: " + id.value());
         }
 
         Instant approvedAt = Instant.now();
@@ -201,7 +137,7 @@ public class ExplainableRecommendationService {
         Objects.requireNonNull(reason, "Rejection reason must be provided");
 
         ExplainableRecommendation existing = recommendationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Recommendation not found: " + id.value()));
+                .orElseThrow(() -> new ValidationException("Recommendation not found: " + id.value()));
 
         Instant rejectedAt = Instant.now();
         ExplainableRecommendation rejected = existing.withRejection(rejectingUserId, reason, rejectedAt);

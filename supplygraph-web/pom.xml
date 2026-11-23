@@ -126,4 +126,37 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- ./mvnw -Pproduction package: builds the optimised Vaadin frontend bundle that vaadin.productionMode=true needs at startup. Requires network access (downloads Node). -->
+        <profile>
+            <id>production</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.vaadin</groupId>
+                        <artifactId>vaadin-maven-plugin</artifactId>
+                        <dependencies>
+                            <!-- The plugin's scanner loads app-shell classes in its own realm; without Spring on that realm it fails with NoClassDefFoundError (ApplicationEventPublisherAware). -->
+                            <dependency>
+                                <groupId>org.springframework</groupId>
+                                <artifactId>spring-context</artifactId>
+                                <version>6.2.1</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <id>frontend</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>prepare-frontend</goal>
+                                    <goal>build-frontend</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

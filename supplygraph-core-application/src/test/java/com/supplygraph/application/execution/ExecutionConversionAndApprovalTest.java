@@ -1,5 +1,6 @@
 package com.supplygraph.application.execution;
 
+import com.supplygraph.domain.error.InvalidStateException;
 import com.supplygraph.application.security.SecurityContext;
 import com.supplygraph.domain.model.execution.*;
 import com.supplygraph.domain.model.plan.RecoveryPlan;
@@ -58,9 +59,9 @@ class ExecutionConversionAndApprovalTest {
         assertThat(w.statusReason()).contains("Stale plan");
         assertThat(f.reassessments.values()).hasSize(1).allSatisfy(r -> assertThat(r.status()).isEqualTo(ReassessmentRequest.Status.PROPOSED));
         f.as(UserRole.WORKSPACE_ADMIN);
-        assertThatThrownBy(() -> f.approvals.approve(w.id(), WorkflowApproval.Scope.WORKFLOW, "x")).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> f.approvals.approve(w.id(), WorkflowApproval.Scope.WORKFLOW, "x")).isInstanceOf(InvalidStateException.class);
         f.as(UserRole.LOGISTICS_MANAGER);
-        assertThatThrownBy(() -> f.orchestration.start(w.id())).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> f.orchestration.start(w.id())).isInstanceOf(InvalidStateException.class);
         assertThat(f.recording.calls).isEmpty();
         // converting the same stale plan again must not stack up duplicate proposals
         f.as(UserRole.SUPPLY_CHAIN_MANAGER);
@@ -141,7 +142,7 @@ class ExecutionConversionAndApprovalTest {
         f.as(UserRole.WORKSPACE_ADMIN);
         assertThat(f.approvals.reject(w.id(), "too risky").status()).isEqualTo(WorkflowStatus.REJECTED);
         f.as(UserRole.LOGISTICS_MANAGER);
-        assertThatThrownBy(() -> f.orchestration.start(w.id())).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> f.orchestration.start(w.id())).isInstanceOf(InvalidStateException.class);
     }
 
     @Test void workflowOfAnotherWorkspaceIsInvisibleAndImmutableToOutsiders() {

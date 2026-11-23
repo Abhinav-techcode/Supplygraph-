@@ -1,5 +1,6 @@
 package com.supplygraph.application.planning;
 
+import com.supplygraph.domain.error.AccessDeniedException;
 import com.supplygraph.application.audit.AuditGovernanceService;
 import com.supplygraph.application.planning.port.out.DemandForecastRepositoryPort;
 import com.supplygraph.application.planning.port.out.InventoryPlanRepositoryPort;
@@ -193,7 +194,7 @@ class PlanningApplicationServiceTest {
 
         UserProfile unauthorizedUser = UserProfile.create("user-viewer", "viewer", "viewer@corp.com", "Viewer", UserRole.VIEWER, java.util.Set.of(workspaceId));
         assertThatThrownBy(() -> scenarioService.approvePlan(scenario.scenarioId(), unauthorizedUser, "Looks good"))
-                .isInstanceOf(SecurityException.class);
+                .isInstanceOf(AccessDeniedException.class);
 
         UserProfile authorizedUser = UserProfile.create("user-manager", "manager", "manager@corp.com", "Manager", UserRole.SUPPLY_CHAIN_MANAGER, java.util.Set.of(workspaceId));
         PlanningScenarioComparison approved = scenarioService.approvePlan(scenario.scenarioId(), authorizedUser, "Authorized for Q1");

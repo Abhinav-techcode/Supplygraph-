@@ -36,7 +36,7 @@ public class AdaptiveReplanningMonitorView extends VerticalLayout {
         H2 title = new H2("Adaptive Agentic Replanning Monitor");
         Paragraph desc = new Paragraph("Tracks multi-agent selective replanning cycles, ConcurGuard re-arbitration, and human re-approval requirements.");
 
-        workspaceFilter = new TextField("Workspace ID", "WS-AUTO-01");
+        workspaceFilter = new TextField("Workspace ID", "WS-AUTO-01", "");
         workspaceFilter.addValueChangeListener(e -> refreshGrid());
 
         grid = new Grid<>();

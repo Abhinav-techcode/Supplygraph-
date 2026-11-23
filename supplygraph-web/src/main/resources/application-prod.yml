@@ -1,0 +1,90 @@
+# ==============================================================================
+# SupplyGraph Production Configuration Profile
+# ==============================================================================
+
+server:
+  port: ${PORT:8080}
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: supplygraph-enterprise
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:supplygraph}}
+    username: ${SPRING_DATASOURCE_USERNAME:supplygraph}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: SupplyGraphProdHikariPool
+      maximum-pool-size: ${DB_POOL_MAX:25}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      connection-timeout: 20000
+      leak-detection-threshold: 30000
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    validate-on-migrate: true
+    locations: classpath:db/migration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+
+vaadin:
+  productionMode: true
+  launch-browser: false
+
+supplygraph:
+  database-browser:
+    enabled: ${SUPPLYGRAPH_DB_BROWSER:false}   # the Database page shows raw table rows; keep it off on a public deployment
+  security:
+    strict-workspace-isolation: true
+    enforce-rbac: true
+  ui:
+    demo-role-switcher: false
+    default-role: SUPPLY_CHAIN_MANAGER
+  outbox:
+    worker:
+      enabled: true
+      interval-millis: 2000
+      batch-size: 100
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      environment: production
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  level:
+    root: INFO
+    com.supplygraph: INFO
+    org.springframework.security: WARN
+    org.flywaydb: INFO
+    org.hibernate: WARN
+

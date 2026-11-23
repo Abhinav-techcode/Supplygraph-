@@ -1,5 +1,8 @@
 package com.supplygraph.application.execution;
 
+import com.supplygraph.domain.error.InvalidStateException;
+import com.supplygraph.domain.error.ValidationException;
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.port.out.ExecutionEvidenceRepositoryPort;
 import com.supplygraph.domain.model.audit.AuditAction;
 import com.supplygraph.domain.model.execution.*;
@@ -23,19 +26,19 @@ public class ExecutionCompensationService {
     public ExecutionWorkflow compensate(String taskId, String rationale) {
         String workflowId = ExecutionSupport.workflowIdOf(taskId);
         support.load(workflowId, Permission.EXECUTION_COMPENSATE);
-        if (rationale == null || rationale.isBlank()) throw new IllegalArgumentException("A compensation rationale is required");
+        if (rationale == null || rationale.isBlank()) throw new ValidationException("A compensation rationale is required");
         return support.withLock(workflowId, () -> {
             ExecutionWorkflow w = support.reload(workflowId);
-            ExecutionTask t = w.task(taskId).orElseThrow(() -> new NoSuchElementException("Task not found: " + taskId));
-            if (t.status() != TaskStatus.COMPLETED) throw new IllegalStateException("Only COMPLETED tasks can be compensated (task is " + t.status() + ")");
-            if (!t.type().compensable()) throw new IllegalStateException("No valid compensation exists for " + t.type() + ": " + t.type().compensation());
-            if (w.status() == WorkflowStatus.COMPLETED) throw new IllegalStateException("Workflow completed successfully; nothing to compensate");
+            ExecutionTask t = w.task(taskId).orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+            if (t.status() != TaskStatus.COMPLETED) throw new InvalidStateException("Only COMPLETED tasks can be compensated (task is " + t.status() + ")");
+            if (!t.type().compensable()) throw new InvalidStateException("No valid compensation exists for " + t.type() + ": " + t.type().compensation());
+            if (w.status() == WorkflowStatus.COMPLETED) throw new InvalidStateException("Workflow completed successfully; nothing to compensate");
             ExecutionPolicy policy = support.policy(w.workspaceId());
             ExecutionAdapter adapter = adapters.select(t.type(), policy).orElseThrow(() -> new IllegalStateException("No adapter available for " + t.type()));
             ExecutionAdapter.ExecutionResponse r = adapter.compensate(new ExecutionAdapter.Request(w.workspaceId(), w.id(), t.id(), t.type(), t.parameters(),
                     "compensate:" + t.id(), w.correlationId(), support.actor()));
             if (r.outcome() != ExecutionAdapter.Outcome.ACKNOWLEDGED && r.outcome() != ExecutionAdapter.Outcome.COMPLETED_CONFIRMED)
-                throw new IllegalStateException("Compensation not accepted by " + adapter.adapterId() + ": " + r.message());
+                throw new InvalidStateException("Compensation not accepted by " + adapter.adapterId() + ": " + r.message());
             evidence.save(ExecutionEvidence.of(workflowId, taskId, ExecutionEvidence.Kind.ADAPTER_ACKNOWLEDGEMENT, adapter.simulated(), adapter.adapterId(), "compensate:" + r.externalReference(),
                     Map.of(), Map.of(), "Compensation: " + t.type().compensation(), support.actor()));
             ExecutionTask next = t.compensated();
@@ -49,7 +52,7 @@ public class ExecutionCompensationService {
     /** Operator accepts the partial result instead of compensating. */
     public ExecutionWorkflow acceptPartial(String workflowId, String rationale) {
         support.load(workflowId, Permission.EXECUTION_COMPENSATE);
-        if (rationale == null || rationale.isBlank()) throw new IllegalArgumentException("A rationale is required");
+        if (rationale == null || rationale.isBlank()) throw new ValidationException("A rationale is required");
         return support.withLock(workflowId, () -> {
             ExecutionWorkflow saved = support.save(support.reload(workflowId).acceptPartial());
             support.timeline(saved, null, "PARTIAL_ACCEPTED", rationale);

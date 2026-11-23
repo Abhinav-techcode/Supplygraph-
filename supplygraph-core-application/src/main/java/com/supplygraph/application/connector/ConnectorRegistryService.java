@@ -1,5 +1,6 @@
 package com.supplygraph.application.connector;
 
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.audit.AuditGovernanceService;
 import com.supplygraph.application.port.out.ConnectorRepositoryPort;
 import com.supplygraph.application.security.SecurityContext;
@@ -63,7 +64,7 @@ public class ConnectorRegistryService {
 
     /** Loads then enforces the connector's own workspace, so a guessed ID from another workspace is refused (IDOR). */
     private Connector load(ConnectorId id, Permission permission) {
-        Connector c = repository.findById(id).orElseThrow(() -> new NoSuchElementException("Connector not found: " + id));
+        Connector c = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Connector not found: " + id));
         if (permission != null) guard.enforceWorkspaceAndPermission(c.workspaceId(), permission);
         else guard.enforceWorkspaceAccess(c.workspaceId());
         return c;

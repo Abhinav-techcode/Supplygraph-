@@ -1,5 +1,6 @@
 package com.supplygraph.web.views.execution;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.execution.ClosedLoopService;
 import com.supplygraph.application.execution.ExecutionAdvisoryService;
 import com.supplygraph.application.execution.ExecutionQueryService;
@@ -43,11 +44,11 @@ public class PlanVersusActualAnalyticsView extends ExecutionViewBase {
         grid.addColumn(r -> r.actualSource() == null ? "" : r.actualSource()).setHeader("Source").setAutoWidth(true);
         grid.setHeight("14em");
         Button record = new Button("Record measurement", e -> {
-            if (selector.getValue() == null || metric.isEmpty() || value.isEmpty() || source.isEmpty()) { UiSupport.error(new IllegalArgumentException("Workflow, metric, value and source are required")); return; }
+            if (selector.getValue() == null || metric.isEmpty() || value.isEmpty() || source.isEmpty()) { UiSupport.error(new ValidationException("Workflow, metric, value and source are required")); return; }
             if (UiSupport.run("Measurement recorded", () -> closedLoop.recordActual(selector.getValue().id(), metric.getValue(), value.getValue(), source.getValue().trim(), false))) refresh();
         });
         Button evaluate = new Button("Evaluate deviation", e -> {
-            if (selector.getValue() == null) { UiSupport.error(new IllegalArgumentException("Select a workflow")); return; }
+            if (selector.getValue() == null) { UiSupport.error(new ValidationException("Select a workflow")); return; }
             var r = UiSupport.call(() -> closedLoop.evaluateDeviation(selector.getValue().id()), java.util.Optional.<ReassessmentRequest>empty());
             UiSupport.run(r.isPresent() ? "Reassessment proposed — a human must decide it in the Closed-Loop dashboard" : "No reassessment proposed (below threshold, unknown/simulated, duplicate or depth limit)", () -> {});
             refresh();

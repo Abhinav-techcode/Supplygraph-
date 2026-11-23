@@ -1,5 +1,7 @@
 package com.supplygraph.adapter.integration;
 
+import com.supplygraph.domain.error.SecurityViolationException;
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.connector.*;
 import com.supplygraph.domain.model.connector.*;
 import org.slf4j.Logger;
@@ -62,7 +64,7 @@ public class RestConnectorAdapter implements ConnectorAdapter {
         URI target = URI.create(base.endsWith("/") ? base + path : base + "/" + path);
         try {
             guard.check(target, cfg.allowedHosts());
-        } catch (SecurityException e) {
+        } catch (SecurityViolationException e) {
             return ConnectorCallResult.failure(ErrorCategory.POLICY_BLOCKED, e.getMessage(), false);
         }
         byte[] token = credentials.resolve(cfg.credential()).orElse(null);
@@ -84,7 +86,7 @@ public class RestConnectorAdapter implements ConnectorAdapter {
             try {
                 RecordPayloadInspector.Inspection i = inspector.inspect(body);
                 return ConnectorCallResult.ok(i.received(), i.valid(), i.rejected(), "HTTP " + status, inspector.parse(body));
-            } catch (IllegalArgumentException e) {
+            } catch (ValidationException e) {
                 return ConnectorCallResult.failure(ErrorCategory.INVALID_RESPONSE, e.getMessage(), false);
             }
         } catch (HttpTimeoutException e) {

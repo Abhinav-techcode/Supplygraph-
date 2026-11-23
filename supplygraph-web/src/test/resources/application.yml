@@ -31,3 +31,7 @@ management:
     health:
       show-details: always
 
+
+supplygraph:
+  auth:
+    required: false

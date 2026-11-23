@@ -1,89 +1,35 @@
 package com.supplygraph.adapter.ai.agent;
 
-import com.supplygraph.application.agent.AgentInvestigationContext;
-import com.supplygraph.application.agent.AgentProposal;
-import com.supplygraph.application.agent.AgentRole;
+import com.supplygraph.application.agent.*;
 import com.supplygraph.application.tool.ToolExecutionBoundary;
-import com.supplygraph.concurguard.model.ActionIntent;
+import com.supplygraph.application.tool.ToolExecutionResult;
 import com.supplygraph.concurguard.model.ActionType;
-import com.supplygraph.concurguard.model.IntentId;
-import com.supplygraph.concurguard.replanning.ReplanningScope;
-import com.supplygraph.domain.model.capacity.CapacityWindow;
+import com.supplygraph.domain.model.bom.MaterialId;
+import com.supplygraph.domain.model.graph.*;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-/**
- * Specialized Risk Intelligence Agent: detects external shocks, lead-time variances, and geopolitical risks.
- */
-public class RiskIntelligenceAgent extends BaseSpecializedAgent {
-
-    public RiskIntelligenceAgent() {
-        super(AgentRole.RISK_INTELLIGENCE, Set.of("query_lane_status", "query_inventory"));
-    }
+/** Quantifies how far the disruption reaches and where the network has single points of failure. Advisory (no action). */
+public class RiskIntelligenceAgent extends InsightAgent {
+    public RiskIntelligenceAgent() { super(AgentRole.RISK_INTELLIGENCE, Set.of("query_lane_status", "query_inventory")); }
 
     @Override
-    public AgentProposal investigate(AgentInvestigationContext context, ToolExecutionBoundary toolBoundary) {
-        String primaryNode = context.incident().affectedNodeIds().stream().findFirst().orElse("NODE-DEFAULT");
-
-        // Execute lane query tool call
-        toolBoundary.execute(new com.supplygraph.application.tool.ToolExecutionRequest(
-                "query_lane_status",
-                identity(),
-                context.incident().workspaceId(),
-                Map.of("originNodeId", primaryNode)
-        ));
-
-        Instant now = Instant.now();
-        CapacityWindow window = CapacityWindow.of(now, now.plusSeconds(86400 * 5));
-
-        ActionIntent intent = ActionIntent.builder()
-                .id(IntentId.of("INT-RISK-" + context.incident().incidentId().substring(0, Math.min(8, context.incident().incidentId().length()))))
-                .agentId(role().agentId())
-                .actionType(ActionType.REROUTE_SHIPMENT)
-                .targetEntityId("LANE-RISK-AVOID-" + primaryNode)
-                .expectedStateVersion(context.snapshot().version())
-                .timeWindow(window)
-                .riskScore(0.20)
-                .build();
-
-        return AgentProposal.of(
-                "PROP-RISK-1",
-                role(),
-                intent,
-                List.of("Severe weather or disruption anomaly detected at origin " + primaryNode),
-                List.of("Alternate transit lane operational"),
-                0.92,
-                List.of("Increased fuel surcharge by 8%")
-        );
-    }
-
-    @Override
-    public AgentProposal replan(AgentInvestigationContext context, ReplanningScope scope, ToolExecutionBoundary toolBoundary) {
-        String primaryNode = context.incident().affectedNodeIds().stream().findFirst().orElse("NODE-DEFAULT");
-        Instant now = Instant.now().plusSeconds(86400 * 2);
-        CapacityWindow window = CapacityWindow.of(now, now.plusSeconds(86400 * 4));
-
-        ActionIntent revisedIntent = ActionIntent.builder()
-                .id(IntentId.of("INT-RISK-REV-" + scope.iteration()))
-                .agentId(role().agentId())
-                .actionType(ActionType.REROUTE_SHIPMENT)
-                .targetEntityId("LANE-SEC-AIR-" + primaryNode)
-                .expectedStateVersion(context.snapshot().version())
-                .timeWindow(window)
-                .riskScore(0.12)
-                .build();
-
-        return AgentProposal.of(
-                "PROP-RISK-REV-" + scope.iteration(),
-                role(),
-                revisedIntent,
-                List.of("Replanned risk mitigation via multimodal air routing"),
-                List.of("Dedicated air charter capacity reserved"),
-                0.88,
-                List.of("Premium freight expense incurred")
-        );
+    protected Draft analyse(TwinInsights ins, AgentInvestigationContext ctx, ToolExecutionBoundary b, int rank) {
+        List<String> ev = new ArrayList<>();
+        int facts = 0;
+        String focus = ins.hitNodes().stream().map(NodeId::value).findFirst().orElse("GLOBAL");
+        ev.add("Severity reported by the incident: " + ctx.incident().severity() + "; declared outage " + ctx.incident().estimatedDowntimeHours() + " h.");
+        if (ins.graph().getNodeCount() > 0) { facts++; ev.add("Share of the network disrupted or downstream of the disruption: " + pct(ins.networkDisruptedShare()) + " of " + ins.graph().getNodeCount() + " facilities."); }
+        if (ins.hasAffectedNodes()) {
+            facts++;
+            ToolExecutionResult lanes = tool(b, ctx, "query_lane_status", Map.of("originNodeId", focus));
+            int blocked = ins.blockedLanes().size();
+            ev.add(blocked + " outbound lane(s) of the disrupted facilities stop carrying freight" + (lanes != null ? " (lane tool confirmed " + lanes.data().get("matchingLanesCount") + " lane(s) at " + focus + ")." : "."));
+            if (blocked > 0) facts++;
+        }
+        List<NodeId> spof = ins.singlePointsOfFailure();
+        ev.add(spof.isEmpty() ? "No downstream facility depends exclusively on the disrupted zone." : "Single points of failure (all inbound lanes come from the disrupted zone): " + spof.stream().map(NodeId::value).toList() + ".");
+        if (!ins.downstreamNodes().isEmpty()) facts++;
+        return Draft.advisory(ev, List.of("A facility is a single point of failure when every inbound lane originates inside the disrupted/downstream zone."), List.of("Advisory: proposes no action itself."), facts / 4.0, focus);
     }
 }

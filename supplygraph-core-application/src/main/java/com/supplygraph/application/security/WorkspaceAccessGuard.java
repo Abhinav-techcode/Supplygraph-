@@ -1,5 +1,6 @@
 package com.supplygraph.application.security;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.domain.model.WorkspaceId;
 import com.supplygraph.domain.model.security.*;
 import org.slf4j.Logger;
@@ -37,7 +38,7 @@ public class WorkspaceAccessGuard {
      */
     public void enforceWorkspaceAccess(WorkspaceId workspaceId) {
         if (workspaceId == null) {
-            throw new IllegalArgumentException("Target workspace ID cannot be null");
+            throw new ValidationException("Target workspace ID cannot be null");
         }
         UserProfile user = SecurityContext.getCurrentUser();
         if (user == null) {

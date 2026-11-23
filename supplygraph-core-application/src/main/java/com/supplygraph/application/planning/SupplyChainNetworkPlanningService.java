@@ -1,5 +1,6 @@
 package com.supplygraph.application.planning;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.domain.model.planning.TransportMode;
 import com.supplygraph.domain.model.planning.TransportModeTradeoff;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,7 @@ public class SupplyChainNetworkPlanningService {
 
     public List<TransportModeTradeoff> evaluateTransportTradeoffs(double distanceKm, double shipmentWeightTons) {
         if (distanceKm <= 0 || shipmentWeightTons <= 0) {
-            throw new IllegalArgumentException("Distance and shipment weight must be positive");
+            throw new ValidationException("Distance and shipment weight must be positive");
         }
 
         List<TransportModeTradeoff> results = new ArrayList<>();

@@ -1,5 +1,7 @@
 package com.supplygraph.application.collaboration;
 
+import com.supplygraph.domain.error.InvalidStateException;
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.collaboration.port.out.RfqRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
 import com.supplygraph.domain.model.bom.MaterialId;
@@ -61,10 +63,10 @@ public class RfqCollaborationService {
             LocalDate validityDate
     ) {
         RfqDocument doc = rfqRepository.findById(rfqId)
-                .orElseThrow(() -> new IllegalArgumentException("RFQ document not found: " + rfqId));
+                .orElseThrow(() -> new ValidationException("RFQ document not found: " + rfqId));
 
         if (doc.status() != RfqStatus.PUBLISHED) {
-            throw new IllegalStateException("Cannot submit quotation for RFQ in status: " + doc.status());
+            throw new InvalidStateException("Cannot submit quotation for RFQ in status: " + doc.status());
         }
 
         RfqQuotation quote = new RfqQuotation(
@@ -86,7 +88,7 @@ public class RfqCollaborationService {
 
     public RfqDocument awardQuotation(WorkspaceId workspaceId, RfqId rfqId, RfqQuotationId quoteId) {
         RfqDocument doc = rfqRepository.findById(rfqId)
-                .orElseThrow(() -> new IllegalArgumentException("RFQ document not found: " + rfqId));
+                .orElseThrow(() -> new ValidationException("RFQ document not found: " + rfqId));
 
         List<RfqQuotation> updatedQuotes = new ArrayList<>();
         boolean found = false;
@@ -101,7 +103,7 @@ public class RfqCollaborationService {
         }
 
         if (!found) {
-            throw new IllegalArgumentException("Quotation not found in RFQ: " + quoteId);
+            throw new ValidationException("Quotation not found in RFQ: " + quoteId);
         }
 
         RfqDocument awarded = new RfqDocument(

@@ -1,10 +1,13 @@
 package com.supplygraph.application.service;
 
+import com.supplygraph.application.execution.ExecutionOutcomeTwinReconciler;
 import com.supplygraph.application.port.out.OperationalEventRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
 import com.supplygraph.domain.model.event.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,13 +28,24 @@ public class OperationalEventIngestionService {
 
     private final OperationalEventRepositoryPort eventRepository;
     private final OperationalMonitoringService monitoringService;
+    private final ExecutionOutcomeTwinReconciler twinReconciler;
 
     public OperationalEventIngestionService(
             OperationalEventRepositoryPort eventRepository,
             OperationalMonitoringService monitoringService
     ) {
+        this(eventRepository, monitoringService, null);
+    }
+
+    @Autowired
+    public OperationalEventIngestionService(
+            OperationalEventRepositoryPort eventRepository,
+            OperationalMonitoringService monitoringService,
+            @Lazy @Autowired(required = false) ExecutionOutcomeTwinReconciler twinReconciler
+    ) {
         this.eventRepository = Objects.requireNonNull(eventRepository, "OperationalEventRepositoryPort must not be null");
         this.monitoringService = Objects.requireNonNull(monitoringService, "OperationalMonitoringService must not be null");
+        this.twinReconciler = twinReconciler;
     }
 
     @Transactional
@@ -74,6 +88,16 @@ public class OperationalEventIngestionService {
 
         // 5. Dispatch to Operational Monitoring Engine
         monitoringService.evaluateEvent(event);
+
+        // 6. Closed-Loop Execution Mutation into Living Digital Twin
+        if (twinReconciler != null) {
+            try {
+                twinReconciler.reconcile(event);
+            } catch (Exception ex) {
+                log.warn("Failed reconciling digital twin state for event {}: {}", event.getEventId().value(), ex.getMessage());
+            }
+        }
+
         event.markProcessed();
         eventRepository.save(event);
 

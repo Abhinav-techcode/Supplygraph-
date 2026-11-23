@@ -1,5 +1,6 @@
 package com.supplygraph.web.views.integration;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.outbox.OutboxService;
 import com.supplygraph.domain.model.outbox.OutboxEvent;
 import com.supplygraph.domain.model.outbox.OutboxStatus;
@@ -30,7 +31,7 @@ public class EventReplayCentreView extends IntegrationViewBase {
         rationale.setWidth("40em");
         Button replay = new Button("Replay event", e -> {
             OutboxEvent ev = selector.getValue();
-            if (ev == null) { UiSupport.error(new IllegalArgumentException("Select an event")); return; }
+            if (ev == null) { UiSupport.error(new ValidationException("Select an event")); return; }
             if (UiSupport.run("Event re-queued for delivery", () -> outbox.replay(ev.id(), rationale.getValue()))) { rationale.clear(); load(); }
         });
         replay.addThemeName("primary");

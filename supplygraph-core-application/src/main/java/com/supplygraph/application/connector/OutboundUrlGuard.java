@@ -1,5 +1,6 @@
 package com.supplygraph.application.connector;
 
+import com.supplygraph.domain.error.SecurityViolationException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -16,21 +17,21 @@ public class OutboundUrlGuard {
     public OutboundUrlGuard(boolean allowLoopback) { this.allowLoopback = allowLoopback; }
 
     public void check(URI uri, List<String> allowedHosts) {
-        if (uri == null || uri.getHost() == null) throw new SecurityException("Outbound URL has no host");
+        if (uri == null || uri.getHost() == null) throw new SecurityViolationException("Outbound URL has no host");
         String scheme = uri.getScheme();
         if (!"https".equals(scheme) && !("http".equals(scheme) && allowLoopback)) {
-            throw new SecurityException("Outbound scheme not permitted: " + scheme);
+            throw new SecurityViolationException("Outbound scheme not permitted: " + scheme);
         }
-        if (uri.getUserInfo() != null) throw new SecurityException("Credentials in URL are not permitted");
-        if (!allowedHosts.contains(uri.getHost())) throw new SecurityException("Host not in allow-list: " + uri.getHost());
+        if (uri.getUserInfo() != null) throw new SecurityViolationException("Credentials in URL are not permitted");
+        if (!allowedHosts.contains(uri.getHost())) throw new SecurityViolationException("Host not in allow-list: " + uri.getHost());
         InetAddress[] addresses;
         try {
             addresses = InetAddress.getAllByName(uri.getHost());
         } catch (UnknownHostException e) {
-            throw new SecurityException("Host cannot be resolved: " + uri.getHost());
+            throw new SecurityViolationException("Host cannot be resolved: " + uri.getHost());
         }
         for (InetAddress a : addresses) {
-            if (isForbidden(a)) throw new SecurityException("Resolved address is not publicly routable: " + a.getHostAddress());
+            if (isForbidden(a)) throw new SecurityViolationException("Resolved address is not publicly routable: " + a.getHostAddress());
         }
     }
 

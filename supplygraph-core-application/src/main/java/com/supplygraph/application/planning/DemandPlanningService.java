@@ -1,5 +1,6 @@
 package com.supplygraph.application.planning;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.planning.port.out.DemandForecastRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
 import com.supplygraph.domain.model.bom.MaterialId;
@@ -38,10 +39,10 @@ public class DemandPlanningService {
             double beta
     ) {
         if (history == null || history.isEmpty()) {
-            throw new IllegalArgumentException("Historical demand cannot be empty");
+            throw new ValidationException("Historical demand cannot be empty");
         }
         if (horizonPeriods <= 0) {
-            throw new IllegalArgumentException("Forecast horizon must be positive");
+            throw new ValidationException("Forecast horizon must be positive");
         }
 
         List<Double> historicalValues = history.stream().map(HistoricalDemandPoint::quantity).toList();
@@ -124,7 +125,7 @@ public class DemandPlanningService {
 
     public DemandForecast applyOverride(DemandForecastId forecastId, int periodIndex, double overrideQuantity) {
         DemandForecast existing = forecastRepository.findById(forecastId)
-                .orElseThrow(() -> new IllegalArgumentException("Forecast not found: " + forecastId.value()));
+                .orElseThrow(() -> new ValidationException("Forecast not found: " + forecastId.value()));
 
         Map<Integer, Double> updatedOverrides = new LinkedHashMap<>(existing.periodOverrides());
         updatedOverrides.put(periodIndex, overrideQuantity);

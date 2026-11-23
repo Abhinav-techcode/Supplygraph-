@@ -1,5 +1,6 @@
 package com.supplygraph.application.connector;
 
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.audit.AuditGovernanceService;
 import com.supplygraph.application.port.out.*;
 import com.supplygraph.application.security.SecurityContext;
@@ -97,7 +98,7 @@ public class SyncReconciliationService {
 
     @Transactional
     public ReconciliationItem resolve(String itemId, boolean acceptExternal, String rationale) {
-        ReconciliationItem item = reconciliations.findById(itemId).orElseThrow(() -> new NoSuchElementException("Reconciliation item not found: " + itemId));
+        ReconciliationItem item = reconciliations.findById(itemId).orElseThrow(() -> new ResourceNotFoundException("Reconciliation item not found: " + itemId));
         guard.enforceWorkspaceAndPermission(item.workspaceId(), Permission.DATA_RECONCILE);
         var user = SecurityContext.getCurrentUser().id();
         ReconciliationItem resolved = reconciliations.save(item.resolve(acceptExternal, user.value(), rationale, Instant.now()));

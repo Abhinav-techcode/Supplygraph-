@@ -1,5 +1,7 @@
 package com.supplygraph.application.execution;
 
+import com.supplygraph.domain.error.ValidationException;
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.port.out.ExecutionAttemptRepositoryPort;
 import com.supplygraph.application.port.out.ExecutionEvidenceRepositoryPort;
 import com.supplygraph.domain.model.execution.*;
@@ -29,10 +31,10 @@ public class ExecutionAcknowledgementService {
     public Result record(String taskId, String reference, boolean success, String source, String message) {
         String workflowId = ExecutionSupport.workflowIdOf(taskId);
         support.load(workflowId, Permission.EXECUTION_RECONCILE);
-        if (reference == null || reference.isBlank()) throw new IllegalArgumentException("An acknowledgement reference is required");
+        if (reference == null || reference.isBlank()) throw new ValidationException("An acknowledgement reference is required");
         return support.withLock(workflowId, () -> {
             ExecutionWorkflow w = support.reload(workflowId);
-            ExecutionTask t = w.task(taskId).orElseThrow(() -> new NoSuchElementException("Task not found: " + taskId));
+            ExecutionTask t = w.task(taskId).orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
             String key = reference + ":" + (success ? "OK" : "FAIL");
             if (evidence.exists(taskId, ExecutionEvidence.Kind.EXTERNAL_ACKNOWLEDGEMENT, key)) return Result.DUPLICATE;
             List<ExecutionAttempt> history = attempts.attemptsByTask(taskId);

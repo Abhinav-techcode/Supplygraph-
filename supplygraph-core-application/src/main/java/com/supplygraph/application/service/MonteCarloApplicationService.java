@@ -1,5 +1,6 @@
 package com.supplygraph.application.service;
 
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.port.out.DigitalTwinRepositoryPort;
 import com.supplygraph.application.port.out.DisruptionRepositoryPort;
 import com.supplygraph.application.port.out.MonteCarloRunRepositoryPort;
@@ -54,9 +55,9 @@ public class MonteCarloApplicationService {
             MonteCarloConfiguration config
     ) {
         DigitalTwinState twinState = digitalTwinRepository.findByWorkspaceId(workspaceId)
-                .orElseThrow(() -> new NoSuchElementException("Digital twin not found: " + workspaceId.value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Digital twin not found: " + workspaceId.value()));
         Disruption disruption = disruptionRepository.findById(disruptionId)
-                .orElseThrow(() -> new NoSuchElementException("Disruption not found: " + disruptionId.value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Disruption not found: " + disruptionId.value()));
 
         RecoveryPlan plan = null;
         if (planId != null) {

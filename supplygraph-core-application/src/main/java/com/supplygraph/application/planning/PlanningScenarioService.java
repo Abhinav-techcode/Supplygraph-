@@ -1,5 +1,7 @@
 package com.supplygraph.application.planning;
 
+import com.supplygraph.domain.error.AccessDeniedException;
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.audit.AuditGovernanceService;
 import com.supplygraph.application.planning.port.out.PlanningScenarioRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
@@ -66,11 +68,11 @@ public class PlanningScenarioService {
             String rationale
     ) {
         if (!approver.role().hasPermission(Permission.PLAN_APPROVE)) {
-            throw new SecurityException("User " + approver.id().value() + " lacks required permission: " + Permission.PLAN_APPROVE);
+            throw new AccessDeniedException("User " + approver.id().value() + " lacks required permission: " + Permission.PLAN_APPROVE);
         }
 
         PlanningScenarioComparison existing = scenarioRepository.findById(scenarioId)
-                .orElseThrow(() -> new IllegalArgumentException("Planning scenario not found: " + scenarioId.value()));
+                .orElseThrow(() -> new ValidationException("Planning scenario not found: " + scenarioId.value()));
 
         PlanningScenarioComparison approved = new PlanningScenarioComparison(
                 existing.scenarioId(),

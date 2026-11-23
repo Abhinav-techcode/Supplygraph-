@@ -1,5 +1,6 @@
 package com.supplygraph.web.views.execution;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.execution.ExecutionQueryService;
 import com.supplygraph.application.execution.ExecutionReconciliationService;
 import com.supplygraph.application.execution.ExecutionReconciliationService.Resolution;
@@ -57,7 +58,7 @@ public class ReconciliationWorkspaceView extends ExecutionViewBase {
         TextArea rationale = new TextArea("Rationale and source of confirmation (required)");
         observed.setWidth("30em"); rationale.setWidth("30em");
         Button apply = new Button("Record resolution", e -> {
-            if (resolution.isEmpty()) { UiSupport.error(new IllegalArgumentException("Choose the confirmed outcome")); return; }
+            if (resolution.isEmpty()) { UiSupport.error(new ValidationException("Choose the confirmed outcome")); return; }
             if (UiSupport.run("Reconciled", () -> reconciliation.reconcile(r.task().id(), resolution.getValue(), rationale.getValue(), parse(observed.getValue())))) { d.close(); refresh(); }
         });
         Button observe = new Button("Compare observation with expected", e -> {
@@ -74,7 +75,7 @@ public class ReconciliationWorkspaceView extends ExecutionViewBase {
         if (text == null || text.isBlank()) return m;
         for (String part : text.split(",")) {
             int i = part.indexOf('=');
-            if (i <= 0) throw new IllegalArgumentException("Observed values must look like key=value");
+            if (i <= 0) throw new ValidationException("Observed values must look like key=value");
             m.put(part.substring(0, i).trim(), part.substring(i + 1).trim());
         }
         return m;

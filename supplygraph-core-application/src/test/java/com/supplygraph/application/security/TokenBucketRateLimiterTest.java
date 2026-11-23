@@ -1,5 +1,6 @@
 package com.supplygraph.application.security;
 
+import com.supplygraph.domain.error.RateLimitExceededException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

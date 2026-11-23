@@ -1,5 +1,7 @@
 package com.supplygraph.application.tool;
 
+import com.supplygraph.domain.error.SecurityViolationException;
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.concurguard.model.AgentId;
 import com.supplygraph.domain.model.WorkspaceId;
 
@@ -32,7 +34,7 @@ public class ToolExecutionBoundary {
     public ToolExecutionBoundary(WorkspaceId boundWorkspaceId, int maxRequestsPerAgent, Collection<AgentTool> tools) {
         this.boundWorkspaceId = Objects.requireNonNull(boundWorkspaceId, "boundWorkspaceId must not be null");
         if (maxRequestsPerAgent <= 0) {
-            throw new IllegalArgumentException("maxRequestsPerAgent must be positive");
+            throw new ValidationException("maxRequestsPerAgent must be positive");
         }
         this.maxRequestsPerAgent = maxRequestsPerAgent;
         if (tools != null) {
@@ -66,7 +68,7 @@ public class ToolExecutionBoundary {
         // 1. Workspace Isolation Check
         if (!boundWorkspaceId.equals(request.workspaceId())) {
             recordAudit(request, false, "Cross-workspace violation");
-            throw new SecurityException("Cross-workspace tool execution prohibited: expected "
+            throw new SecurityViolationException("Cross-workspace tool execution prohibited: expected "
                     + boundWorkspaceId + ", but got " + request.workspaceId());
         }
 
@@ -74,12 +76,12 @@ public class ToolExecutionBoundary {
         var identity = request.agentIdentity();
         if (identity == null) {
             recordAudit(request, false, "Missing agent identity");
-            throw new SecurityException("Missing agent identity");
+            throw new SecurityViolationException("Missing agent identity");
         }
 
         if (!identity.isToolAllowed(request.toolName())) {
             recordAudit(request, false, "Unauthorized tool access");
-            throw new SecurityException("Agent [" + identity.agentId().value()
+            throw new SecurityViolationException("Agent [" + identity.agentId().value()
                     + "] is not permitted to execute tool: " + request.toolName());
         }
 
@@ -95,7 +97,7 @@ public class ToolExecutionBoundary {
         AgentTool tool = registeredTools.get(request.toolName());
         if (tool == null) {
             recordAudit(request, false, "Unregistered tool");
-            throw new IllegalArgumentException("Unknown or unregistered tool: " + request.toolName());
+            throw new ValidationException("Unknown or unregistered tool: " + request.toolName());
         }
 
         // 5. Tool Invocation & Audit Recording

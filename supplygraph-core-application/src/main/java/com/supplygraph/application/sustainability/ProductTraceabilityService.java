@@ -1,5 +1,6 @@
 package com.supplygraph.application.sustainability;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.sustainability.port.out.TraceabilityRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
 import com.supplygraph.domain.model.graph.NodeId;
@@ -54,7 +55,7 @@ public class ProductTraceabilityService {
     public RecallImpactResult executeRecallImpactAnalysis(WorkspaceId workspaceId, String taintedBatchNumber) {
         GenealogyDAG dag = getOrCreateDag(workspaceId);
         TraceabilityNode taintedNode = dag.findByBatchNumber(taintedBatchNumber)
-                .orElseThrow(() -> new IllegalArgumentException("Batch number not found in genealogy ledger: " + taintedBatchNumber));
+                .orElseThrow(() -> new ValidationException("Batch number not found in genealogy ledger: " + taintedBatchNumber));
 
         List<TraceabilityNode> affectedNodes = dag.forwardTrace(taintedNode.id());
 

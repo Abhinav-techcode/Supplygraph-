@@ -1,5 +1,8 @@
 package com.supplygraph.application.service;
 
+import com.supplygraph.domain.error.ConflictException;
+import com.supplygraph.domain.error.BusinessRuleException;
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.port.out.DigitalTwinRepositoryPort;
 import com.supplygraph.application.port.out.DisruptionRepositoryPort;
 import com.supplygraph.application.port.out.ImpactAssessmentRepositoryPort;
@@ -40,6 +43,7 @@ public class RecoveryPlanningApplicationService {
     private final DigitalTwinRepositoryPort digitalTwinRepository;
     private final ImpactAssessmentRepositoryPort impactAssessmentRepository;
     private final ConcurGuardEngine concurGuardEngine;
+    private com.supplygraph.application.agent.AgentLearningService agentLearning;
 
     public RecoveryPlanningApplicationService(
             RecoveryPlanRepositoryPort recoveryPlanRepository,
@@ -54,6 +58,12 @@ public class RecoveryPlanningApplicationService {
         this.concurGuardEngine = new DefaultConcurGuardEngine();
     }
 
+    /** Optional: when present, human decisions on plans are recorded as outcomes that calibrate the agents' confidence. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setAgentLearning(com.supplygraph.application.agent.AgentLearningService agentLearning) {
+        this.agentLearning = agentLearning;
+    }
+
     @Transactional
     public RecoveryPlan createPlan(
             DisruptionId disruptionId,
@@ -65,7 +75,7 @@ public class RecoveryPlanningApplicationService {
             PlanComparisonMetrics metrics
     ) {
         DigitalTwinState state = digitalTwinRepository.findByWorkspaceId(workspaceId)
-                .orElseThrow(() -> new NoSuchElementException("Digital twin not found: " + workspaceId.value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Digital twin not found: " + workspaceId.value()));
 
         RecoveryPlan plan = RecoveryPlan.createDraft(
                 disruptionId,
@@ -85,9 +95,9 @@ public class RecoveryPlanningApplicationService {
     @Transactional
     public List<RecoveryPlan> generateAlternativePlans(DisruptionId disruptionId, WorkspaceId workspaceId) {
         Disruption disruption = disruptionRepository.findById(disruptionId)
-                .orElseThrow(() -> new NoSuchElementException("Disruption not found: " + disruptionId.value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Disruption not found: " + disruptionId.value()));
         DigitalTwinState state = digitalTwinRepository.findByWorkspaceId(workspaceId)
-                .orElseThrow(() -> new NoSuchElementException("Digital twin not found: " + workspaceId.value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Digital twin not found: " + workspaceId.value()));
 
         ImpactAssessment assessment = impactAssessmentRepository.findLatestByDisruptionId(disruptionId)
                 .orElse(null);
@@ -95,15 +105,15 @@ public class RecoveryPlanningApplicationService {
 
         List<RecoveryOptionDeriver.Option> options = RecoveryOptionDeriver.derive(disruption, state);
         if (options.isEmpty()) {
-            throw new IllegalStateException("No recovery option can be derived from the digital twin for this disruption: it needs affected facilities in the network, "
+            throw new BusinessRuleException("No recovery option can be derived from the digital twin for this disruption: it needs affected facilities in the network, "
                     + "a downstream facility with a known requirement, and either buffer stock or an alternative supplier reachable over undisrupted lanes.");
         }
-        String[] labels = {"Alpha", "Beta", "Gamma"};
+        String[] labels = {"Alpha", "Beta", "Gamma", "Delta", "Epsilon"};
         List<RecoveryPlan> plans = new ArrayList<>();
         for (int i = 0; i < options.size(); i++) {
             RecoveryOptionDeriver.Option o = options.get(i);
             plans.add(RecoveryPlan.createDraft(disruptionId, workspaceId, state.getCurrentVersion(), assessmentId,
-                    "Plan " + labels[Math.min(i, 2)] + ": " + o.name(), o.description(), List.of(o.action()), o.metrics()));
+                    "Plan " + labels[Math.min(i, labels.length - 1)] + ": " + o.name(), o.description(), List.of(o.action()), o.metrics()));
         }
         for (RecoveryPlan p : plans) {
             recoveryPlanRepository.save(p);
@@ -115,7 +125,7 @@ public class RecoveryPlanningApplicationService {
     public RecoveryPlan validatePlanWithConcurGuard(RecoveryPlanId planId) {
         RecoveryPlan plan = getPlan(planId);
         DigitalTwinState state = digitalTwinRepository.findByWorkspaceId(plan.workspaceId())
-                .orElseThrow(() -> new NoSuchElementException("Digital twin not found: " + plan.workspaceId().value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Digital twin not found: " + plan.workspaceId().value()));
 
         Instant now = Instant.now();
         List<Conflict> conflicts = detectConflicts(plan, state.createSnapshot());
@@ -142,7 +152,7 @@ public class RecoveryPlanningApplicationService {
     public List<String> revalidateConflicts(RecoveryPlanId planId) {
         RecoveryPlan plan = getPlan(planId);
         DigitalTwinState state = digitalTwinRepository.findByWorkspaceId(plan.workspaceId())
-                .orElseThrow(() -> new NoSuchElementException("Digital twin not found: " + plan.workspaceId().value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Digital twin not found: " + plan.workspaceId().value()));
         return detectConflicts(plan, state.createSnapshot()).stream().map(c -> c.id().value() + " :: " + c.explanation()).toList();
     }
 
@@ -163,13 +173,37 @@ public class RecoveryPlanningApplicationService {
             CapacityWindow window = new CapacityWindow(now, now.plusSeconds(action.estimatedDurationHours() * 3600L));
             Quantity qty = new Quantity(action.quantity(), UnitOfMeasure.PIECE);
 
+            List<ResourceClaim> claims = new ArrayList<>();
+            if (action.actionType() == PlanActionType.EMERGENCY_BUFFER_RELEASE || action.actionType() == PlanActionType.INVENTORY_REALLOCATION) {
+                String sourceFacility = (action.parameters() != null && action.parameters().containsKey("sourceNode"))
+                        ? action.parameters().get("sourceNode")
+                        : (action.targetNodeId() != null ? action.targetNodeId().value() : null);
+                if (sourceFacility != null && action.targetMaterialId() != null) {
+                    ResourceIdentity srcRes = ResourceIdentity.of(
+                            "INVENTORY_ACCOUNT",
+                            action.targetMaterialId().value(),
+                            sourceFacility
+                    );
+                    claims.add(ResourceClaim.consumptive(srcRes, qty, window));
+                }
+            } else if (action.actionType() == PlanActionType.PRODUCTION_RESCHEDULING) {
+                if (action.targetMaterialId() != null && action.targetNodeId() != null) {
+                    ResourceIdentity resIdentity = ResourceIdentity.of(
+                            "INVENTORY_ACCOUNT",
+                            action.targetMaterialId().value(),
+                            action.targetNodeId().value()
+                    );
+                    claims.add(ResourceClaim.consumptive(resIdentity, qty, window));
+                }
+            }
+
             ActionIntent intent = new ActionIntent(
                     IntentId.of("INTENT-" + action.actionId()),
                     plan.disruptionId().value(),
                     AgentId.of("RECOVERY_PLANNING_AGENT"),
                     actionType,
                     action.targetNodeId() != null ? action.targetNodeId().value() : "TARGET-FACILITY",
-                    List.of(),
+                    claims,
                     qty,
                     null,
                     window,
@@ -194,10 +228,19 @@ public class RecoveryPlanningApplicationService {
     public RecoveryPlan approvePlan(RecoveryPlanId planId, String approver, String rationale) {
         RecoveryPlan plan = getPlan(planId);
         DigitalTwinState state = digitalTwinRepository.findByWorkspaceId(plan.workspaceId())
-                .orElseThrow(() -> new NoSuchElementException("Digital twin not found: " + plan.workspaceId().value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Digital twin not found: " + plan.workspaceId().value()));
 
+        if (!plan.sourceTwinVersion().equals(state.getCurrentVersion())) {
+            ConflictException stale = new ConflictException("The network changed after this plan was made (plan was made on twin v" + plan.sourceTwinVersion().value()
+                    + ", now v" + state.getCurrentVersion().value() + "), so the options must be derived again before approval.");
+            stale.with("planVersion", plan.sourceTwinVersion().value()).with("currentVersion", state.getCurrentVersion().value());
+            throw stale;
+        }
         RecoveryPlan approved = plan.approve(approver, rationale, state.getCurrentVersion(), Instant.now());
         recoveryPlanRepository.save(approved);
+        if (agentLearning != null) {
+            agentLearning.recordIncidentOutcome(plan.workspaceId(), plan.disruptionId().value(), true, "Plan approved by " + approver);
+        }
         return approved;
     }
 
@@ -205,17 +248,22 @@ public class RecoveryPlanningApplicationService {
     public RecoveryPlan rejectPlan(RecoveryPlanId planId, String rejecter, String rationale) {
         RecoveryPlan plan = getPlan(planId);
         DigitalTwinState state = digitalTwinRepository.findByWorkspaceId(plan.workspaceId())
-                .orElseThrow(() -> new NoSuchElementException("Digital twin not found: " + plan.workspaceId().value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Digital twin not found: " + plan.workspaceId().value()));
 
         RecoveryPlan rejected = plan.reject(rejecter, rationale, state.getCurrentVersion(), Instant.now());
         recoveryPlanRepository.save(rejected);
+        // Rejecting one alternative is a normal choice; the agents are only marked wrong when every plan for the incident was turned down.
+        if (agentLearning != null && recoveryPlanRepository.findByDisruptionId(plan.disruptionId()).stream()
+                .allMatch(p -> p.status() == RecoveryPlanStatus.REJECTED || p.id().equals(rejected.id()))) {
+            agentLearning.recordIncidentOutcome(plan.workspaceId(), plan.disruptionId().value(), false, "All plans rejected; last by " + rejecter);
+        }
         return rejected;
     }
 
     @Transactional(readOnly = true)
     public RecoveryPlan getPlan(RecoveryPlanId id) {
         return recoveryPlanRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Recovery plan not found: " + id.value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Recovery plan not found: " + id.value()));
     }
 
     @Transactional(readOnly = true)

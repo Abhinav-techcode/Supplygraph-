@@ -1,5 +1,6 @@
 package com.supplygraph.web.views.execution;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.execution.ExecutionCompensationService;
 import com.supplygraph.application.execution.ExecutionQueryService;
 import com.supplygraph.domain.model.execution.*;
@@ -43,7 +44,7 @@ public class CompensationRecoveryCentreView extends ExecutionViewBase {
         grid.setSizeFull();
         Button accept = new Button("Accept partial result for selected workflow", e -> grid.getSelectedItems().stream().findFirst().ifPresentOrElse(
                 r -> { if (UiSupport.run("Partial result accepted", () -> compensation.acceptPartial(r.workflow().id(), rationale.getValue()))) refresh(); },
-                () -> UiSupport.error(new IllegalArgumentException("Select a row first"))));
+                () -> UiSupport.error(new ValidationException("Select a row first"))));
         body(rationale, new HorizontalLayout(accept, new Button("Refresh", e -> refresh())), empty, grid);
         refresh();
     }

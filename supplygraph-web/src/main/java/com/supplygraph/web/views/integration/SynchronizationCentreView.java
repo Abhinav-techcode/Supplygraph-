@@ -1,5 +1,6 @@
 package com.supplygraph.web.views.integration;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.connector.ConnectorExecutionService;
 import com.supplygraph.application.connector.ConnectorRegistryService;
 import com.supplygraph.application.connector.SyncReconciliationService;
@@ -36,7 +37,7 @@ public class SynchronizationCentreView extends IntegrationViewBase {
         selector.addValueChangeListener(e -> showCheckpoint());
         Button run = new Button("Synchronize now", e -> {
             Connector c = selector.getValue();
-            if (c == null) { UiSupport.error(new IllegalArgumentException("Select a connector first")); return; }
+            if (c == null) { UiSupport.error(new ValidationException("Select a connector first")); return; }
             ConnectorExecution x = UiSupport.call(() -> executions.synchronize(c.id()), null);
             if (x == null) return;
             result.setText((x.simulated() ? "[SIMULATED] " : "") + "Execution " + x.id() + " → " + x.status() + " · received " + x.recordsReceived()

@@ -1,5 +1,6 @@
 package com.supplygraph.application.explainability;
 
+import com.supplygraph.domain.error.ConflictException;
 import com.supplygraph.application.audit.AuditGovernanceService;
 import com.supplygraph.application.port.out.ExplainableRecommendationRepositoryPort;
 import com.supplygraph.application.port.out.RecoveryPlanRepositoryPort;
@@ -54,9 +55,14 @@ class ExplainableRecommendationServiceTest {
         assertThat(rec.disruptionId()).isEqualTo("DISR-100");
         assertThat(rec.requiresHumanApproval()).isTrue();
         assertThat(rec.approved()).isFalse();
-        assertThat(rec.evidenceList()).isNotEmpty();
-        assertThat(rec.constraintsEvaluated()).isNotEmpty();
-        assertThat(rec.tradeOffs()).isNotEmpty();
+        // only facts the option itself states are recorded; no invented evidence, constraints, trade-offs or scores
+        assertThat(rec.evidenceList()).hasSize(1);
+        assertThat(rec.evidenceList().get(0).confidenceScore()).isEqualTo(com.supplygraph.domain.model.explainability.DecisionEvidence.NOT_MEASURED);
+        assertThat(rec.evidenceList().get(0).summary()).contains("65000", "36.0 hours", "98.0%");
+        assertThat(rec.constraintsEvaluated()).isEmpty();
+        assertThat(rec.tradeOffs()).isEmpty();
+        assertThat(rec.primaryActions()).containsExactly("Action 1", "Action 2");
+        assertThat(rec.uncertaintyFactors()).containsKey("Not assessed");
 
         verify(recommendationRepository, times(1)).save(any(ExplainableRecommendation.class));
     }
@@ -88,7 +94,7 @@ class ExplainableRecommendationServiceTest {
         // Attempting double approval must fail
         when(recommendationRepository.findById(rec.id())).thenReturn(Optional.of(approved));
         assertThatThrownBy(() -> service.approveRecommendation(rec.id(), "USR-ANOTHER", "WS-01"))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("already approved");
     }
 }

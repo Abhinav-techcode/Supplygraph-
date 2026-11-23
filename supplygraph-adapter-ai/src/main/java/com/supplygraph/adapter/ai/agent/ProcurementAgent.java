@@ -1,104 +1,35 @@
 package com.supplygraph.adapter.ai.agent;
 
-import com.supplygraph.application.agent.AgentInvestigationContext;
-import com.supplygraph.application.agent.AgentProposal;
-import com.supplygraph.application.agent.AgentRole;
+import com.supplygraph.application.agent.*;
 import com.supplygraph.application.tool.ToolExecutionBoundary;
-import com.supplygraph.concurguard.model.*;
-import com.supplygraph.concurguard.replanning.ReplanningScope;
-import com.supplygraph.domain.model.capacity.CapacityWindow;
-import com.supplygraph.domain.model.common.Quantity;
-import com.supplygraph.domain.model.common.UnitOfMeasure;
+import com.supplygraph.application.tool.ToolExecutionResult;
+import com.supplygraph.concurguard.model.ActionType;
+import com.supplygraph.domain.model.bom.MaterialId;
+import com.supplygraph.domain.model.graph.*;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-/**
- * Specialized Procurement Agent: secures supplier capacity, spots buys, and expedites purchase orders.
- */
-public class ProcurementAgent extends BaseSpecializedAgent {
-
-    public ProcurementAgent() {
-        super(AgentRole.PROCUREMENT, Set.of("query_inventory", "query_bom"));
-    }
+/** Finds alternative suppliers outside the disruption zone that can still reach the exposed site, ranked by transit time. */
+public class ProcurementAgent extends InsightAgent {
+    public ProcurementAgent() { super(AgentRole.PROCUREMENT, Set.of("query_inventory", "query_bom")); }
 
     @Override
-    public AgentProposal investigate(AgentInvestigationContext context, ToolExecutionBoundary toolBoundary) {
-        String primaryMat = context.incident().affectedMaterialIds().stream().findFirst().orElse("MAT-DEFAULT");
-
-        toolBoundary.execute(new com.supplygraph.application.tool.ToolExecutionRequest(
-                "query_bom",
-                identity(),
-                context.incident().workspaceId(),
-                Map.of("materialId", primaryMat)
-        ));
-
-        Instant now = Instant.now();
-        CapacityWindow window = CapacityWindow.of(now, now.plusSeconds(86400 * 6));
-
-        ResourceClaim claim = ResourceClaim.consumptive(
-                ResourceIdentity.of("SUPPLIER_CATALOG", "SUPPLIER-PO-" + primaryMat, "SUPPLIER-1"),
-                Quantity.of(1000, UnitOfMeasure.PIECE),
-                window
-        );
-
-        ActionIntent intent = ActionIntent.builder()
-                .id(IntentId.of("INT-PROC-" + context.incident().incidentId().substring(0, Math.min(8, context.incident().incidentId().length()))))
-                .agentId(role().agentId())
-                .actionType(ActionType.EXPEDITE_PURCHASE_ORDER)
-                .targetEntityId("SUPPLIER-PO-" + primaryMat)
-                .expectedStateVersion(context.snapshot().version())
-                .timeWindow(window)
-                .quantity(Quantity.of(1000, UnitOfMeasure.PIECE))
-                .addResourceClaim(claim)
-                .riskScore(0.30)
-                .build();
-
-        return AgentProposal.of(
-                "PROP-PROC-1",
-                role(),
-                intent,
-                List.of("BOM explosion verified required precursors for " + primaryMat, "Supplier primary quota allocated"),
-                List.of("Tier-1 vendor confirms 4-day expedite manufacturing run"),
-                0.89,
-                List.of("15% expedited order surcharge")
-        );
-    }
-
-    @Override
-    public AgentProposal replan(AgentInvestigationContext context, ReplanningScope scope, ToolExecutionBoundary toolBoundary) {
-        String primaryMat = context.incident().affectedMaterialIds().stream().findFirst().orElse("MAT-DEFAULT");
-        Instant now = Instant.now().plusSeconds(86400 * 2);
-        CapacityWindow window = CapacityWindow.of(now, now.plusSeconds(86400 * 5));
-
-        ResourceClaim claim = ResourceClaim.consumptive(
-                ResourceIdentity.of("SUPPLIER_CATALOG", "SUPPLIER-ALT-" + primaryMat, "SUPPLIER-2"),
-                Quantity.of(800, UnitOfMeasure.PIECE),
-                window
-        );
-
-        ActionIntent revisedIntent = ActionIntent.builder()
-                .id(IntentId.of("INT-PROC-REV-" + scope.iteration()))
-                .agentId(role().agentId())
-                .actionType(ActionType.EXPEDITE_PURCHASE_ORDER)
-                .targetEntityId("SUPPLIER-ALT-" + primaryMat)
-                .expectedStateVersion(context.snapshot().version())
-                .timeWindow(window)
-                .quantity(Quantity.of(800, UnitOfMeasure.PIECE))
-                .addResourceClaim(claim)
-                .riskScore(0.18)
-                .build();
-
-        return AgentProposal.of(
-                "PROP-PROC-REV-" + scope.iteration(),
-                role(),
-                revisedIntent,
-                List.of("Switched to secondary pre-qualified supplier catalog"),
-                List.of("Supplier SLA guarantees delivery within adjusted window"),
-                0.91,
-                List.of("Standard pricing but 2 days slower lead time")
-        );
+    protected Draft analyse(TwinInsights ins, AgentInvestigationContext ctx, ToolExecutionBoundary b, int rank) {
+        List<String> ev = new ArrayList<>();
+        Optional<NodeId> site = ins.exposedSite();
+        Optional<MaterialId> mat = ins.material();
+        String focus = site.map(NodeId::value).orElse("GLOBAL");
+        List<Map.Entry<NodeId, TwinInsights.Route>> alts = ins.alternativeSuppliers();
+        if (alts.isEmpty()) return Draft.advisory(List.of("No supplier outside the disruption zone has an undisrupted route to " + focus + "."), List.of(), List.of("Escalate to spot-market sourcing outside the modelled network."), site.isPresent() ? 0.35 : 0.0, focus);
+        Map.Entry<NodeId, TwinInsights.Route> alt = alts.get(Math.min(rank, alts.size() - 1));
+        double required = ins.requiredUnits();
+        double facts = 2 + (required > 0 ? 1 : 0) + (mat.isPresent() ? 1 : 0);
+        ev.add(alts.size() + " alternative supplier(s) can reach " + focus + " without crossing the disruption; best: " + alts.get(0).getKey().value() + " in " + n1(alts.get(0).getValue().hours()) + " h.");
+        ev.add("Selected " + alt.getKey().value() + " via " + alt.getValue().text() + " (" + n1(alt.getValue().hours()) + " h, lane cost " + n1(alt.getValue().costPerKg()) + "/kg summed along the route).");
+        mat.ifPresent(m -> { ToolExecutionResult t = tool(b, ctx, "query_inventory", Map.of("materialId", m.value(), "nodeId", alt.getKey().value())); ev.add(t != null ? "Supplier stock query answered by the inventory tool." : "Supplier stock could not be confirmed (tool unavailable)."); });
+        if (required > 0) ev.add("Order quantity sized to the estimated requirement of " + n0(required) + " units.");
+        return new Draft(ActionType.EXPEDITE_PURCHASE_ORDER, alt.getKey().value(), alt.getKey().value(), required, "NONE", null, null, ev,
+                List.of("The supplier has capacity to ship the quantity; it is not yet confirmed (supplier collaboration module)."), List.of("Supplier capacity is unverified until the supplier confirms."),
+                facts / 4.0, clamp(alt.getValue().hours() / 240.0) + 0.1, focus);
     }
 }

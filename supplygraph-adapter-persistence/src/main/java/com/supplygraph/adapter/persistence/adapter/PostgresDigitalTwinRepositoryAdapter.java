@@ -53,6 +53,11 @@ public class PostgresDigitalTwinRepositoryAdapter implements DigitalTwinReposito
     }
 
     @Override
+    public void reload(WorkspaceId workspaceId) {
+        stateCache.remove(workspaceId);
+    }
+
+    @Override
     public boolean existsByWorkspaceId(WorkspaceId workspaceId) {
         return stateCache.containsKey(workspaceId) || repository.existsById(workspaceId.value());
     }

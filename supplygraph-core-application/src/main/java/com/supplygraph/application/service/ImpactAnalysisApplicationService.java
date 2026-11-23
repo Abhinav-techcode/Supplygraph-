@@ -1,5 +1,6 @@
 package com.supplygraph.application.service;
 
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.port.out.DigitalTwinRepositoryPort;
 import com.supplygraph.application.port.out.DisruptionRepositoryPort;
 import com.supplygraph.application.port.out.ImpactAssessmentRepositoryPort;
@@ -48,10 +49,10 @@ public class ImpactAnalysisApplicationService {
     @Transactional
     public ImpactAssessment performImpactAssessment(DisruptionId disruptionId, WorkspaceId workspaceId) {
         Disruption disruption = disruptionRepository.findById(disruptionId)
-                .orElseThrow(() -> new NoSuchElementException("Disruption not found: " + disruptionId.value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Disruption not found: " + disruptionId.value()));
 
         DigitalTwinState twinState = digitalTwinRepository.findByWorkspaceId(workspaceId)
-                .orElseThrow(() -> new NoSuchElementException("Digital twin not found for workspace: " + workspaceId.value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Digital twin not found for workspace: " + workspaceId.value()));
 
         DigitalTwinSnapshot snapshot = twinState.createSnapshot();
         SupplyChainGraph graph = snapshot.graph();
@@ -101,40 +102,53 @@ public class ImpactAnalysisApplicationService {
             }
         }
 
-        // 3. BOM & Material Shortage Analysis
+        // 3. Multi-tier BOM and material shortage analysis, computed from the twin. Quantities that the twin cannot supply are reported as missing.
         List<MaterialShortageImpact> materialShortages = new ArrayList<>();
-        BigDecimal totalShortageCost = BigDecimal.ZERO;
+        List<String> bomImpactDetails = new ArrayList<>();
+        List<String> ttsDetails = new ArrayList<>();
+        List<String> spofAlerts = new ArrayList<>();
+        List<String> unknown = new ArrayList<>();
+        com.supplygraph.application.agent.TwinInsights insights = com.supplygraph.application.agent.TwinInsights.of(snapshot, com.supplygraph.application.agent.TwinInsights.incidentOf(disruption));
 
-        for (MaterialId matId : disruption.affectedMaterialIds()) {
-            Optional<Material> matOpt = snapshot.bom().findMaterial(matId);
-            String matName = matOpt.map(Material::getName).orElse(matId.value());
+        Set<MaterialId> allImpactedMaterials = new LinkedHashSet<>(disruption.affectedMaterialIds());
+        if (allImpactedMaterials.isEmpty()) {
+            insights.material().ifPresent(allImpactedMaterials::add);
+            if (!allImpactedMaterials.isEmpty()) unknown.add("The disruption declares no affected material; the material with the largest stock in the network was assumed.");
+        }
+        Optional<NodeId> exposed = insights.exposedSite();
+        double requiredUnits = disruption.impactParameters().affectedQuantity() != null ? disruption.impactParameters().affectedQuantity().doubleValue() : insights.requiredUnits();
+        if (requiredUnits <= 0) unknown.add("Requirement over the outage is unknown: no downstream manufacturing site with a known throughput, and no affected quantity declared.");
 
-            BigDecimal required = disruption.impactParameters().affectedQuantity() != null
-                    ? disruption.impactParameters().affectedQuantity()
-                    : BigDecimal.valueOf(1000);
-
-            // Compute available stock across inventory accounts
+        for (MaterialId matId : allImpactedMaterials) {
+            String matName = insights.materialName(matId);
             BigDecimal available = BigDecimal.ZERO;
             for (Map.Entry<InventoryAccountId, Quantity> entry : snapshot.inventoryBalances().entrySet()) {
-                if (entry.getKey().materialId().equals(matId)) {
-                    available = available.add(entry.getValue().amount());
-                }
+                if (entry.getKey().materialId().equals(matId) && !disruption.affectedNodeIds().contains(entry.getKey().nodeId())) available = available.add(entry.getValue().amount());
             }
-
+            BigDecimal required = BigDecimal.valueOf(requiredUnits).setScale(0, RoundingMode.HALF_UP);
             BigDecimal shortage = required.subtract(available).max(BigDecimal.ZERO);
-            BigDecimal estimatedCostPerUnit = BigDecimal.valueOf(85.0); // Baseline material price
-            totalShortageCost = totalShortageCost.add(shortage.multiply(estimatedCostPerUnit));
 
-            materialShortages.add(new MaterialShortageImpact(
-                    matId,
-                    matName,
-                    required,
-                    available,
-                    shortage,
-                    "UNIT",
-                    Instant.now().plusSeconds(86400 * 2)
-            ));
+            java.util.OptionalDouble tts = insights.timeToSurviveDays(matId);
+            Instant stockout = null;
+            if (tts.isPresent()) {
+                stockout = Instant.now().plusSeconds((long) (tts.getAsDouble() * 86400));
+                ttsDetails.add("Time to survive for " + matName + " at " + exposed.map(NodeId::value).orElse("?") + ": " + String.format("%.1f", tts.getAsDouble())
+                        + " days (own stock / daily throughput).");
+            } else {
+                unknown.add("Time to survive for " + matName + " is unknown: the exposed site has no known daily throughput.");
+            }
+            long reachableSources = insights.stockHolders(matId).stream().filter(h -> exposed.isEmpty() || insights.fastestRoute(h.node(), exposed.get()).isPresent()).count()
+                    + insights.alternativeSuppliers().size();
+            if (reachableSources == 0) spofAlerts.add("Single source: no stock holder or supplier outside the disruption can reach " + exposed.map(NodeId::value).orElse("the network") + " for " + matName + ".");
+
+            materialShortages.add(new MaterialShortageImpact(matId, matName, required, available, shortage,
+                    snapshot.bom().findMaterial(matId).map(m -> m.getBaseUnit().name()).orElse("PIECE"), stockout));
+            List<MaterialId> parents = insights.dependentProducts(matId);
+            if (!parents.isEmpty()) bomImpactDetails.add("BOM cascade: " + matName + " feeds " + parents.size() + " parent assemblies / products: " + parents.stream().map(MaterialId::value).limit(8).toList());
         }
+        insights.singlePointsOfFailure().forEach(n -> spofAlerts.add("Facility " + n.value() + " receives freight only through the disrupted zone."));
+        BigDecimal totalShortageCost = BigDecimal.ZERO;
+        unknown.add("Financial exposure is not estimated: the twin holds no unit prices or order values.");
 
         // 4. Capacity Impacts
         List<CapacityImpact> capacityImpacts = new ArrayList<>();
@@ -188,10 +202,14 @@ public class ImpactAnalysisApplicationService {
         if (!indirectNodes.isEmpty()) {
             riskIndicators.add("Cascading propagation detected to " + indirectNodes.size() + " downstream network facilities");
         }
+        riskIndicators.addAll(bomImpactDetails);
+        riskIndicators.addAll(ttsDetails);
+        riskIndicators.addAll(spofAlerts);
 
         List<String> assumptions = List.of(
-                "Deterministic propagation based on active graph topology and nominal transit times",
-                "Linear scrap rate and BOM consumption applied across manufacturing sites"
+                "Deterministic propagation over the twin's lanes; every lane is assumed to run at nominal transit time",
+                "Requirement = throughput per hour x 24 x outage days of the first downstream manufacturing site",
+                "Time to survive = the exposed site's own stock of the material / its daily throughput"
         );
 
         ImpactAssessment assessment = ImpactAssessment.create(
@@ -206,7 +224,7 @@ public class ImpactAnalysisApplicationService {
                 totalShortageCost.setScale(2, RoundingMode.HALF_UP),
                 riskIndicators,
                 assumptions,
-                List.of()
+                unknown
         );
 
         impactAssessmentRepository.save(assessment);

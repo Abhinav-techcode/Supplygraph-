@@ -1,5 +1,6 @@
 package com.supplygraph.application.tool;
 
+import com.supplygraph.domain.error.SecurityViolationException;
 import com.supplygraph.application.agent.AgentIdentity;
 import com.supplygraph.application.agent.AgentRole;
 import com.supplygraph.concurguard.model.AgentId;
@@ -59,7 +60,7 @@ class ToolExecutionBoundarySecurityTest {
         );
 
         assertThatThrownBy(() -> boundary.execute(crossWsRequest))
-                .isInstanceOf(SecurityException.class)
+                .isInstanceOf(SecurityViolationException.class)
                 .hasMessageContaining("Cross-workspace tool execution prohibited");
 
         // Verify violation is recorded in audit trail
@@ -81,7 +82,7 @@ class ToolExecutionBoundarySecurityTest {
         );
 
         assertThatThrownBy(() -> boundary.execute(request))
-                .isInstanceOf(SecurityException.class)
+                .isInstanceOf(SecurityViolationException.class)
                 .hasMessageContaining("is not permitted to execute tool: query_inventory");
 
         assertThat(boundary.auditTrail()).hasSize(1);

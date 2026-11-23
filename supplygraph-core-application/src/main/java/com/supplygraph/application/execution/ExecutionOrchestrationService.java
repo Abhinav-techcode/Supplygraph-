@@ -1,5 +1,8 @@
 package com.supplygraph.application.execution;
 
+import com.supplygraph.domain.error.InvalidStateException;
+import com.supplygraph.domain.error.ValidationException;
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.execution.ExecutionAdapter.ExecutionResponse;
 import com.supplygraph.application.port.out.DigitalTwinRepositoryPort;
 import com.supplygraph.application.port.out.ExecutionAttemptRepositoryPort;
@@ -46,7 +49,7 @@ public class ExecutionOrchestrationService implements DisposableBean {
         support.load(workflowId, Permission.EXECUTION_RUN);
         return support.withLock(workflowId, () -> {
             ExecutionWorkflow w = support.reload(workflowId);
-            if (w.status() != WorkflowStatus.READY) throw new IllegalStateException("Workflow is " + w.status() + "; only READY workflows can be started");
+            if (w.status() != WorkflowStatus.READY) throw new InvalidStateException("Workflow is " + w.status() + "; only READY workflows can be started");
             String user = support.user().id().value();
             ExecutionPolicy policy = support.policy(w.workspaceId());
             if (policy.executorMustDifferFromApprover() && w.approvedBy(user))
@@ -70,9 +73,9 @@ public class ExecutionOrchestrationService implements DisposableBean {
         support.load(workflowId, Permission.EXECUTION_RUN);
         return support.withLock(workflowId, () -> {
             ExecutionWorkflow w = support.reload(workflowId);
-            ExecutionTask t = w.task(taskId).orElseThrow(() -> new NoSuchElementException("Task not found: " + taskId));
-            if (t.status() != TaskStatus.RETRY_PENDING) throw new IllegalStateException("Task " + taskId + " is " + t.status() + "; only RETRY_PENDING tasks can be retried. Outcomes of unknown state must be reconciled first.");
-            if (w.status() != WorkflowStatus.EXECUTING) throw new IllegalStateException("Workflow is " + w.status() + "; cannot retry");
+            ExecutionTask t = w.task(taskId).orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+            if (t.status() != TaskStatus.RETRY_PENDING) throw new InvalidStateException("Task " + taskId + " is " + t.status() + "; only RETRY_PENDING tasks can be retried. Outcomes of unknown state must be reconciled first.");
+            if (w.status() != WorkflowStatus.EXECUTING) throw new InvalidStateException("Workflow is " + w.status() + "; cannot retry");
             support.audit(w, AuditAction.TASK_RETRIED, taskId, TaskStatus.RETRY_PENDING.name(), "RETRYING", "Retry attempt " + (t.attempts() + 1) + " of " + t.maxAttempts());
             w = executeOne(w, taskId, support.policy(w.workspaceId()));
             return drive(w, support.policy(w.workspaceId()));
@@ -83,7 +86,7 @@ public class ExecutionOrchestrationService implements DisposableBean {
         support.load(workflowId, Permission.EXECUTION_RUN);
         return support.withLock(workflowId, () -> {
             ExecutionWorkflow w = support.reload(workflowId);
-            if (reason == null || reason.isBlank()) throw new IllegalArgumentException("A cancellation reason is required");
+            if (reason == null || reason.isBlank()) throw new ValidationException("A cancellation reason is required");
             ExecutionWorkflow c = support.save(w.cancel(reason));
             support.timeline(c, null, "WORKFLOW_CANCELLED", reason);
             support.audit(c, AuditAction.WORKFLOW_CANCELLED, c.id(), w.status().name(), WorkflowStatus.CANCELLED.name(), reason);

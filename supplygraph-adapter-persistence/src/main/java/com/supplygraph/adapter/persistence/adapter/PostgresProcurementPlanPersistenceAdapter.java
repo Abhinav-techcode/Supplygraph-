@@ -1,5 +1,6 @@
 package com.supplygraph.adapter.persistence.adapter;
 
+import com.supplygraph.domain.error.StorageFailureException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,7 +49,7 @@ public class PostgresProcurementPlanPersistenceAdapter implements ProcurementPla
 
             repository.save(entity);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to persist procurement plan: " + plan.id().value(), e);
+            throw new StorageFailureException("Failed to persist procurement plan: " + plan.id().value(), e);
         }
     }
 
@@ -81,7 +82,7 @@ public class PostgresProcurementPlanPersistenceAdapter implements ProcurementPla
                     entity.getGeneratedAt()
             );
         } catch (Exception e) {
-            throw new RuntimeException("Failed to deserialize procurement plan entity: " + entity.getId(), e);
+            throw new StorageFailureException("Failed to deserialize procurement plan entity: " + entity.getId(), e);
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.supplygraph.application.service;
 
+import com.supplygraph.domain.error.ConflictException;
 import com.supplygraph.application.port.out.DigitalTwinRepositoryPort;
 import com.supplygraph.application.port.out.InventoryLedgerRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
@@ -68,7 +69,7 @@ class DigitalTwinApplicationServiceTest {
         when(twinRepo.existsByWorkspaceId(wsId)).thenReturn(true);
 
         assertThatThrownBy(() -> service.createDigitalTwin(wsId, SupplyChainGraph.empty(), BillOfMaterials.empty()))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("Digital twin already exists");
     }
 

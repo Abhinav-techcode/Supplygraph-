@@ -1,5 +1,6 @@
 package com.supplygraph.application.platform;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.platform.port.out.BackupSnapshotRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
 import com.supplygraph.domain.model.platform.BackupSnapshotId;
@@ -59,7 +60,7 @@ public class BackupDisasterRecoveryService {
 
     public BackupSnapshotRecord verifySnapshot(BackupSnapshotId id) {
         BackupSnapshotRecord record = snapshotRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Snapshot not found: " + id.value()));
+                .orElseThrow(() -> new ValidationException("Snapshot not found: " + id.value()));
 
         BackupSnapshotRecord verified = record.withVerified(true);
         snapshotRepository.save(verified);
@@ -68,7 +69,7 @@ public class BackupDisasterRecoveryService {
 
     public RestoreResult restoreSnapshot(BackupSnapshotId id) {
         BackupSnapshotRecord record = snapshotRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Snapshot not found: " + id.value()));
+                .orElseThrow(() -> new ValidationException("Snapshot not found: " + id.value()));
 
         if (!record.verified()) {
             return new RestoreResult(id, false, "Snapshot checksum must be verified prior to restoration", Instant.now());

@@ -38,6 +38,35 @@
 4. **Access Platform UI:**
    Navigate browser to: `http://localhost:8080/`
 
+
+---
+
+### 2b. Deploying (read this first)
+
+**What you must set**
+
+| Variable | Why |
+|---|---|
+| `POSTGRES_PASSWORD` | Compose refuses to start without it. No default password is shipped. |
+| `SUPPLYGRAPH_ADMIN_PASSWORD` | Creates the first administrator (`admin`, 8+ characters). Without it nobody can sign in. |
+| `SPRING_PROFILES_ACTIVE` | `prod` for a real deployment (starts empty). `prod,demo` for a public demo with sample data. |
+| `SUPPLYGRAPH_DEMO_PASSWORD` | Only with `prod,demo`: the shared password of the demo accounts. The app refuses to start without it. |
+
+**Two ways to deploy**
+
+1. *Real use:* `SPRING_PROFILES_ACTIVE=prod`. The app starts empty. Sign in as `admin`, open **Add your data**, load your own CSV files or generate a network.
+2. *Public demo:* `SPRING_PROFILES_ACTIVE=prod,demo`. It loads the sample supply chain, incidents and history and creates accounts `admin`, `manager`, `procurement`, `production`, `logistics`, `quality`, `analyst`, `viewer`, all with `SUPPLYGRAPH_DEMO_PASSWORD`. Because those usernames are public, never put real data in a demo deployment.
+
+**What the production profile switches off**
+
+- Only `/actuator/health` and `/actuator/info` are exposed, with no detail. Metrics and Prometheus are not published.
+- The **Database** page is off (`SUPPLYGRAPH_DB_BROWSER=true` turns it on; it shows raw rows to any signed-in user).
+- The PostgreSQL port is bound to `127.0.0.1` in `docker-compose.yml`.
+
+**Build note.** `docker compose up -d --build` runs `./mvnw -Pproduction package`, which builds the optimised Vaadin frontend bundle that `vaadin.productionMode=true` needs. That step downloads Node.js, so the build machine needs internet access. This has not been run end to end on the machine this repository was developed on (it was offline); run it once before relying on it.
+
+**Put it behind HTTPS.** The app does not terminate TLS. Use a reverse proxy or your platform's load balancer; `forward-headers-strategy: framework` is already set.
+
 ---
 
 ### 3. Database Migration Runbook (Flyway)

@@ -15,6 +15,9 @@ public record DecisionEvidence(
         Instant timestamp,
         String summary
 ) implements Serializable {
+    /** Confidence value meaning "no measurement exists"; never shown as a percentage. */
+    public static final double NOT_MEASURED = -1.0;
+
     public DecisionEvidence {
         Objects.requireNonNull(id, "id must not be null");
         Objects.requireNonNull(title, "title must not be null");

@@ -1,11 +1,12 @@
 package com.supplygraph.domain.model.security;
 
+import com.supplygraph.domain.error.AccessDeniedException;
 import com.supplygraph.domain.model.WorkspaceId;
 
 /**
  * Thrown when an actor attempts cross-workspace access or insecure direct object reference (IDOR).
  */
-public class WorkspaceAccessDeniedException extends RuntimeException {
+public class WorkspaceAccessDeniedException extends AccessDeniedException {
 
     private static final long serialVersionUID = 1L;
 

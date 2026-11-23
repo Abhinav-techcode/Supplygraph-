@@ -1,5 +1,7 @@
 package com.supplygraph.application.execution;
 
+import com.supplygraph.domain.error.BusinessRuleException;
+import com.supplygraph.domain.error.InvalidStateException;
 import com.supplygraph.domain.model.audit.AuditAction;
 import com.supplygraph.domain.model.execution.*;
 import com.supplygraph.domain.model.security.Permission;
@@ -21,8 +23,8 @@ public class ExecutionApprovalService {
         support.load(workflowId, needed);            // workspace + permission, server side
         return support.withLock(workflowId, () -> {
             ExecutionWorkflow w = support.reload(workflowId);
-            if (w.status() != WorkflowStatus.PENDING_APPROVAL) throw new IllegalStateException("Workflow is " + w.status() + "; only PENDING_APPROVAL workflows can be approved");
-            if (scope == WorkflowApproval.Scope.SENSITIVE_TASKS && !w.hasSensitiveTasks()) throw new IllegalStateException("Workflow has no sensitive tasks");
+            if (w.status() != WorkflowStatus.PENDING_APPROVAL) throw new InvalidStateException("Workflow is " + w.status() + "; only PENDING_APPROVAL workflows can be approved");
+            if (scope == WorkflowApproval.Scope.SENSITIVE_TASKS && !w.hasSensitiveTasks()) throw new BusinessRuleException("Workflow has no sensitive tasks");
             UserProfile user = support.user();
             ExecutionPolicy policy = support.policy(w.workspaceId());
             if (policy.approverMustDifferFromCreator() && user.id().value().equals(w.createdBy()))
@@ -31,7 +33,7 @@ public class ExecutionApprovalService {
                 throw new SeparationOfDutiesException("Two-person rule: the sensitive-task approver must differ from the workflow approver");
             if (scope == WorkflowApproval.Scope.WORKFLOW && w.approvals().stream().anyMatch(a -> a.approved() && a.scope() == WorkflowApproval.Scope.SENSITIVE_TASKS && a.userId().equals(user.id().value())))
                 throw new SeparationOfDutiesException("Two-person rule: the workflow approver must differ from the sensitive-task approver");
-            if (w.hasApproval(scope)) throw new IllegalStateException("Approval for scope " + scope + " already recorded");
+            if (w.hasApproval(scope)) throw new InvalidStateException("Approval for scope " + scope + " already recorded");
 
             w = w.addApproval(new WorkflowApproval(w.id(), user.id().value(), user.role().name(), scope, true, rationale, Instant.now()));
             support.timeline(w, null, "APPROVAL_RECORDED", scope + " approved by " + user.id().value() + ": " + rationale);
@@ -50,7 +52,7 @@ public class ExecutionApprovalService {
         support.load(workflowId, Permission.EXECUTION_APPROVE);
         return support.withLock(workflowId, () -> {
             ExecutionWorkflow w = support.reload(workflowId);
-            if (w.status() != WorkflowStatus.PENDING_APPROVAL) throw new IllegalStateException("Workflow is " + w.status() + "; only PENDING_APPROVAL workflows can be rejected");
+            if (w.status() != WorkflowStatus.PENDING_APPROVAL) throw new InvalidStateException("Workflow is " + w.status() + "; only PENDING_APPROVAL workflows can be rejected");
             UserProfile user = support.user();
             w = w.addApproval(new WorkflowApproval(w.id(), user.id().value(), user.role().name(), WorkflowApproval.Scope.WORKFLOW, false, rationale, Instant.now()));
             support.timeline(w, null, "WORKFLOW_REJECTED", rationale);

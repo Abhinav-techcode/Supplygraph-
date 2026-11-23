@@ -58,8 +58,8 @@ public final class UiSupport {
     }
 
     public static void error(RuntimeException e) {
-        String msg = e.getMessage() == null || e.getMessage().isBlank() ? e.getClass().getSimpleName() : e.getMessage();
-        Notification n = Notification.show(msg, 6000, Notification.Position.MIDDLE);
+        String shown = com.supplygraph.web.error.UiErrors.describe(e, org.slf4j.LoggerFactory.getLogger(UiSupport.class));
+        Notification n = Notification.show(shown, 6000, Notification.Position.MIDDLE);
         n.addThemeVariants(NotificationVariant.LUMO_ERROR);
     }
 }

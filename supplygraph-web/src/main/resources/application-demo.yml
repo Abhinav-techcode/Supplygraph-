@@ -1,0 +1,7 @@
+# Add this profile on top of "prod" for a public demo: SPRING_PROFILES_ACTIVE=prod,demo
+# It loads the sample supply chain and creates the demo accounts. Because the accounts are publicly known, never use it with real data.
+supplygraph:
+  auth:
+    seed-demo-users: true
+    show-demo-accounts: ${SUPPLYGRAPH_SHOW_DEMO_ACCOUNTS:false}
+    demo-password: ${SUPPLYGRAPH_DEMO_PASSWORD}   # required: there is no default, so the app refuses to start without it

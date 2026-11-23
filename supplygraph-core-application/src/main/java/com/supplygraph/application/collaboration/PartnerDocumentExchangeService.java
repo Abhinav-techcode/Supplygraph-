@@ -1,5 +1,6 @@
 package com.supplygraph.application.collaboration;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.collaboration.port.out.PartnerDocumentRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
 import com.supplygraph.domain.model.collaboration.DocumentCategory;
@@ -47,7 +48,7 @@ public class PartnerDocumentExchangeService {
             PartnerDocumentId documentId
     ) {
         PartnerDocumentRecord doc = documentRepository.findById(documentId)
-                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + documentId));
+                .orElseThrow(() -> new ValidationException("Document not found: " + documentId));
 
         PartnerDocumentRecord verified = doc.withVerified(true);
         documentRepository.save(verified);

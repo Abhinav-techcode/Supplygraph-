@@ -1,5 +1,6 @@
 package com.supplygraph.application.service;
 
+import com.supplygraph.domain.error.ConflictException;
 import com.supplygraph.application.port.out.DigitalTwinRepositoryPort;
 import com.supplygraph.application.port.out.DisruptionRepositoryPort;
 import com.supplygraph.application.port.out.ImpactAssessmentRepositoryPort;
@@ -134,8 +135,8 @@ class RecoveryPlanningApplicationServiceTest {
         when(twinRepo.findByWorkspaceId(ws)).thenReturn(Optional.of(advancedTwin));
 
         assertThatThrownBy(() -> service.approvePlan(plan.id(), "CHIEF_OPERATING_OFFICER", "Approve stale"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Stale plan cannot be approved");
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("network changed after this plan was made");
     }
 }
 

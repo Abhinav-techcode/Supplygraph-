@@ -1,89 +1,38 @@
 package com.supplygraph.adapter.ai.agent;
 
-import com.supplygraph.application.agent.AgentInvestigationContext;
-import com.supplygraph.application.agent.AgentProposal;
-import com.supplygraph.application.agent.AgentRole;
+import com.supplygraph.application.agent.*;
 import com.supplygraph.application.tool.ToolExecutionBoundary;
-import com.supplygraph.concurguard.model.ActionIntent;
+import com.supplygraph.application.tool.ToolExecutionResult;
 import com.supplygraph.concurguard.model.ActionType;
-import com.supplygraph.concurguard.model.IntentId;
-import com.supplygraph.concurguard.replanning.ReplanningScope;
-import com.supplygraph.domain.model.capacity.CapacityWindow;
+import com.supplygraph.domain.model.bom.MaterialId;
+import com.supplygraph.domain.model.graph.*;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-/**
- * Specialized Coordinator Agent: orchestrates multi-agent boundaries and synthesizes the recovery framework.
- */
-public class CoordinatorAgent extends BaseSpecializedAgent {
-
-    public CoordinatorAgent() {
-        super(AgentRole.COORDINATOR, Set.of("query_inventory", "query_bom", "query_lane_status", "query_capacity"));
-    }
+/** Synthesises the overall posture of the incident from the twin: what is hit, who is exposed, how long stock lasts. Advisory (no action). */
+public class CoordinatorAgent extends InsightAgent {
+    public CoordinatorAgent() { super(AgentRole.COORDINATOR, Set.of("query_inventory", "query_bom", "query_lane_status", "query_capacity")); }
 
     @Override
-    public AgentProposal investigate(AgentInvestigationContext context, ToolExecutionBoundary toolBoundary) {
-        String primaryMat = context.incident().affectedMaterialIds().stream().findFirst().orElse("MAT-DEFAULT");
-        
-        // Execute tool call to check inventory context
-        toolBoundary.execute(new com.supplygraph.application.tool.ToolExecutionRequest(
-                "query_inventory",
-                identity(),
-                context.incident().workspaceId(),
-                Map.of("materialId", primaryMat)
-        ));
-
-        Instant now = Instant.now();
-        CapacityWindow window = CapacityWindow.of(now, now.plusSeconds(86400 * 3));
-
-        ActionIntent intent = ActionIntent.builder()
-                .id(IntentId.of("INT-COORD-" + context.incident().incidentId().substring(0, Math.min(8, context.incident().incidentId().length()))))
-                .agentId(role().agentId())
-                .actionType(ActionType.EXPEDITE_PURCHASE_ORDER)
-                .targetEntityId("PO-EXP-" + primaryMat)
-                .expectedStateVersion(context.snapshot().version())
-                .timeWindow(window)
-                .riskScore(0.15)
-                .build();
-
-        return AgentProposal.of(
-                "PROP-COORD-1",
-                role(),
-                intent,
-                List.of("Disruption incident scope analyzed: " + context.incident().title(), "Evaluated primary affected material " + primaryMat),
-                List.of("Supplier has expedited freight option available"),
-                0.95,
-                List.of("Subject to carrier transit window availability")
-        );
-    }
-
-    @Override
-    public AgentProposal replan(AgentInvestigationContext context, ReplanningScope scope, ToolExecutionBoundary toolBoundary) {
-        String primaryMat = context.incident().affectedMaterialIds().stream().findFirst().orElse("MAT-DEFAULT");
-        Instant now = Instant.now().plusSeconds(86400); // Shift by 1 day
-        CapacityWindow window = CapacityWindow.of(now, now.plusSeconds(86400 * 3));
-
-        ActionIntent revisedIntent = ActionIntent.builder()
-                .id(IntentId.of("INT-COORD-REV-" + scope.iteration()))
-                .agentId(role().agentId())
-                .actionType(ActionType.EXPEDITE_PURCHASE_ORDER)
-                .targetEntityId("PO-EXP-ALT-" + primaryMat)
-                .expectedStateVersion(context.snapshot().version())
-                .timeWindow(window)
-                .riskScore(0.10)
-                .build();
-
-        return AgentProposal.of(
-                "PROP-COORD-REV-" + scope.iteration(),
-                role(),
-                revisedIntent,
-                List.of("Replanned after scope invalidation in iteration " + scope.iteration()),
-                List.of("Alternative PO delivery date accepted"),
-                0.90,
-                List.of("Higher expedite surcharge")
-        );
+    protected Draft analyse(TwinInsights ins, AgentInvestigationContext ctx, ToolExecutionBoundary b, int rank) {
+        List<String> ev = new ArrayList<>();
+        int facts = 0;
+        String focus = ins.hitNodes().stream().map(NodeId::value).findFirst().orElse("GLOBAL");
+        if (ins.hasAffectedNodes()) { facts++; ev.add("Disrupted facilities in the twin: " + ins.hitNodes().stream().map(NodeId::value).toList() + "; " + ins.downstreamNodes().size() + " downstream facilities depend on them."); }
+        else ev.add("None of the incident's affected facilities exist in the twin; no network posture can be derived.");
+        Optional<NodeId> site = ins.exposedSite();
+        if (site.isPresent()) { facts++; ev.add("Most exposed manufacturing/downstream site: " + site.get().value() + "."); }
+        Optional<MaterialId> mat = ins.material();
+        if (mat.isPresent()) {
+            facts++;
+            ToolExecutionResult inv = tool(b, ctx, "query_inventory", Map.of("materialId", mat.get().value()));
+            ev.add("Material in focus: " + ins.materialName(mat.get()) + (inv != null ? " (inventory tool answered)." : " (inventory tool unavailable)."));
+            if (ins.requiredUnits() > 0) { facts++; ev.add("Estimated requirement over the outage: " + n0(ins.requiredUnits()) + " units (throughput/h x 24 x outage days)."); }
+            OptionalDouble tts = ins.timeToSurviveDays(mat.get());
+            if (tts.isPresent()) { facts++; ev.add("Time to survive on the exposed site's own stock: " + n1(tts.getAsDouble()) + " days."); }
+        }
+        List<MaterialId> products = mat.map(ins::dependentProducts).orElse(List.of());
+        ev.add(products.isEmpty() ? "The bill of materials lists no product that consumes this material." : "Products that consume it (bill of materials): " + products.stream().map(MaterialId::value).limit(6).toList() + ".");
+        return Draft.advisory(ev, List.of("Requirement estimate assumes the exposed site runs at its nominal throughput."), List.of("Advisory: proposes no action itself."), facts / 5.0, focus);
     }
 }

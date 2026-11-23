@@ -34,15 +34,38 @@ public class AgenticRecoveryOrchestrator {
     private final ConcurGuardEngine concurGuardEngine;
     private final List<SpecializedAgent> specializedAgents;
     private final Collection<AgentTool> registeredTools;
+    private final com.supplygraph.application.port.out.AgentInvestigationRepositoryPort investigationRepo;
+    private final com.supplygraph.application.agent.AgentLearningService learning;
 
     public AgenticRecoveryOrchestrator(
             ConcurGuardEngine concurGuardEngine,
             List<SpecializedAgent> specializedAgents,
             Collection<AgentTool> registeredTools
     ) {
+        this(concurGuardEngine, specializedAgents, registeredTools, null);
+    }
+
+    public AgenticRecoveryOrchestrator(
+            ConcurGuardEngine concurGuardEngine,
+            List<SpecializedAgent> specializedAgents,
+            Collection<AgentTool> registeredTools,
+            com.supplygraph.application.port.out.AgentInvestigationRepositoryPort investigationRepo
+    ) {
+        this(concurGuardEngine, specializedAgents, registeredTools, investigationRepo, null);
+    }
+
+    public AgenticRecoveryOrchestrator(
+            ConcurGuardEngine concurGuardEngine,
+            List<SpecializedAgent> specializedAgents,
+            Collection<AgentTool> registeredTools,
+            com.supplygraph.application.port.out.AgentInvestigationRepositoryPort investigationRepo,
+            com.supplygraph.application.agent.AgentLearningService learning
+    ) {
+        this.learning = learning;
         this.concurGuardEngine = Objects.requireNonNull(concurGuardEngine, "concurGuardEngine must not be null");
         this.specializedAgents = specializedAgents != null ? List.copyOf(specializedAgents) : List.of();
         this.registeredTools = registeredTools != null ? List.copyOf(registeredTools) : List.of();
+        this.investigationRepo = investigationRepo;
     }
 
     /**
@@ -57,7 +80,8 @@ public class AgenticRecoveryOrchestrator {
         Objects.requireNonNull(snapshot, "snapshot must not be null");
 
         // 1. Initialize context & zero-trust tool boundary
-        AgentInvestigationContext context = new AgentInvestigationContext(incident, snapshot, Map.of());
+        AgentInvestigationContext context = new AgentInvestigationContext(incident, snapshot,
+                Map.of());
         ToolExecutionBoundary toolBoundary = new ToolExecutionBoundary(incident.workspaceId(), registeredTools);
 
         // 2. Dispatch investigation across all specialized agents
@@ -138,14 +162,43 @@ public class AgenticRecoveryOrchestrator {
         result.escalationReason().ifPresent(reason ->
                 arbitratedTradeOffs.add("Escalation Advisory: " + reason));
 
+        // Persist one auditable investigation record per agent, with the outcome ConcurGuard actually produced.
+        if (investigationRepo != null) {
+            Map<com.supplygraph.concurguard.model.AgentId, Integer> toolCalls = new HashMap<>();
+            for (var e : toolBoundary.auditTrail()) toolCalls.merge(e.agentId(), 1, Integer::sum);
+            Set<IntentId> allowedIds = new HashSet<>();
+            approvedIntents.forEach(i -> allowedIds.add(i.id()));
+            for (int i = 0; i < specializedAgents.size(); i++) {
+                SpecializedAgent agent = specializedAgents.get(i);
+                AgentProposal pr = initialProposals.get(i);
+                List<ActionIntent> mine = result.finalPlan().stream().filter(it -> it.agentId().equals(agent.identity().agentId())).toList();
+                String outcome = mine.isEmpty() ? (pr.intents().isEmpty() ? "ADVISORY" : "REPLACED_BY_REPLANNING")
+                        : mine.stream().anyMatch(it -> allowedIds.contains(it.id())) ? "ARBITRATED_ALLOW" : "REJECTED_BY_CONCURGUARD";
+                String target = !pr.intents().isEmpty() ? pr.intents().get(0).targetEntityId() : incident.affectedNodeIds().stream().findFirst().orElse("GLOBAL");
+                investigationRepo.save(new com.supplygraph.application.agent.AgentInvestigationRecord(
+                        "INV-" + UUID.randomUUID().toString().substring(0, 8),
+                        incident.workspaceId().value(),
+                        incident.incidentId(),
+                        agent.identity().role().displayName(),
+                        agent.identity().role().name(),
+                        target,
+                        toolCalls.getOrDefault(agent.identity().agentId(), 0),
+                        pr.intents().size(),
+                        pr.confidence(),
+                        outcome,
+                        Instant.now(),
+                        String.join(" | ", pr.evidence())));
+            }
+        }
+
         // 5. Calculate Metrics
-        BigDecimal totalEstimatedCost = BigDecimal.valueOf(approvedIntents.size() * 1500L); // Baseline operational estimate
+        BigDecimal totalEstimatedCost = approvedIntents.stream().map(ActionIntent::estimatedCost).reduce(BigDecimal.ZERO, BigDecimal::add); // agents do not price actions; zero means "not estimated"
         long recoveryTimeObjectiveHours = Math.max(incident.estimatedDowntimeHours(), 24L);
 
         double totalConfidence = initialProposals.stream()
                 .mapToDouble(AgentProposal::confidence)
                 .average()
-                .orElse(0.85);
+                .orElse(0.0);
 
         // Penalize slightly if replanning iterations were needed
         double overallConfidence = Math.max(0.1, Math.min(1.0, totalConfidence - (result.iterationsCompleted() * 0.05)));

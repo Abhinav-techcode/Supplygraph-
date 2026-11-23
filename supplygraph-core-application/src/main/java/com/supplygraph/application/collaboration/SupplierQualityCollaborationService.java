@@ -1,5 +1,6 @@
 package com.supplygraph.application.collaboration;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.collaboration.port.out.SupplierQualityRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
 import com.supplygraph.domain.model.bom.MaterialId;
@@ -51,7 +52,7 @@ public class SupplierQualityCollaborationService {
             EightDStep nextStep
     ) {
         QualityIncident8D incident = qualityRepository.findById(incidentId)
-                .orElseThrow(() -> new IllegalArgumentException("Quality incident not found: " + incidentId));
+                .orElseThrow(() -> new ValidationException("Quality incident not found: " + incidentId));
 
         QualityIncident8D advanced = incident.advanceStep(nextStep);
         qualityRepository.save(advanced);

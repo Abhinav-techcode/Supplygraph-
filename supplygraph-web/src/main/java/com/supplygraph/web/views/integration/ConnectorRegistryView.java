@@ -1,5 +1,6 @@
 package com.supplygraph.web.views.integration;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.connector.ConnectorRegistryService;
 import com.supplygraph.domain.model.connector.*;
 import com.supplygraph.web.layout.MainLayout;
@@ -67,7 +68,7 @@ public class ConnectorRegistryView extends IntegrationViewBase {
         Span hint = new Span("Sandbox connectors are simulated: they never contact an external system.");
         Checkbox activate = new Checkbox("Configure with sandbox defaults and activate immediately (SIMULATED connectors only)", true);
         Button save = new Button("Register", e -> {
-            if (name.isEmpty() || category.isEmpty() || mode.isEmpty() || adapter.isEmpty()) { UiSupport.error(new IllegalArgumentException("Name, category, mode and adapter are required")); return; }
+            if (name.isEmpty() || category.isEmpty() || mode.isEmpty() || adapter.isEmpty()) { UiSupport.error(new ValidationException("Name, category, mode and adapter are required")); return; }
             boolean auto = activate.getValue() && mode.getValue() == ConnectorMode.SANDBOX_SIMULATED;
             if (UiSupport.run(auto ? "Connector registered, configured and activated (SIMULATED)" : "Connector registered — configure it, then activate", () -> {
                 Connector c = service.register(UiSupport.workspace(), name.getValue().trim(), category.getValue(), mode.getValue(), adapter.getValue());

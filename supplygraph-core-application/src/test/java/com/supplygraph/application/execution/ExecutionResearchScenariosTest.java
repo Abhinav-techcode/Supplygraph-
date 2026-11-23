@@ -131,7 +131,7 @@ class ExecutionResearchScenariosTest {
             f.as(UserRole.LOGISTICS_MANAGER);
             w = f.orchestration.start(w.id());
             String id = w.id(), first = w.tasks().get(0).id();
-            try { f.orchestration.retryTask(id, first); violations++; } catch (IllegalStateException expected) { /* required */ }
+            try { f.orchestration.retryTask(id, first); violations++; } catch (com.supplygraph.domain.error.InvalidStateException expected) { /* required */ }
             long sends = f.recording.calls.stream().filter(c -> c.taskId().equals(first)).count();
             if (sends != 1) violations++;
         }
@@ -150,7 +150,7 @@ class ExecutionResearchScenariosTest {
             f.as(UserRole.LOGISTICS_MANAGER);
             f.orchestration.start(wid);
             int retries = 0;
-            for (int i = 0; i < 6 + rnd.nextInt(3); i++) { try { f.orchestration.retryTask(wid, first); retries++; } catch (IllegalStateException e) { break; } }
+            for (int i = 0; i < 6 + rnd.nextInt(3); i++) { try { f.orchestration.retryTask(wid, first); retries++; } catch (com.supplygraph.domain.error.InvalidStateException e) { break; } }
             long keys = f.recording.calls.stream().filter(c -> c.taskId().equals(first)).map(ExecutionAdapter.Request::idempotencyKey).distinct().count();
             long sends = f.recording.calls.stream().filter(c -> c.taskId().equals(first)).count();
             if (keys != 1 || sends > 3) violations++;

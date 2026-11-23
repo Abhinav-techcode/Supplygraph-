@@ -1,5 +1,7 @@
 package com.supplygraph.application.execution;
 
+import com.supplygraph.domain.error.InvalidStateException;
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.execution.ExecutionAdapter.ExecutionResponse;
 import com.supplygraph.application.execution.ExecutionAdapter.Outcome;
 import com.supplygraph.application.security.SecurityContext;
@@ -261,7 +263,7 @@ class ExecutionEngineTest {
         f.as(UserRole.LOGISTICS_MANAGER);
         assertThatThrownBy(() -> f.reconciliation.reconcile(t1, ExecutionReconciliationService.Resolution.CONFIRMED_COMPLETED, "ok", Map.of())).isInstanceOf(UnauthorizedOperationException.class);
         f.as(UserRole.SUPPLY_CHAIN_MANAGER);
-        assertThatThrownBy(() -> f.reconciliation.reconcile(t1, ExecutionReconciliationService.Resolution.CONFIRMED_COMPLETED, " ", Map.of())).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> f.reconciliation.reconcile(t1, ExecutionReconciliationService.Resolution.CONFIRMED_COMPLETED, " ", Map.of())).isInstanceOf(ValidationException.class);
     }
 
     @Test void restartRecoveryTurnsInterruptedTasksIntoReconciliationNotRetry() {
@@ -316,10 +318,10 @@ class ExecutionEngineTest {
         ExecutionWorkflow w = f.readyWorkflow();
         f.as(UserRole.LOGISTICS_MANAGER);
         String wid = w.id();
-        assertThatThrownBy(() -> f.orchestration.cancel(wid, " ")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> f.orchestration.cancel(wid, " ")).isInstanceOf(ValidationException.class);
         w = f.orchestration.cancel(wid, "supplier resolved the shortage");
         assertThat(w.status()).isEqualTo(WorkflowStatus.CANCELLED);
-        assertThatThrownBy(() -> f.orchestration.start(wid)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> f.orchestration.start(wid)).isInstanceOf(InvalidStateException.class);
         assertThat(f.recording.calls).isEmpty();
     }
 

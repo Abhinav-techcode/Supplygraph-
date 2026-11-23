@@ -1,5 +1,6 @@
 package com.supplygraph.adapter.persistence.adapter;
 
+import com.supplygraph.domain.error.StorageFailureException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,7 +50,7 @@ public class PostgresRfqPersistenceAdapter implements RfqRepositoryPort {
             );
             repository.save(entity);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize RFQ quotations", e);
+            throw new StorageFailureException("Failed to serialize RFQ quotations", e);
         }
     }
 
@@ -82,7 +83,7 @@ public class PostgresRfqPersistenceAdapter implements RfqRepositoryPort {
                     e.getCreatedAt()
             );
         } catch (Exception ex) {
-            throw new RuntimeException("Failed to deserialize RFQ quotations", ex);
+            throw new StorageFailureException("Failed to deserialize RFQ quotations", ex);
         }
     }
 }

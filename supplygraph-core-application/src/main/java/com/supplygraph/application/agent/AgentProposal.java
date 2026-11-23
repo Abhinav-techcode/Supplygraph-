@@ -1,5 +1,6 @@
 package com.supplygraph.application.agent;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.concurguard.model.ActionIntent;
 import com.supplygraph.concurguard.model.AgentId;
 
@@ -33,7 +34,7 @@ public record AgentProposal(
         limitations = limitations != null ? List.copyOf(limitations) : List.of();
         Objects.requireNonNull(proposedAt, "proposedAt must not be null");
         if (confidence < 0.0 || confidence > 1.0) {
-            throw new IllegalArgumentException("Confidence must be within [0.0, 1.0], was: " + confidence);
+            throw new ValidationException("Confidence must be within [0.0, 1.0], was: " + confidence);
         }
     }
 

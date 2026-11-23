@@ -1,5 +1,6 @@
 package com.supplygraph.application.execution;
 
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.agent.AgentRole;
 import com.supplygraph.application.port.out.ExecutionAttemptRepositoryPort;
 import com.supplygraph.domain.model.execution.*;
@@ -25,7 +26,7 @@ public class ExecutionAdvisoryService {
 
     public Advisory explainFailure(String workflowId, String taskId) {
         ExecutionWorkflow w = support.load(workflowId, null);
-        ExecutionTask t = w.task(taskId).orElseThrow(() -> new NoSuchElementException("Task not found: " + taskId));
+        ExecutionTask t = w.task(taskId).orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
         List<ExecutionAttempt> history = attempts.attemptsByTask(taskId);
         List<String> evidence = new ArrayList<>();
         history.forEach(a -> evidence.add("attempt " + a.attemptNo() + " via " + a.adapterId() + " → " + a.outcome() + (a.message() != null ? ": " + a.message() : "")));

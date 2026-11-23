@@ -1,0 +1,33 @@
+# Render Blueprint: one Docker web service (Vaadin UI + backend are the same app) + managed Postgres.
+databases:
+  - name: supplygraph-db
+    plan: basic-256mb
+    databaseName: supplygraph
+    user: supplygraph
+
+services:
+  - type: web
+    name: supplygraph
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_FLYWAY_ENABLED
+        value: "true"
+      - key: SERVER_PORT
+        value: "8080"
+      - key: DB_HOST
+        fromDatabase: { name: supplygraph-db, property: host }
+      - key: DB_PORT
+        fromDatabase: { name: supplygraph-db, property: port }
+      - key: DB_NAME
+        fromDatabase: { name: supplygraph-db, property: database }
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase: { name: supplygraph-db, property: user }
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase: { name: supplygraph-db, property: password }
+      - key: SUPPLYGRAPH_ADMIN_PASSWORD
+        sync: false   # you type this in the Render dashboard; it is never stored in git

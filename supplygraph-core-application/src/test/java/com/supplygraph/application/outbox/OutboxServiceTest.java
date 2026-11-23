@@ -1,5 +1,7 @@
 package com.supplygraph.application.outbox;
 
+import com.supplygraph.domain.error.ValidationException;
+import com.supplygraph.domain.error.ConflictException;
 import com.supplygraph.application.audit.AuditGovernanceService;
 import com.supplygraph.application.port.out.OutboxRepositoryPort;
 import com.supplygraph.application.security.SecurityContext;
@@ -80,7 +82,7 @@ class OutboxServiceTest {
     }
 
     @Test void duplicateHandlerRegistrationRejected() {
-        assertThatThrownBy(() -> service(handler("T", () -> {}), handler("T", () -> {}))).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> service(handler("T", () -> {}), handler("T", () -> {}))).isInstanceOf(ConflictException.class);
     }
 
     @Test void replayRequiresPermissionInEventWorkspaceAndRationale() {
@@ -94,7 +96,7 @@ class OutboxServiceTest {
         login(UserRole.SUPPLY_CHAIN_MANAGER, WorkspaceId.of("other"));
         assertThatThrownBy(() -> s.replay(dead.id(), "why")).isInstanceOf(WorkspaceAccessDeniedException.class);
         login(UserRole.SUPPLY_CHAIN_MANAGER, ws);
-        assertThatThrownBy(() -> s.replay(dead.id(), " ")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> s.replay(dead.id(), " ")).isInstanceOf(ValidationException.class);
         verify(repo, never()).save(any());
 
         assertThat(s.replay(dead.id(), "endpoint fixed").status()).isEqualTo(OutboxStatus.PENDING);

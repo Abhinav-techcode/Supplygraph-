@@ -1,227 +1,105 @@
 package com.supplygraph.adapter.ai.workflow;
 
-import com.supplygraph.adapter.ai.agent.*;
-import com.supplygraph.application.agent.DisruptionIncident;
-import com.supplygraph.application.agent.SpecializedAgent;
+import com.supplygraph.adapter.ai.IncidentInvestigationService;
+import com.supplygraph.application.agent.*;
+import com.supplygraph.application.port.out.AgentInvestigationRepositoryPort;
 import com.supplygraph.application.recovery.AgenticRecoveryOrchestrator;
 import com.supplygraph.application.recovery.RecoveryProposal;
 import com.supplygraph.application.tool.AgentTool;
-import com.supplygraph.application.tool.builtin.QueryBomTool;
-import com.supplygraph.application.tool.builtin.QueryCapacityTool;
-import com.supplygraph.application.tool.builtin.QueryInventoryTool;
-import com.supplygraph.application.tool.builtin.QueryLaneStatusTool;
+import com.supplygraph.application.tool.builtin.*;
 import com.supplygraph.concurguard.api.DefaultConcurGuardEngine;
 import com.supplygraph.domain.model.WorkspaceId;
-import com.supplygraph.domain.model.bom.*;
-import com.supplygraph.domain.model.capacity.*;
-import com.supplygraph.domain.model.common.Quantity;
-import com.supplygraph.domain.model.common.UnitOfMeasure;
-import com.supplygraph.domain.model.graph.*;
-import com.supplygraph.domain.model.inventory.BalanceCategory;
-import com.supplygraph.domain.model.inventory.InventoryAccountId;
 import com.supplygraph.domain.model.twin.DigitalTwinSnapshot;
-import com.supplygraph.domain.model.twin.StateVersion;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("End-to-End Multi-Agent Disruption Recovery Workflow Tests")
+/** All eight agents + ConcurGuard + audit trail + learning, against one coherent twin. */
+@DisplayName("Agentic recovery workflow (agents -> ConcurGuard -> audit -> learning)")
 class EndToEndDisruptionRecoveryWorkflowTest {
 
-    private DefaultConcurGuardEngine concurGuardEngine;
-    private List<SpecializedAgent> allSpecializedAgents;
-    private WorkspaceId workspaceId;
-    private DigitalTwinSnapshot snapshot;
-    private List<AgentTool> registeredTools;
-    private AgenticRecoveryOrchestrator orchestrator;
+    /** Minimal in-memory ports; the real ones are JDBC adapters (covered by persistence tests). */
+    static final class MemInvestigations implements AgentInvestigationRepositoryPort {
+        final List<AgentInvestigationRecord> rows = new ArrayList<>();
+        public void save(AgentInvestigationRecord r) { rows.add(r); }
+        public List<AgentInvestigationRecord> findByWorkspaceId(WorkspaceId ws) { return rows.stream().filter(r -> r.workspaceId().equals(ws.value())).toList(); }
+        public List<AgentInvestigationRecord> findAll() { return rows; }
+    }
 
-    @BeforeEach
-    void setUp() {
-        workspaceId = WorkspaceId.of("WS-E2E-ORCHESTRATION");
-        concurGuardEngine = new DefaultConcurGuardEngine();
+    static final class MemOutcomes implements com.supplygraph.application.port.out.AgentOutcomePort {
+        final List<Object[]> rows = new ArrayList<>();
+        public void record(String ws, String role, String inc, boolean ok, String note, Instant at) { rows.add(new Object[]{ws, role, ok}); }
+        public List<AgentTrackRecord> trackRecords(String ws) {
+            Map<String, int[]> m = new LinkedHashMap<>();
+            for (Object[] r : rows) { int[] c = m.computeIfAbsent((String) r[1], k -> new int[2]); c[0]++; if ((Boolean) r[2]) c[1]++; }
+            return m.entrySet().stream().map(e -> new AgentTrackRecord(e.getKey(), e.getValue()[0], e.getValue()[1])).toList();
+        }
+    }
 
-        // 8 specialized agents
-        allSpecializedAgents = List.of(
-                new CoordinatorAgent(),
-                new RiskIntelligenceAgent(),
-                new InventoryAgent(),
-                new ProcurementAgent(),
-                new LogisticsAgent(),
-                new ProductionAgent(),
-                new QualityAgent(),
-                new RecoveryPlanningAgent()
-        );
-
-        // Standard materials
-        Material lithium = new Material(MaterialId.of("MAT-LITHIUM-HYDROXIDE"), "LH-01", "Lithium Hydroxide", MaterialType.RAW_MATERIAL, UnitOfMeasure.KILOGRAM);
-        Material cathode = new Material(MaterialId.of("MAT-CATHODE-NMC"), "NMC-01", "Cathode NMC811", MaterialType.INTERMEDIATE, UnitOfMeasure.KILOGRAM);
-        Material wafer = new Material(MaterialId.of("MAT-SILICON-WAFER"), "SW-300", "300mm Silicon Wafer", MaterialType.RAW_MATERIAL, UnitOfMeasure.PIECE);
-        Material chip = new Material(MaterialId.of("MAT-MICROCONTROLLER"), "MCU-7NM", "Automotive Microcontroller", MaterialType.COMPONENT, UnitOfMeasure.PIECE);
-        Material apiMat = new Material(MaterialId.of("MAT-API-BIOLOGIC"), "API-400", "Biologic Active Ingredient", MaterialType.RAW_MATERIAL, UnitOfMeasure.LITER);
-        Material vaccine = new Material(MaterialId.of("MAT-MRNA-VACCINE"), "VAC-MRNA", "mRNA Vaccine Vial", MaterialType.FINISHED_PRODUCT, UnitOfMeasure.PIECE);
-        Material steel = new Material(MaterialId.of("MAT-STAMPING-STEEL"), "STEEL-600", "Cold Rolled Steel Coil", MaterialType.RAW_MATERIAL, UnitOfMeasure.KILOGRAM);
-        Material chassis = new Material(MaterialId.of("MAT-CHASSIS-SUBASSY"), "CHASSIS-01", "Chassis Sub-Assembly", MaterialType.COMPONENT, UnitOfMeasure.PIECE);
-
-        BomEntry bomEv = BomEntry.of(cathode.getId(), lithium.getId(), Quantity.of(3, UnitOfMeasure.KILOGRAM), BigDecimal.valueOf(0.01), 1);
-        BomEntry bomSemi = BomEntry.of(chip.getId(), wafer.getId(), Quantity.of(1, UnitOfMeasure.PIECE), BigDecimal.valueOf(0.05), 1);
-        BomEntry bomPharma = BomEntry.of(vaccine.getId(), apiMat.getId(), Quantity.of(1, UnitOfMeasure.LITER), BigDecimal.valueOf(0.005), 1);
-        BomEntry bomAuto = BomEntry.of(chassis.getId(), steel.getId(), Quantity.of(150, UnitOfMeasure.KILOGRAM), BigDecimal.valueOf(0.02), 1);
-
-        BillOfMaterials bom = new BillOfMaterials(
-                List.of(lithium, cathode, wafer, chip, apiMat, vaccine, steel, chassis),
-                List.of(bomEv, bomSemi, bomPharma, bomAuto)
-        );
-
-        // Network nodes & lanes
-        NodeId supplier1 = NodeId.of("NODE-SUP-PORT");
-        NodeId plant1 = NodeId.of("NODE-MFG-PLANT");
-        Supplier sup = new Supplier(supplier1, "Global Port Hub", "Rotterdam", true, 1, Set.of("ISO9001"), 0.1);
-        ManufacturingSite mfg = new ManufacturingSite(plant1, "Central Assembly Plant", "Munich", true, Set.of("LINE-A"), "ISO-6", 250);
-        TransportationLane lane = new TransportationLane(
-                EdgeId.of("LANE-ROTTERDAM-MUNICH"), supplier1, plant1, TransportMode.ROAD, Duration.ofHours(18), BigDecimal.valueOf(1.95), true
-        );
-        SupplyChainGraph graph = new SupplyChainGraph(List.of(sup, mfg), List.of(lane));
-
-        // Inventories
-        InventoryAccountId accLithium = InventoryAccountId.of(plant1, lithium.getId(), BalanceCategory.ON_HAND_AVAILABLE);
-        InventoryAccountId accWafer = InventoryAccountId.of(plant1, wafer.getId(), BalanceCategory.ON_HAND_AVAILABLE);
-        InventoryAccountId accApi = InventoryAccountId.of(plant1, apiMat.getId(), BalanceCategory.ON_HAND_AVAILABLE);
-        InventoryAccountId accSteel = InventoryAccountId.of(plant1, steel.getId(), BalanceCategory.ON_HAND_AVAILABLE);
-
-        Map<InventoryAccountId, Quantity> balances = Map.of(
-                accLithium, Quantity.of(15000, UnitOfMeasure.KILOGRAM),
-                accWafer, Quantity.of(5000, UnitOfMeasure.PIECE),
-                accApi, Quantity.of(800, UnitOfMeasure.LITER),
-                accSteel, Quantity.of(80000, UnitOfMeasure.KILOGRAM)
-        );
-
-        snapshot = new DigitalTwinSnapshot(workspaceId, StateVersion.of(1), Instant.now(), graph, bom, balances);
-
-        // Capacities
-        ResourceId resLine = ResourceId.of("LINE-NODE-MFG-PLANT");
-        CapacityWindow horizon = CapacityWindow.of(Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(365)));
-        ResourceCapacity capacity = ResourceCapacity.of(Quantity.of(150, UnitOfMeasure.PIECE), OperatingSchedule.continuous(horizon));
-        Map<ResourceId, CapacityCalendar> calendars = Map.of(resLine, new CapacityCalendar(resLine, capacity));
-
-        registeredTools = List.of(
-                new QueryInventoryTool(() -> snapshot),
-                new QueryBomTool(() -> snapshot),
-                new QueryLaneStatusTool(() -> snapshot),
-                new QueryCapacityTool(() -> calendars)
-        );
-
-        orchestrator = new AgenticRecoveryOrchestrator(concurGuardEngine, allSpecializedAgents, registeredTools);
+    private AgenticRecoveryOrchestrator orchestrator(DigitalTwinSnapshot s, MemInvestigations repo, AgentLearningService learning) {
+        List<AgentTool> tools = List.of(new QueryInventoryTool(() -> s), new QueryBomTool(() -> s), new QueryLaneStatusTool(() -> s), new QueryCapacityTool(Map::of));
+        return new AgenticRecoveryOrchestrator(new DefaultConcurGuardEngine(), IncidentInvestigationService.allAgents(), tools, repo, learning);
     }
 
     @Test
-    @DisplayName("Scenario 1: EV Battery Manufacturing - Port delay and cathode cell line contention")
-    void testEvBatteryDisruptionRecovery() {
-        DisruptionIncident incident = new DisruptionIncident(
-                "INC-EV-BATTERY-001",
-                workspaceId,
-                "Rotterdam Port Congestion - Lithium Hydroxide Shipment Delayed",
-                "Severe customs backlog at Rotterdam delays critical battery precursor vessel",
-                "EV_BATTERY",
-                Set.of("NODE-SUP-PORT", "NODE-MFG-PLANT"),
-                Set.of("MAT-LITHIUM-HYDROXIDE"),
-                168L,
-                "HIGH",
-                Instant.now()
-        );
+    @DisplayName("A supplier outage yields arbitrated, evidence-backed proposals and one audit record per agent")
+    void supplierOutageEndToEnd() {
+        DigitalTwinSnapshot s = com.supplygraph.adapter.ai.agent.AgentTestTwinAccess.snapshot(5000, 2000);
+        MemInvestigations repo = new MemInvestigations();
+        RecoveryProposal proposal = orchestrator(s, repo, null).coordinateRecovery(com.supplygraph.adapter.ai.agent.AgentTestTwinAccess.incident(Set.of("SUP-A"), 72), s);
 
-        RecoveryProposal proposal = orchestrator.coordinateRecovery(incident, snapshot);
-
-        assertThat(proposal).isNotNull();
-        assertThat(proposal.incidentId()).isEqualTo("INC-EV-BATTERY-001");
         assertThat(proposal.approvedIntents()).isNotEmpty();
-        assertThat(proposal.totalEstimatedCost()).isPositive();
-        assertThat(proposal.recoveryTimeObjectiveHours()).isGreaterThanOrEqualTo(168L);
-        assertThat(proposal.auditTrail()).isNotEmpty();
-        assertThat(proposal.riskAssessmentSummary()).contains("Disruption severity [HIGH]");
-
-        // Zero-mutation invariant: DigitalTwin snapshot remains strictly at v1
-        assertThat(snapshot.version().value()).isEqualTo(1L);
+        assertThat(proposal.approvedIntents()).as(String.valueOf(proposal.arbitratedTradeOffs())).extracting(i -> i.actionType().name()).contains("EMERGENCY_BUFFER_DISPATCH", "EXPEDITE_PURCHASE_ORDER", "REROUTE_SHIPMENT");
+        assertThat(proposal.auditTrail()).anyMatch(a -> a.toolName().equals("query_inventory") && a.success());
+        assertThat(repo.rows).hasSize(8);
+        assertThat(repo.rows).extracting(AgentInvestigationRecord::role).containsExactlyInAnyOrder("COORDINATOR", "RISK_INTELLIGENCE", "INVENTORY", "PROCUREMENT", "LOGISTICS", "PRODUCTION", "QUALITY", "RECOVERY_PLANNING");
+        AgentInvestigationRecord inv = repo.rows.stream().filter(r -> r.role().equals("INVENTORY")).findFirst().orElseThrow();
+        assertThat(inv.outcome()).isEqualTo("ARBITRATED_ALLOW");
+        assertThat(inv.toolsInvoked()).isPositive();
+        assertThat(inv.summary()).contains("HUB");
+        AgentInvestigationRecord coord = repo.rows.stream().filter(r -> r.role().equals("COORDINATOR")).findFirst().orElseThrow();
+        assertThat(coord.outcome()).isEqualTo("ADVISORY");
+        assertThat(coord.intentsGenerated()).isZero();
+        assertThat(proposal.totalEstimatedCost()).isNotNegative();
     }
 
     @Test
-    @DisplayName("Scenario 2: Pharmaceutical Cold Chain - Temperature excursion and inspection hold")
-    void testPharmaColdChainDisruptionRecovery() {
-        DisruptionIncident incident = new DisruptionIncident(
-                "INC-PHARMA-COLD-002",
-                workspaceId,
-                "Biologic API Cold Chain Excursion Alert",
-                "Transit refrigeration sensor recorded 8°C excursion during cross-dock transfer",
-                "PHARMA",
-                Set.of("NODE-SUP-PORT", "NODE-MFG-PLANT"),
-                Set.of("MAT-API-BIOLOGIC"),
-                72L,
-                "CRITICAL",
-                Instant.now()
-        );
-
-        RecoveryProposal proposal = orchestrator.coordinateRecovery(incident, snapshot);
-
-        assertThat(proposal).isNotNull();
-        assertThat(proposal.incidentId()).isEqualTo("INC-PHARMA-COLD-002");
-        assertThat(proposal.approvedIntents()).isNotEmpty();
-        assertThat(proposal.overallConfidence()).isGreaterThan(0.60);
-        assertThat(proposal.auditTrail()).anyMatch(a -> a.toolName().equals("query_inventory"));
+    @DisplayName("An incident that touches nothing in the twin produces no approved actions")
+    void unknownIncidentProducesNothing() {
+        DigitalTwinSnapshot s = com.supplygraph.adapter.ai.agent.AgentTestTwinAccess.snapshot(5000, 2000);
+        MemInvestigations repo = new MemInvestigations();
+        RecoveryProposal proposal = orchestrator(s, repo, null).coordinateRecovery(com.supplygraph.adapter.ai.agent.AgentTestTwinAccess.incident(Set.of("GHOST"), 72), s);
+        assertThat(proposal.approvedIntents()).isEmpty();
+        assertThat(repo.rows).allMatch(r -> r.outcome().equals("ADVISORY"));
     }
 
     @Test
-    @DisplayName("Scenario 3: Semiconductor Manufacturing - Fab wafer shortage and cleanroom line allocation")
-    void testSemiconductorDisruptionRecovery() {
-        DisruptionIncident incident = new DisruptionIncident(
-                "INC-SEMI-FAB-003",
-                workspaceId,
-                "Photolithography Chemical Purity Alert",
-                "Batch contamination in photoresist requires immediate wafer inspection hold",
-                "SEMICONDUCTOR",
-                Set.of("NODE-MFG-PLANT"),
-                Set.of("MAT-SILICON-WAFER"),
-                96L,
-                "CRITICAL",
-                Instant.now()
-        );
+    @DisplayName("Track record counts real decisions only: nothing is scored before people have decided")
+    void trackRecordCountsDecisions() {
+        DigitalTwinSnapshot s = com.supplygraph.adapter.ai.agent.AgentTestTwinAccess.snapshot(5000, 2000);
+        MemInvestigations repo = new MemInvestigations();
+        MemOutcomes outcomes = new MemOutcomes();
+        AgentLearningService learning = new AgentLearningService(outcomes, repo);
+        WorkspaceId ws = WorkspaceId.of("WS-AGENT-TEST");
+        DisruptionIncident incident = com.supplygraph.adapter.ai.agent.AgentTestTwinAccess.incident(Set.of("SUP-A"), 72);
 
-        RecoveryProposal proposal = orchestrator.coordinateRecovery(incident, snapshot);
+        assertThat(learning.trackRecords(ws).get("INVENTORY").summary()).isEqualTo("No decisions yet");
+        orchestrator(s, repo, learning).coordinateRecovery(incident, s);
+        double completenessBefore = repo.rows.stream().filter(r -> r.role().equals("INVENTORY")).findFirst().orElseThrow().confidenceScore();
 
-        assertThat(proposal).isNotNull();
-        assertThat(proposal.incidentId()).isEqualTo("INC-SEMI-FAB-003");
-        assertThat(proposal.approvedIntents()).isNotEmpty();
-        assertThat(proposal.totalEstimatedCost()).isGreaterThan(BigDecimal.ZERO);
-    }
+        assertThat(learning.recordIncidentOutcome(ws, incident.incidentId(), false, "Human rejected the plan")).isEqualTo(4);   // only agents that proposed an action
+        assertThat(learning.trackRecords(ws).get("COORDINATOR").trials()).isZero();                                          // advisory agents are not counted
+        learning.recordIncidentOutcome(ws, incident.incidentId(), true, "accepted");
+        learning.recordIncidentOutcome(ws, incident.incidentId(), true, "accepted");
+        assertThat(learning.trackRecords(ws).get("INVENTORY").summary()).isEqualTo("Accepted 2 of 3 decisions");
 
-    @Test
-    @DisplayName("Scenario 4: Automotive Component - Tier-1 stamping die failure and expedited multimodal dispatch")
-    void testAutomotiveStampingDisruptionRecovery() {
-        DisruptionIncident incident = new DisruptionIncident(
-                "INC-AUTO-STAMP-004",
-                workspaceId,
-                "Tier-1 Press Line Die Fracture",
-                "Major tooling die fracture on 2000T stamping press halts chassis sub-assembly",
-                "AUTOMOTIVE",
-                Set.of("NODE-SUP-PORT", "NODE-MFG-PLANT"),
-                Set.of("MAT-STAMPING-STEEL"),
-                120L,
-                "HIGH",
-                Instant.now()
-        );
-
-        RecoveryProposal proposal = orchestrator.coordinateRecovery(incident, snapshot);
-
-        assertThat(proposal).isNotNull();
-        assertThat(proposal.incidentId()).isEqualTo("INC-AUTO-STAMP-004");
-        assertThat(proposal.approvedIntents()).isNotEmpty();
-        assertThat(proposal.arbitratedTradeOffs()).isNotNull();
+        repo.rows.clear();
+        orchestrator(s, repo, learning).coordinateRecovery(incident, s);
+        double completenessAfter = repo.rows.stream().filter(r -> r.role().equals("INVENTORY")).findFirst().orElseThrow().confidenceScore();
+        assertThat(completenessAfter).isEqualTo(completenessBefore);   // decisions never inflate or deflate the measured completeness
     }
 }

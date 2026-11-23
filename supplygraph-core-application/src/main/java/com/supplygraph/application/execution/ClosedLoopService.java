@@ -1,5 +1,6 @@
 package com.supplygraph.application.execution;
 
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.port.out.OutcomeRepositoryPort;
 import com.supplygraph.application.port.out.RecoveryPlanRepositoryPort;
 import com.supplygraph.application.service.OperationalEventIngestionService;
@@ -47,7 +48,7 @@ public class ClosedLoopService {
 
     public PlanOutcomeComparison comparison(String workflowId) {
         ExecutionWorkflow w = support.load(workflowId, null);
-        RecoveryPlan plan = plans.findById(RecoveryPlanId.of(w.planId())).orElseThrow(() -> new NoSuchElementException("Plan not found: " + w.planId()));
+        RecoveryPlan plan = plans.findById(RecoveryPlanId.of(w.planId())).orElseThrow(() -> new ResourceNotFoundException("Plan not found: " + w.planId()));
         return PlanOutcomeComparison.compare(expected(plan.metrics()), outcomes.findActuals(workflowId));
     }
 
@@ -77,7 +78,7 @@ public class ClosedLoopService {
 
     /** Human decision on a proposal. Approval is recorded and handed to the existing Recovery Decision Centre; no plan is auto-generated or auto-executed. */
     public ReassessmentRequest decide(String requestId, boolean approve, String rationale) {
-        ReassessmentRequest r = outcomes.findReassessment(requestId).orElseThrow(() -> new NoSuchElementException("Reassessment request not found: " + requestId));
+        ReassessmentRequest r = outcomes.findReassessment(requestId).orElseThrow(() -> new ResourceNotFoundException("Reassessment request not found: " + requestId));
         support.guard().enforceWorkspaceAndPermission(r.workspaceId(), Permission.PLAN_APPROVE);
         ReassessmentRequest decided = outcomes.saveReassessment(r.decide(approve, support.actor(), rationale));
         ExecutionWorkflow w = support.reload(r.workflowId());

@@ -1,5 +1,6 @@
 package com.supplygraph.application.security;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.port.out.UserProfileRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
 import com.supplygraph.domain.model.security.Permission;
@@ -62,7 +63,7 @@ public class UserManagementService {
         workspaceAccessGuard.enforcePermission(Permission.WORKSPACE_ADMIN);
 
         UserProfile existing = userProfileRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
+                .orElseThrow(() -> new ValidationException("User not found: " + id));
 
         UserProfile updated = existing.withRole(newRole);
         return userProfileRepository.save(updated);
@@ -72,7 +73,7 @@ public class UserManagementService {
         workspaceAccessGuard.enforcePermission(Permission.WORKSPACE_ADMIN);
 
         UserProfile existing = userProfileRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
+                .orElseThrow(() -> new ValidationException("User not found: " + id));
 
         UserProfile updated = existing.withStatus(active);
         return userProfileRepository.save(updated);

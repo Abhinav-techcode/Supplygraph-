@@ -21,10 +21,11 @@ COPY supplygraph-simulation-engine/pom.xml supplygraph-simulation-engine/
 COPY supplygraph-core-application/pom.xml supplygraph-core-application/
 COPY supplygraph-industry-ev/pom.xml supplygraph-industry-ev/
 COPY supplygraph-industry-pharma/pom.xml supplygraph-industry-pharma/
-COPY supplygraph-industry-semi/pom.xml supplygraph-industry-semi/
-COPY supplygraph-industry-auto/pom.xml supplygraph-industry-auto/
+COPY supplygraph-industry-semiconductor/pom.xml supplygraph-industry-semiconductor/
+COPY supplygraph-industry-automotive/pom.xml supplygraph-industry-automotive/
 COPY supplygraph-adapter-persistence/pom.xml supplygraph-adapter-persistence/
 COPY supplygraph-adapter-ai/pom.xml supplygraph-adapter-ai/
+COPY supplygraph-adapter-integration/pom.xml supplygraph-adapter-integration/
 COPY supplygraph-web/pom.xml supplygraph-web/
 
 RUN chmod +x ./mvnw

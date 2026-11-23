@@ -1,5 +1,6 @@
 package com.supplygraph.application.integration;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.audit.AuditGovernanceService;
 import com.supplygraph.application.port.out.DigitalTwinRepositoryPort;
 import com.supplygraph.application.port.out.ImportJobRepositoryPort;
@@ -136,7 +137,7 @@ class EnterpriseDataImportServiceTest {
                 "giant.csv",
                 "WS-TEST-01",
                 "USR-01"
-        )).isInstanceOf(IllegalArgumentException.class)
+        )).isInstanceOf(ValidationException.class)
           .hasMessageContaining("exceeds maximum permitted threshold");
     }
 }

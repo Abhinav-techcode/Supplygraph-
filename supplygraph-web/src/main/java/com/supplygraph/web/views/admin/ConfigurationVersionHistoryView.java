@@ -27,8 +27,11 @@ public class ConfigurationVersionHistoryView extends PlatformAdminViewBase {
         super("Configuration Version History", "Audited immutable revision log of industry pack policies with deterministic rollback capability.");
         this.policyService = policyService;
 
-        cbIndustry.setItems("EV_BATTERY", "SEMICONDUCTOR", "AEROSPACE", "PHARMACEUTICALS");
-        cbIndustry.setValue("EV_BATTERY");
+        // Offer the industries this workspace really has policies for; fall back to the known packs when there are none yet.
+        java.util.List<String> industries = policyService.findAll(currentWorkspaceId()).stream().map(IndustryPolicyRecord::industryCode).distinct().sorted().toList();
+        if (industries.isEmpty()) industries = java.util.List.of("AUTOMOTIVE", "EV_BATTERY", "SEMICONDUCTOR", "PHARMACEUTICALS");
+        cbIndustry.setItems(industries);
+        cbIndustry.setValue(industries.getFirst());
         cbIndustry.addValueChangeListener(e -> loadHistory(e.getValue()));
 
         HorizontalLayout filterBar = new HorizontalLayout(cbIndustry);
@@ -39,7 +42,7 @@ public class ConfigurationVersionHistoryView extends PlatformAdminViewBase {
         configureGrid();
         add(historyGrid);
 
-        loadHistory("EV_BATTERY");
+        loadHistory(cbIndustry.getValue());
     }
 
     private void configureGrid() {

@@ -237,8 +237,7 @@ public class RecoveryDecisionCentreView extends VerticalLayout {
         metricsBox.add(
                 new Span("Estimated Cost: $" + m.totalCost().toPlainString()),
                 new Span("Recovery Duration: " + String.format("%.1f", m.recoveryDurationDays()) + " Days"),
-                new Span("Service Level: " + String.format("%.1f%%", m.serviceLevelImpactPercentage())),
-                new Span("Risk Score: " + String.format("%.2f", m.operationalRiskScore()))
+                new Span("Covers requirement: " + String.format("%.1f%%", m.serviceLevelImpactPercentage()))
         );
 
         // 4. Actions Grid (Mini)

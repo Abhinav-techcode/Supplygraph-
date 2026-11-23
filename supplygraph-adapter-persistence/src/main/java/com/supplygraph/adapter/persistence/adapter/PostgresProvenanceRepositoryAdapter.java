@@ -1,5 +1,6 @@
 package com.supplygraph.adapter.persistence.adapter;
 
+import com.supplygraph.domain.error.StorageFailureException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.supplygraph.adapter.persistence.entity.ProvenanceRecordJpaEntity;
@@ -85,7 +86,7 @@ public class PostgresProvenanceRepositoryAdapter implements ProvenanceRepository
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (Exception e) {
-            return "{}";
+            throw new StorageFailureException("Stored data could not be processed (PostgresProvenanceRepositoryAdapter)", e);
         }
     }
 
@@ -94,7 +95,7 @@ public class PostgresProvenanceRepositoryAdapter implements ProvenanceRepository
             if (json == null || json.isBlank()) return null;
             return objectMapper.readValue(json, ref);
         } catch (Exception e) {
-            return null;
+            throw new StorageFailureException("Stored data could not be processed (PostgresProvenanceRepositoryAdapter)", e);
         }
     }
 }

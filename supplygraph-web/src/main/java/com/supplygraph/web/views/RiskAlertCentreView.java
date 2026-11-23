@@ -40,7 +40,7 @@ public class RiskAlertCentreView extends VerticalLayout {
         H2 title = new H2("Operational Risk & Alert Centre");
         Paragraph desc = new Paragraph("Correlated, deduplicated risk findings retaining factual evidence, trigger event provenance, and digital twin version.");
 
-        workspaceFilter = new TextField("Workspace ID", "WS-AUTO-01");
+        workspaceFilter = new TextField("Workspace ID", "WS-AUTO-01", "");
         workspaceFilter.addValueChangeListener(e -> refreshAlerts());
 
         Button refreshBtn = new Button("Refresh Alerts", e -> refreshAlerts());

@@ -1,5 +1,6 @@
 package com.supplygraph.web.views.integration;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.connector.ConnectorRegistryService;
 import com.supplygraph.domain.model.connector.*;
 import com.supplygraph.web.layout.MainLayout;
@@ -56,7 +57,7 @@ public class ConnectorConfigurationView extends IntegrationViewBase {
 
     private void save() {
         Connector c = selector.getValue();
-        if (c == null) { UiSupport.error(new IllegalArgumentException("Select a connector first")); return; }
+        if (c == null) { UiSupport.error(new ValidationException("Select a connector first")); return; }
         try {
             URI uri = baseUri.isEmpty() ? null : URI.create(baseUri.getValue().trim());
             CredentialReference ref = credential.isEmpty() ? null : new CredentialReference(credential.getValue().trim());
@@ -64,7 +65,7 @@ public class ConnectorConfigurationView extends IntegrationViewBase {
             ConnectorConfiguration cfg = new ConnectorConfiguration(uri, ref, allowed, timeout.getValue() == null ? 5000 : timeout.getValue(),
                     maxBytes.getValue() == null ? 1_048_576 : maxBytes.getValue(), retries.getValue() == null ? 3 : retries.getValue());
             if (UiSupport.run("Configuration saved", () -> service.configure(c.id(), cfg))) reload();
-        } catch (IllegalArgumentException e) {
+        } catch (com.supplygraph.domain.error.ValidationException | IllegalArgumentException e) {
             UiSupport.error(e);
         }
     }

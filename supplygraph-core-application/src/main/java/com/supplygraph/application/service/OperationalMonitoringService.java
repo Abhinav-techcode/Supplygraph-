@@ -118,7 +118,10 @@ public class OperationalMonitoringService {
                             Map.of("delayHours", delayHoursStr, "threshold", rule.getThreshold().toString())
                     ));
                 }
-            } catch (Exception ignored) {}
+            } catch (RuntimeException ex) {
+                // one malformed event/rule must not stop the others, but it must never vanish silently
+                log.warn("Monitoring rule {} could not be evaluated for event {}: {}", rule.getId(), event.getEventId(), ex.toString());
+            }
         }
 
         // 2. Capacity Drop Threshold
@@ -141,7 +144,10 @@ public class OperationalMonitoringService {
                             Map.of("dropPercentage", dropPctStr, "threshold", rule.getThreshold().toString())
                     ));
                 }
-            } catch (Exception ignored) {}
+            } catch (RuntimeException ex) {
+                // one malformed event/rule must not stop the others, but it must never vanish silently
+                log.warn("Monitoring rule {} could not be evaluated for event {}: {}", rule.getId(), event.getEventId(), ex.toString());
+            }
         }
 
         // 3. Inventory Safety Stock Breach
@@ -164,7 +170,10 @@ public class OperationalMonitoringService {
                             Map.of("currentBalance", balanceStr, "safetyThreshold", rule.getThreshold().toString())
                     ));
                 }
-            } catch (Exception ignored) {}
+            } catch (RuntimeException ex) {
+                // one malformed event/rule must not stop the others, but it must never vanish silently
+                log.warn("Monitoring rule {} could not be evaluated for event {}: {}", rule.getId(), event.getEventId(), ex.toString());
+            }
         }
 
         // 4. Quality Hold Incident

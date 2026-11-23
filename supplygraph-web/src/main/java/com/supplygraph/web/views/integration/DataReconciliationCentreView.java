@@ -1,5 +1,6 @@
 package com.supplygraph.web.views.integration;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.connector.SyncReconciliationService;
 import com.supplygraph.domain.model.sync.*;
 import com.supplygraph.web.layout.MainLayout;
@@ -46,7 +47,7 @@ public class DataReconciliationCentreView extends IntegrationViewBase {
         field.setValue("*");
         ComboBox<FieldAuthority> authority = new ComboBox<>("Authority", FieldAuthority.values());
         Button save = new Button("Save override", e -> {
-            if (entity.isEmpty() || field.isEmpty() || authority.isEmpty()) { UiSupport.error(new IllegalArgumentException("Entity, field and authority are required")); return; }
+            if (entity.isEmpty() || field.isEmpty() || authority.isEmpty()) { UiSupport.error(new ValidationException("Entity, field and authority are required")); return; }
             UiSupport.run("Field authority override saved", () -> sync.setPolicy(UiSupport.workspace(), entity.getValue(), field.getValue().trim(), authority.getValue()));
         });
         body(new H3("Open conflicts"), empty, open, rationale, new H3("Field authority override"), new HorizontalLayout(entity, field, authority, save),

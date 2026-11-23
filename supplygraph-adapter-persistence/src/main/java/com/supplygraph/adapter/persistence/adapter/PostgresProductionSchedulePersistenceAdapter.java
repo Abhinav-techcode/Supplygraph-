@@ -1,5 +1,6 @@
 package com.supplygraph.adapter.persistence.adapter;
 
+import com.supplygraph.domain.error.StorageFailureException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,7 +48,7 @@ public class PostgresProductionSchedulePersistenceAdapter implements ProductionS
 
             repository.save(entity);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to persist production schedule: " + schedule.id().value(), e);
+            throw new StorageFailureException("Failed to persist production schedule: " + schedule.id().value(), e);
         }
     }
 
@@ -79,7 +80,7 @@ public class PostgresProductionSchedulePersistenceAdapter implements ProductionS
                     entity.getGeneratedAt()
             );
         } catch (Exception e) {
-            throw new RuntimeException("Failed to deserialize production schedule entity: " + entity.getId(), e);
+            throw new StorageFailureException("Failed to deserialize production schedule entity: " + entity.getId(), e);
         }
     }
 }

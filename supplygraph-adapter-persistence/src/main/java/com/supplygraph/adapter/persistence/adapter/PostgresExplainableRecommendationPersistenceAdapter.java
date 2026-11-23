@@ -1,5 +1,6 @@
 package com.supplygraph.adapter.persistence.adapter;
 
+import com.supplygraph.domain.error.StorageFailureException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.supplygraph.adapter.persistence.entity.ExplainableRecommendationJpaEntity;
@@ -105,7 +106,7 @@ public class PostgresExplainableRecommendationPersistenceAdapter implements Expl
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (Exception e) {
-            return "[]";
+            throw new StorageFailureException("Stored data could not be processed (PostgresExplainableRecommendationPersistenceAdapter)", e);
         }
     }
 
@@ -114,7 +115,7 @@ public class PostgresExplainableRecommendationPersistenceAdapter implements Expl
         try {
             return objectMapper.readValue(json, typeRef);
         } catch (Exception e) {
-            return defaultVal;
+            throw new StorageFailureException("Stored data could not be processed (PostgresExplainableRecommendationPersistenceAdapter)", e);
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.supplygraph.adapter.persistence.adapter;
 
+import com.supplygraph.domain.error.StorageFailureException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,7 +61,7 @@ public class PostgresDemandForecastPersistenceAdapter implements DemandForecastR
 
             repository.save(entity);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to persist demand forecast: " + forecast.id().value(), e);
+            throw new StorageFailureException("Failed to persist demand forecast: " + forecast.id().value(), e);
         }
     }
 
@@ -99,7 +100,7 @@ public class PostgresDemandForecastPersistenceAdapter implements DemandForecastR
                     entity.getGeneratedAt()
             );
         } catch (Exception e) {
-            throw new RuntimeException("Failed to deserialize demand forecast entity: " + entity.getId(), e);
+            throw new StorageFailureException("Failed to deserialize demand forecast entity: " + entity.getId(), e);
         }
     }
 }

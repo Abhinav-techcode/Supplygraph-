@@ -1,5 +1,6 @@
 package com.supplygraph.adapter.persistence.adapter;
 
+import com.supplygraph.domain.error.StorageFailureException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.supplygraph.adapter.persistence.entity.RecoveryPlanJpaEntity;
@@ -119,7 +120,7 @@ public class PostgresRecoveryPlanRepositoryAdapter implements RecoveryPlanReposi
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (Exception e) {
-            return null;
+            throw new StorageFailureException("Stored data could not be processed (PostgresRecoveryPlanRepositoryAdapter)", e);
         }
     }
 
@@ -128,7 +129,7 @@ public class PostgresRecoveryPlanRepositoryAdapter implements RecoveryPlanReposi
         try {
             return objectMapper.readValue(json, typeRef);
         } catch (Exception e) {
-            return List.of();
+            throw new StorageFailureException("Stored data could not be processed (PostgresRecoveryPlanRepositoryAdapter)", e);
         }
     }
 
@@ -137,7 +138,7 @@ public class PostgresRecoveryPlanRepositoryAdapter implements RecoveryPlanReposi
         try {
             return objectMapper.readValue(json, PlanComparisonMetrics.class);
         } catch (Exception e) {
-            return PlanComparisonMetrics.defaultMetrics();
+            throw new StorageFailureException("Stored data could not be processed (PostgresRecoveryPlanRepositoryAdapter)", e);
         }
     }
 
@@ -146,7 +147,7 @@ public class PostgresRecoveryPlanRepositoryAdapter implements RecoveryPlanReposi
         try {
             return objectMapper.readValue(json, PlanApproval.class);
         } catch (Exception e) {
-            return null;
+            throw new StorageFailureException("Stored data could not be processed (PostgresRecoveryPlanRepositoryAdapter)", e);
         }
     }
 }

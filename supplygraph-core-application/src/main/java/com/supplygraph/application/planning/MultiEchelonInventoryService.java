@@ -1,5 +1,6 @@
 package com.supplygraph.application.planning;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.planning.port.out.InventoryPlanRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
 import com.supplygraph.domain.model.planning.EchelonInventoryPosition;
@@ -32,7 +33,7 @@ public class MultiEchelonInventoryService {
             double fixedOrderingCost
     ) {
         if (meanDailyDemand < 0 || stdDevDailyDemand < 0 || leadTimeDays < 1) {
-            throw new IllegalArgumentException("Demand and lead time parameters must be non-negative");
+            throw new ValidationException("Demand and lead time parameters must be non-negative");
         }
 
         double z = serviceLevel.getZScore();

@@ -35,13 +35,13 @@ public class ProductionManagerWorkspaceView extends WorkspaceViewBase {
         List<FiniteProductionSchedule> schedules = productionService.listSchedules(ws);
         List<QualityIncident8D> incidents = qualityService.listIncidents(ws);
 
-        double avgUtil = schedules.stream().mapToDouble(FiniteProductionSchedule::averageCapacityUtilization).average().orElse(85.0);
+        double avgUtil = schedules.stream().mapToDouble(FiniteProductionSchedule::averageCapacityUtilization).average().orElse(Double.NaN);
 
         HorizontalLayout kpiRow = new HorizontalLayout();
         kpiRow.setWidthFull();
 
         kpiRow.add(createKpiCard("Finite Machine Runs", String.valueOf(schedules.size()), "Scheduled job campaigns", "primary"));
-        kpiRow.add(createKpiCard("Avg Capacity Utilization", String.format("%.1f%%", avgUtil), "Scheduled machine capacity", "success"));
+        kpiRow.add(createKpiCard("Avg Capacity Utilization", Double.isNaN(avgUtil) ? "No schedules yet" : String.format("%.1f%%", avgUtil), "Scheduled machine capacity", "success"));
         kpiRow.add(createKpiCard("Line Yield Efficiency", "No data", "No production-yield source connected", "warning"));
         kpiRow.add(createKpiCard("Quality Holds", String.valueOf(incidents.stream().filter(i -> !i.closed()).count()), "Active 8D shop floor alerts", "error"));
 

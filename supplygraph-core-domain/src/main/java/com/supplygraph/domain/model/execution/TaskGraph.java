@@ -4,7 +4,7 @@ import java.util.*;
 
 /** Dependency graph over tasks: validation, cycle detection (Kahn), runnable-set evaluation and failure propagation. */
 public final class TaskGraph {
-    public static final class CycleException extends RuntimeException {
+    public static final class CycleException extends com.supplygraph.domain.error.BusinessRuleException {
         private final Set<String> members;
         public CycleException(Set<String> members) { super("Task dependency cycle involving: " + new TreeSet<>(members)); this.members = Set.copyOf(members); }
         public Set<String> members() { return members; }

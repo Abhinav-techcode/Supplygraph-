@@ -1,5 +1,7 @@
 package com.supplygraph.application.security;
 
+import com.supplygraph.domain.error.SecurityViolationException;
+import com.supplygraph.domain.error.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -55,19 +57,19 @@ public class SanitizationAndSafetyGuard {
         Objects.requireNonNull(content, "File content cannot be null");
 
         if (content.length > MAX_FILE_SIZE_BYTES) {
-            throw new IllegalArgumentException(String.format(
+            throw new ValidationException(String.format(
                     "Uploaded file size (%d bytes) exceeds maximum allowable limit of %d bytes (10MB)",
                     content.length, MAX_FILE_SIZE_BYTES));
         }
 
         int dotIndex = filename.lastIndexOf('.');
         if (dotIndex == -1 || dotIndex == filename.length() - 1) {
-            throw new IllegalArgumentException("Uploaded file lacks a valid extension: " + filename);
+            throw new ValidationException("Uploaded file lacks a valid extension: " + filename);
         }
 
         String extension = filename.substring(dotIndex + 1).toLowerCase();
         if (!ALLOWED_FILE_EXTENSIONS.contains(extension)) {
-            throw new IllegalArgumentException(String.format(
+            throw new ValidationException(String.format(
                     "File extension .%s is not permitted. Allowed extensions: %s",
                     extension, ALLOWED_FILE_EXTENSIONS));
         }
@@ -84,7 +86,7 @@ public class SanitizationAndSafetyGuard {
         for (Pattern pattern : PROMPT_INJECTION_PATTERNS) {
             if (pattern.matcher(promptText).find()) {
                 log.warn("Zero-trust prompt boundary triggered: suspicious pattern detected in prompt: [{}]", pattern.pattern());
-                throw new SecurityException("Prompt rejected: Detected attempt to manipulate agent security boundaries");
+                throw new SecurityViolationException("Prompt rejected: Detected attempt to manipulate agent security boundaries");
             }
         }
     }

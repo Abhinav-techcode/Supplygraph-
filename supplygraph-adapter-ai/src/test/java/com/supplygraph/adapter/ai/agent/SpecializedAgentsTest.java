@@ -1,222 +1,165 @@
 package com.supplygraph.adapter.ai.agent;
 
 import com.supplygraph.application.agent.*;
-import com.supplygraph.application.tool.AgentTool;
-import com.supplygraph.application.tool.ToolExecutionBoundary;
-import com.supplygraph.application.tool.builtin.QueryBomTool;
-import com.supplygraph.application.tool.builtin.QueryCapacityTool;
-import com.supplygraph.application.tool.builtin.QueryInventoryTool;
-import com.supplygraph.application.tool.builtin.QueryLaneStatusTool;
-import com.supplygraph.concurguard.model.ActionIntent;
-import com.supplygraph.concurguard.model.IntentId;
-import com.supplygraph.concurguard.replanning.ReplanningScope;
-import com.supplygraph.domain.model.WorkspaceId;
-import com.supplygraph.domain.model.bom.*;
-import com.supplygraph.domain.model.capacity.*;
-import com.supplygraph.domain.model.common.Quantity;
-import com.supplygraph.domain.model.common.UnitOfMeasure;
-import com.supplygraph.domain.model.graph.*;
-import com.supplygraph.domain.model.inventory.BalanceCategory;
-import com.supplygraph.domain.model.inventory.InventoryAccountId;
+import com.supplygraph.concurguard.model.ActionType;
 import com.supplygraph.domain.model.twin.DigitalTwinSnapshot;
-import com.supplygraph.domain.model.twin.StateVersion;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("Specialized Bounded Agents Contract Tests")
+@DisplayName("Specialised agents compute proposals from the digital twin")
 class SpecializedAgentsTest {
 
-    private WorkspaceId workspaceId;
-    private DigitalTwinSnapshot snapshot;
-    private DisruptionIncident incident;
-    private AgentInvestigationContext context;
-    private ToolExecutionBoundary toolBoundary;
+    private static AgentProposal run(InsightAgent agent, DigitalTwinSnapshot s, Set<String> hitNodes, Map<String, Object> params) {
+        return agent.investigate(AgentTestTwin.context(s, AgentTestTwin.incident(hitNodes, 72), params), AgentTestTwin.boundary(s));
+    }
 
-    @BeforeEach
-    void setUp() {
-        workspaceId = WorkspaceId.of("WS-AGENT-TEST");
+    private static AgentProposal run(InsightAgent agent, DigitalTwinSnapshot s) { return run(agent, s, Set.of("SUP-A"), Map.of()); }
 
-        // Setup BOM
-        Material raw = new Material(MaterialId.of("RAW-LITHIUM"), "RM-01", "Raw Lithium", MaterialType.RAW_MATERIAL, UnitOfMeasure.KILOGRAM);
-        Material cathode = new Material(MaterialId.of("CATHODE-PRECURSOR"), "CP-01", "Cathode Precursor", MaterialType.INTERMEDIATE, UnitOfMeasure.KILOGRAM);
-        BomEntry entry = BomEntry.of(cathode.getId(), raw.getId(), Quantity.of(2, UnitOfMeasure.KILOGRAM), BigDecimal.valueOf(0.01), 1);
-        BillOfMaterials bom = new BillOfMaterials(List.of(raw, cathode), List.of(entry));
-
-        // Setup Graph
-        NodeId supNode = NodeId.of("SUP-CHILE");
-        NodeId mfgNode = NodeId.of("MFG-LEIPZIG");
-        Supplier supplier = new Supplier(supNode, "Chile Lithium Mining", "Santiago", true, 1, Set.of("ISO14001"), 0.15);
-        ManufacturingSite mfg = new ManufacturingSite(mfgNode, "Gigafactory Leipzig", "Leipzig", true, Set.of("LINE-1"), "ISO-8", 100);
-        TransportationLane lane = new TransportationLane(
-                EdgeId.of("LANE-CHILE-LEIPZIG"), supNode, mfgNode, TransportMode.OCEAN, Duration.ofDays(21), BigDecimal.valueOf(1.80), true
-        );
-        SupplyChainGraph graph = new SupplyChainGraph(List.of(supplier, mfg), List.of(lane));
-
-        // Setup Inventory
-        InventoryAccountId acc = InventoryAccountId.of(mfgNode, raw.getId(), BalanceCategory.ON_HAND_AVAILABLE);
-        Map<InventoryAccountId, Quantity> balances = Map.of(acc, Quantity.of(10000, UnitOfMeasure.KILOGRAM));
-
-        snapshot = new DigitalTwinSnapshot(workspaceId, StateVersion.of(1), Instant.now(), graph, bom, balances);
-
-        // Setup Capacity
-        ResourceId resId = ResourceId.of("LINE-MFG-LEIPZIG");
-        CapacityWindow horizon = CapacityWindow.of(Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(365)));
-        ResourceCapacity capacity = ResourceCapacity.of(Quantity.of(100, UnitOfMeasure.KILOGRAM), OperatingSchedule.continuous(horizon));
-        Map<ResourceId, CapacityCalendar> calendars = Map.of(resId, new CapacityCalendar(resId, capacity));
-
-        incident = new DisruptionIncident(
-                "INC-EV-01",
-                workspaceId,
-                "Lithium Raw Material Shipment Delayed",
-                "Port congestion at Antofagasta delays raw lithium vessel by 14 days",
-                "EV_BATTERY",
-                Set.of("SUP-CHILE", "MFG-LEIPZIG"),
-                Set.of("RAW-LITHIUM"),
-                336L,
-                "HIGH",
-                Instant.now()
-        );
-
-        context = new AgentInvestigationContext(incident, snapshot, Map.of());
-
-        List<AgentTool> tools = List.of(
-                new QueryInventoryTool(() -> snapshot),
-                new QueryBomTool(() -> snapshot),
-                new QueryLaneStatusTool(() -> snapshot),
-                new QueryCapacityTool(() -> calendars)
-        );
-
-        toolBoundary = new ToolExecutionBoundary(workspaceId, tools);
+    @Test
+    @DisplayName("Inventory: releases the largest holder outside the disruption zone, sized to the requirement, with an inventory claim")
+    void inventoryUsesRealStockHolder() {
+        AgentProposal p = run(new InventoryAgent(), AgentTestTwin.snapshot(5000, 2000));
+        assertThat(p.intents()).hasSize(1);
+        var intent = p.intents().get(0);
+        assertThat(intent.actionType()).isEqualTo(ActionType.EMERGENCY_BUFFER_DISPATCH);
+        assertThat(intent.targetEntityId()).isEqualTo("PLANT");
+        assertThat(intent.location()).isEqualTo("HUB");
+        assertThat(intent.quantity().amount().longValue()).isEqualTo(720);   // 10 units/h x 24 x 3 days
+        assertThat(intent.resourceClaims()).hasSize(1);
+        assertThat(intent.resourceClaims().get(0).resourceIdentity().facilityId()).isEqualTo("HUB");
+        assertThat(String.join(" ", p.evidence())).contains("HUB", "720", "100%");
     }
 
     @Test
-    @DisplayName("CoordinatorAgent: investigates incident and supports replanning")
-    void testCoordinatorAgent() {
-        CoordinatorAgent agent = new CoordinatorAgent();
-        assertThat(agent.role()).isEqualTo(AgentRole.COORDINATOR);
-
-        AgentProposal proposal = agent.investigate(context, toolBoundary);
-        assertThat(proposal.agentRole()).isEqualTo(AgentRole.COORDINATOR);
-        assertThat(proposal.intents()).hasSize(1);
-        assertThat(proposal.evidence()).isNotEmpty();
-        assertThat(proposal.confidence()).isGreaterThan(0.8);
-
-        ReplanningScope scope = new ReplanningScope(Set.of(), Set.of(proposal.intents().get(0).id()), List.of(), 1);
-        AgentProposal replanned = agent.replan(context, scope, toolBoundary);
-        assertThat(replanned.intents()).hasSize(1);
-        assertThat(replanned.intents().get(0).id().value()).contains("REV-1");
+    @DisplayName("Inventory: proposal changes when the twin changes (less stock -> smaller release, lower coverage)")
+    void inventoryOutputDependsOnTwin() {
+        AgentProposal rich = run(new InventoryAgent(), AgentTestTwin.snapshot(5000, 2000));
+        AgentProposal poor = run(new InventoryAgent(), AgentTestTwin.snapshot(100, 2000));
+        assertThat(poor.intents().get(0).quantity().amount().longValue()).isEqualTo(100);
+        assertThat(poor.intents().get(0).riskScore()).isGreaterThan(rich.intents().get(0).riskScore());
+        assertThat(String.join(" ", poor.evidence())).contains("14%");
     }
 
     @Test
-    @DisplayName("RiskIntelligenceAgent: evaluates external disruption and reroutes freight")
-    void testRiskIntelligenceAgent() {
-        RiskIntelligenceAgent agent = new RiskIntelligenceAgent();
-        assertThat(agent.role()).isEqualTo(AgentRole.RISK_INTELLIGENCE);
-
-        AgentProposal proposal = agent.investigate(context, toolBoundary);
-        assertThat(proposal.intents()).hasSize(1);
-        assertThat(proposal.evidence()).anyMatch(e -> e.contains("Severe weather or disruption"));
-
-        ReplanningScope scope = new ReplanningScope(Set.of(), Set.of(proposal.intents().get(0).id()), List.of(), 1);
-        AgentProposal replanned = agent.replan(context, scope, toolBoundary);
-        assertThat(replanned.intents().get(0).targetEntityId()).contains("LANE-SEC-AIR");
+    @DisplayName("Inventory: with no stock outside the disruption zone it proposes nothing and says why")
+    void inventoryDoesNotInventStock() {
+        AgentProposal p = run(new InventoryAgent(), AgentTestTwin.snapshot(0, 2000));
+        assertThat(p.intents()).isEmpty();
+        assertThat(String.join(" ", p.evidence())).contains("No stock");
     }
 
     @Test
-    @DisplayName("InventoryAgent: asserts quantity allocation claims under safe buffer limits")
-    void testInventoryAgent() {
+    @DisplayName("Procurement: picks the alternative supplier that can still reach the site, never the disrupted one")
+    void procurementPicksReachableSupplier() {
+        AgentProposal p = run(new ProcurementAgent(), AgentTestTwin.snapshot(5000, 2000));
+        assertThat(p.intents()).hasSize(1);
+        assertThat(p.intents().get(0).actionType()).isEqualTo(ActionType.EXPEDITE_PURCHASE_ORDER);
+        assertThat(p.intents().get(0).targetEntityId()).isEqualTo("SUP-B");
+        assertThat(String.join(" ", p.evidence())).contains("SUP-B > HUB > PLANT", "60.0 h");
+    }
+
+    @Test
+    @DisplayName("Logistics: reroutes along an undisrupted route and claims its first lane")
+    void logisticsRoutesAroundDisruption() {
+        AgentProposal p = run(new LogisticsAgent(), AgentTestTwin.snapshot(5000, 2000));
+        assertThat(p.intents()).hasSize(1);
+        var claim = p.intents().get(0).resourceClaims().get(0);
+        assertThat(p.intents().get(0).actionType()).isEqualTo(ActionType.REROUTE_SHIPMENT);
+        assertThat(claim.resourceIdentity().canonicalId()).isEqualTo("HUB->PLANT");
+        assertThat(String.join(" ", p.evidence())).contains("HUB > PLANT", "12.0 h");
+    }
+
+    @Test
+    @DisplayName("Production: time to survive comes from the site's own stock; less stock means higher risk")
+    void productionRiskFollowsStock() {
+        AgentProposal ok = run(new ProductionAgent(), AgentTestTwin.snapshot(5000, 2000));
+        AgentProposal low = run(new ProductionAgent(), AgentTestTwin.snapshot(5000, 100));
+        assertThat(String.join(" ", ok.evidence())).contains("8.3 days");
+        assertThat(String.join(" ", low.evidence())).contains("0.4 days");
+        assertThat(low.intents().get(0).riskScore()).isGreaterThan(ok.intents().get(0).riskScore());
+    }
+
+    @Test
+    @DisplayName("Quality: quarantines stock only when a disrupted manufacturing site actually holds it")
+    void qualityQuarantinesOnlyRealStock() {
+        DigitalTwinSnapshot s = AgentTestTwin.snapshot(5000, 2000);
+        assertThat(run(new QualityAgent(), s, Set.of("SUP-A"), Map.of()).intents()).isEmpty();
+        AgentProposal plantHit = run(new QualityAgent(), s, Set.of("PLANT"), Map.of());
+        assertThat(plantHit.intents()).hasSize(1);
+        assertThat(plantHit.intents().get(0).actionType()).isEqualTo(ActionType.QUARANTINE_LOT);
+        assertThat(plantHit.intents().get(0).quantity().amount().longValue()).isEqualTo(2000);
+    }
+
+    @Test
+    @DisplayName("Coordinator and Risk are advisory and quote real numbers from the twin")
+    void advisoryAgentsQuoteTwinFacts() {
+        DigitalTwinSnapshot s = AgentTestTwin.snapshot(5000, 2000);
+        AgentProposal coordinator = run(new CoordinatorAgent(), s);
+        AgentProposal risk = run(new RiskIntelligenceAgent(), s);
+        assertThat(coordinator.intents()).isEmpty();
+        assertThat(String.join(" ", coordinator.evidence())).contains("PLANT", "8.3 days", "PROD-1");
+        assertThat(risk.intents()).isEmpty();
+        assertThat(String.join(" ", risk.evidence())).contains("1 outbound lane", "No downstream facility depends exclusively");
+    }
+
+    @Test
+    @DisplayName("Risk: flags a facility whose only inbound lanes come from the disrupted zone")
+    void riskFindsSinglePointOfFailure() {
+        DigitalTwinSnapshot s = AgentTestTwin.snapshot(5000, 2000);
+        AgentProposal p = run(new RiskIntelligenceAgent(), s, Set.of("SUP-A", "HUB"), Map.of());
+        assertThat(String.join(" ", p.evidence())).contains("Single points of failure").contains("PLANT").doesNotContain("No downstream facility depends exclusively");
+    }
+
+    @Test
+    @DisplayName("Recovery planning: reserves capacity only for the shortfall the other stock cannot cover")
+    void recoveryPlanningReservesShortfall() {
+        assertThat(run(new RecoveryPlanningAgent(), AgentTestTwin.snapshot(5000, 2000)).intents()).isEmpty();
+        AgentProposal p = run(new RecoveryPlanningAgent(), AgentTestTwin.snapshot(200, 2000));
+        assertThat(p.intents()).hasSize(1);
+        assertThat(p.intents().get(0).actionType()).isEqualTo(ActionType.RESERVE_CAPACITY);
+        assertThat(p.intents().get(0).quantity().amount().longValue()).isEqualTo(520);   // 720 required - 200 reachable
+    }
+
+    @Test
+    @DisplayName("The reported figure is data completeness: a measured ratio that changes with the twin, never with an assumed track record")
+    void reportedFigureIsMeasuredCompleteness() {
+        AgentProposal full = run(new InventoryAgent(), AgentTestTwin.snapshot(5000, 2000));
+        assertThat(full.confidence()).isEqualTo(1.0);                                   // every fact the agent needs was found
+        assertThat(String.join(" ", full.evidence())).contains("Data completeness: 100%").doesNotContain("reliability");
+        AgentProposal noRoute = run(new InventoryAgent(), AgentTestTwin.snapshot(5000, 2000), Set.of("SUP-A", "HUB"), Map.of());
+        assertThat(noRoute.confidence()).isLessThan(1.0);                               // fewer facts found -> lower, and explained
+        // an old calibration parameter must not influence the number
+        AgentProposal ignoresOld = run(new InventoryAgent(), AgentTestTwin.snapshot(5000, 2000), Set.of("SUP-A"), Map.of("calibration.INVENTORY", 0.1));
+        assertThat(ignoresOld.confidence()).isEqualTo(full.confidence());
+    }
+
+    @Test
+    @DisplayName("No invention: an incident that touches nothing in the twin yields no actions and zero confidence in every agent")
+    void unknownIncidentProducesNoActions() {
+        DigitalTwinSnapshot s = AgentTestTwin.snapshot(5000, 2000);
+        List<InsightAgent> agents = List.of(new CoordinatorAgent(), new RiskIntelligenceAgent(), new InventoryAgent(), new ProcurementAgent(), new LogisticsAgent(), new ProductionAgent(), new QualityAgent(), new RecoveryPlanningAgent());
+        for (InsightAgent a : agents) {
+            AgentProposal p = run(a, s, Set.of("NOT-IN-TWIN"), Map.of());
+            assertThat(p.intents()).as(a.role().name()).isEmpty();
+            assertThat(p.confidence()).as(a.role().name()).isLessThanOrEqualTo(0.5);
+        }
+    }
+
+    @Test
+    @DisplayName("Replanning prefers the next-best option instead of repeating the same one")
+    void replanningChangesTheChoice() {
+        DigitalTwinSnapshot s = AgentTestTwin.snapshot(5000, 2000);
         InventoryAgent agent = new InventoryAgent();
-        assertThat(agent.role()).isEqualTo(AgentRole.INVENTORY);
-
-        AgentProposal proposal = agent.investigate(context, toolBoundary);
-        assertThat(proposal.intents()).hasSize(1);
-        ActionIntent intent = proposal.intents().get(0);
-        assertThat(intent.resourceClaims()).isNotEmpty();
-
-        ReplanningScope scope = new ReplanningScope(Set.of(), Set.of(intent.id()), List.of(), 1);
-        AgentProposal replanned = agent.replan(context, scope, toolBoundary);
-        assertThat(replanned.intents().get(0).resourceClaims().get(0).claimedQuantity().amount()).isEqualTo(BigDecimal.valueOf(250).setScale(4));
-    }
-
-    @Test
-    @DisplayName("ProcurementAgent: secures vendor quotas and expedites purchase orders")
-    void testProcurementAgent() {
-        ProcurementAgent agent = new ProcurementAgent();
-        assertThat(agent.role()).isEqualTo(AgentRole.PROCUREMENT);
-
-        AgentProposal proposal = agent.investigate(context, toolBoundary);
-        assertThat(proposal.intents()).hasSize(1);
-
-        ReplanningScope scope = new ReplanningScope(Set.of(), Set.of(proposal.intents().get(0).id()), List.of(), 1);
-        AgentProposal replanned = agent.replan(context, scope, toolBoundary);
-        assertThat(replanned.intents().get(0).targetEntityId()).contains("SUPPLIER-ALT");
-    }
-
-    @Test
-    @DisplayName("LogisticsAgent: analyzes freight corridors and dispatches multimodal transport")
-    void testLogisticsAgent() {
-        LogisticsAgent agent = new LogisticsAgent();
-        assertThat(agent.role()).isEqualTo(AgentRole.LOGISTICS);
-
-        AgentProposal proposal = agent.investigate(context, toolBoundary);
-        assertThat(proposal.intents()).hasSize(1);
-
-        ReplanningScope scope = new ReplanningScope(Set.of(), Set.of(proposal.intents().get(0).id()), List.of(), 1);
-        AgentProposal replanned = agent.replan(context, scope, toolBoundary);
-        assertThat(replanned.intents().get(0).targetEntityId()).contains("EXP");
-    }
-
-    @Test
-    @DisplayName("ProductionAgent: asserts manufacturing line capacity claims")
-    void testProductionAgent() {
-        ProductionAgent agent = new ProductionAgent();
-        assertThat(agent.role()).isEqualTo(AgentRole.PRODUCTION);
-
-        AgentProposal proposal = agent.investigate(context, toolBoundary);
-        assertThat(proposal.intents()).hasSize(1);
-        assertThat(proposal.intents().get(0).capacityClaim()).isNotNull();
-
-        ReplanningScope scope = new ReplanningScope(Set.of(), Set.of(proposal.intents().get(0).id()), List.of(), 1);
-        AgentProposal replanned = agent.replan(context, scope, toolBoundary);
-        assertThat(replanned.intents().get(0).capacityClaim().resourceId().value()).contains("BACKUP");
-    }
-
-    @Test
-    @DisplayName("QualityAgent: enforces regulatory compliance and inspection holds")
-    void testQualityAgent() {
-        QualityAgent agent = new QualityAgent();
-        assertThat(agent.role()).isEqualTo(AgentRole.QUALITY);
-
-        AgentProposal proposal = agent.investigate(context, toolBoundary);
-        assertThat(proposal.intents()).hasSize(1);
-        assertThat(proposal.confidence()).isGreaterThan(0.95);
-
-        ReplanningScope scope = new ReplanningScope(Set.of(), Set.of(proposal.intents().get(0).id()), List.of(), 1);
-        AgentProposal replanned = agent.replan(context, scope, toolBoundary);
-        assertThat(replanned.intents().get(0).targetEntityId()).contains("EXP");
-    }
-
-    @Test
-    @DisplayName("RecoveryPlanningAgent: calculates pareto trade-offs across objectives")
-    void testRecoveryPlanningAgent() {
-        RecoveryPlanningAgent agent = new RecoveryPlanningAgent();
-        assertThat(agent.role()).isEqualTo(AgentRole.RECOVERY_PLANNING);
-
-        AgentProposal proposal = agent.investigate(context, toolBoundary);
-        assertThat(proposal.intents()).hasSize(1);
-
-        ReplanningScope scope = new ReplanningScope(Set.of(), Set.of(proposal.intents().get(0).id()), List.of(), 1);
-        AgentProposal replanned = agent.replan(context, scope, toolBoundary);
-        assertThat(replanned.confidence()).isGreaterThanOrEqualTo(0.95);
+        var ctx = AgentTestTwin.context(s, AgentTestTwin.incident(Set.of("SUP-A"), 72), Map.of());
+        AgentProposal first = agent.investigate(ctx, AgentTestTwin.boundary(s));
+        AgentProposal again = agent.replan(ctx, new com.supplygraph.concurguard.replanning.ReplanningScope(Set.of(), Set.of(first.intents().get(0).id()), List.of(), 1), AgentTestTwin.boundary(s));
+        assertThat(again.intents().get(0).id()).isNotEqualTo(first.intents().get(0).id());
+        assertThat(again.intents().get(0).timeWindow().start()).isAfter(first.intents().get(0).timeWindow().start());
     }
 }

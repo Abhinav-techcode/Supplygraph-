@@ -1,5 +1,6 @@
 package com.supplygraph.application.connector;
 
+import com.supplygraph.domain.error.InvalidStateException;
 import com.supplygraph.application.audit.AuditGovernanceService;
 import com.supplygraph.application.port.out.ConnectorExecutionRepositoryPort;
 import com.supplygraph.application.port.out.ConnectorRepositoryPort;
@@ -73,7 +74,7 @@ class ConnectorExecutionServiceTest {
     @Test void permanentFailureIsNeverRetried() {
         next = ConnectorCallResult.failure(ErrorCategory.AUTHENTICATION, "denied", false);
         ConnectorExecution e = service.synchronize(connector.id());
-        assertThatThrownBy(() -> service.retry(e.id())).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> service.retry(e.id())).isInstanceOf(InvalidStateException.class);
     }
 
     @Test void retryBudgetIsBounded() {

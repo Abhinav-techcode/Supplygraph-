@@ -1,5 +1,6 @@
 package com.supplygraph.application.connector;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.outbox.DeliveryException;
 import com.supplygraph.application.outbox.InboxService;
 import com.supplygraph.application.outbox.OutboxHandler;
@@ -38,7 +39,7 @@ public class WebhookEventHandler implements OutboxHandler {
         List<ExternalRecord> records;
         try {
             records = inspector.parse(event.payload().getBytes(StandardCharsets.UTF_8));
-        } catch (IllegalArgumentException e) {
+        } catch (ValidationException e) {
             throw new DeliveryException("Payload no longer parses: " + e.getMessage(), false);
         }
         inbox.processOnce(event.workspaceId(), "webhook-handler", event.idempotencyKey(), () -> sync.apply(c, records, event.correlationId()));

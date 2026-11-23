@@ -1,5 +1,6 @@
 package com.supplygraph.application.platform;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.platform.port.out.IndustryPolicyRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
 import com.supplygraph.domain.model.platform.IndustryPolicyId;
@@ -50,7 +51,7 @@ public class IndustryPolicyLifecycleService {
 
     public IndustryPolicyRecord validatePolicy(IndustryPolicyId id) {
         IndustryPolicyRecord record = policyRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Industry policy not found: " + id.value()));
+                .orElseThrow(() -> new ValidationException("Industry policy not found: " + id.value()));
 
         if (record.policyJson().isBlank()) {
             throw new IllegalStateException("Policy payload cannot be blank for validation");
@@ -63,7 +64,7 @@ public class IndustryPolicyLifecycleService {
 
     public IndustryPolicyRecord activatePolicy(IndustryPolicyId id) {
         IndustryPolicyRecord record = policyRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Industry policy not found: " + id.value()));
+                .orElseThrow(() -> new ValidationException("Industry policy not found: " + id.value()));
 
         // Deprecate any currently active policies for the same workspace & industry
         List<IndustryPolicyRecord> existing = policyRepository.findByWorkspaceIdAndIndustryCode(record.workspaceId(), record.industryCode());
@@ -80,7 +81,7 @@ public class IndustryPolicyLifecycleService {
 
     public IndustryPolicyRecord deprecatePolicy(IndustryPolicyId id) {
         IndustryPolicyRecord record = policyRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Industry policy not found: " + id.value()));
+                .orElseThrow(() -> new ValidationException("Industry policy not found: " + id.value()));
 
         IndustryPolicyRecord deprecated = record.withStatus(PolicyStatus.DEPRECATED);
         policyRepository.save(deprecated);
@@ -89,7 +90,7 @@ public class IndustryPolicyLifecycleService {
 
     public IndustryPolicyRecord rollbackPolicy(IndustryPolicyId targetPolicyId) {
         IndustryPolicyRecord target = policyRepository.findById(targetPolicyId)
-                .orElseThrow(() -> new IllegalArgumentException("Target policy not found: " + targetPolicyId.value()));
+                .orElseThrow(() -> new ValidationException("Target policy not found: " + targetPolicyId.value()));
 
         List<IndustryPolicyRecord> existing = policyRepository.findByWorkspaceIdAndIndustryCode(target.workspaceId(), target.industryCode());
         int nextVersion = existing.stream()
@@ -127,9 +128,9 @@ public class IndustryPolicyLifecycleService {
 
     public PolicyComparisonResult comparePolicies(IndustryPolicyId idA, IndustryPolicyId idB) {
         IndustryPolicyRecord a = policyRepository.findById(idA)
-                .orElseThrow(() -> new IllegalArgumentException("Policy A not found: " + idA.value()));
+                .orElseThrow(() -> new ValidationException("Policy A not found: " + idA.value()));
         IndustryPolicyRecord b = policyRepository.findById(idB)
-                .orElseThrow(() -> new IllegalArgumentException("Policy B not found: " + idB.value()));
+                .orElseThrow(() -> new ValidationException("Policy B not found: " + idB.value()));
 
         boolean identical = a.policyJson().trim().equals(b.policyJson().trim());
         int lenDiff = Math.abs(a.policyJson().length() - b.policyJson().length());

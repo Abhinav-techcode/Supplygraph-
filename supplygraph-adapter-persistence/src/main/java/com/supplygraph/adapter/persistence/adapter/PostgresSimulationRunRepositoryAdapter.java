@@ -1,5 +1,6 @@
 package com.supplygraph.adapter.persistence.adapter;
 
+import com.supplygraph.domain.error.StorageFailureException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.supplygraph.adapter.persistence.entity.SimulationRunJpaEntity;
@@ -106,7 +107,7 @@ public class PostgresSimulationRunRepositoryAdapter implements SimulationRunRepo
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (Exception e) {
-            return "[]";
+            throw new StorageFailureException("Stored data could not be processed (PostgresSimulationRunRepositoryAdapter)", e);
         }
     }
 
@@ -115,7 +116,7 @@ public class PostgresSimulationRunRepositoryAdapter implements SimulationRunRepo
         try {
             return objectMapper.readValue(json, new TypeReference<List<String>>() {});
         } catch (Exception e) {
-            return List.of();
+            throw new StorageFailureException("Stored data could not be processed (PostgresSimulationRunRepositoryAdapter)", e);
         }
     }
 }

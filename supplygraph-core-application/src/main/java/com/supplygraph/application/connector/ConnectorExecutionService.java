@@ -1,5 +1,8 @@
 package com.supplygraph.application.connector;
 
+import com.supplygraph.domain.error.InvalidStateException;
+import com.supplygraph.domain.error.ConflictException;
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.audit.AuditGovernanceService;
 import com.supplygraph.application.port.out.ConnectorExecutionRepositoryPort;
 import com.supplygraph.application.port.out.ConnectorRepositoryPort;
@@ -35,7 +38,7 @@ public class ConnectorExecutionService {
         this.guard = guard;
         this.audit = audit;
         for (ConnectorAdapter a : adapterList) {
-            if (adapters.put(a.adapterType(), a) != null) throw new IllegalStateException("Duplicate adapter type " + a.adapterType());
+            if (adapters.put(a.adapterType(), a) != null) throw new ConflictException("Duplicate adapter type " + a.adapterType());
         }
     }
 
@@ -45,19 +48,19 @@ public class ConnectorExecutionService {
 
     /** Retries a retryable failure once, within the connector's retry budget. Unknown/permanent outcomes are never retried. */
     public ConnectorExecution retry(String executionId) {
-        ConnectorExecution prior = executions.findById(executionId).orElseThrow(() -> new NoSuchElementException("Execution not found: " + executionId));
-        Connector c = connectors.findById(prior.connectorId()).orElseThrow(() -> new NoSuchElementException("Connector not found"));
+        ConnectorExecution prior = executions.findById(executionId).orElseThrow(() -> new ResourceNotFoundException("Execution not found: " + executionId));
+        Connector c = connectors.findById(prior.connectorId()).orElseThrow(() -> new ResourceNotFoundException("Connector not found"));
         guard.enforceWorkspaceAndPermission(c.workspaceId(), Permission.CONNECTOR_EXECUTE);
         int budget = c.configuration() != null ? c.configuration().maxRetries() : 0;
-        if (!prior.canRetry(budget)) throw new IllegalStateException("Execution is not eligible for retry (status " + prior.status() + ", attempt " + prior.attempt() + ", budget " + budget + ")");
-        if (executions.hasRetry(executionId)) throw new IllegalStateException("Execution already retried");
+        if (!prior.canRetry(budget)) throw new InvalidStateException("Execution is not eligible for retry (status " + prior.status() + ", attempt " + prior.attempt() + ", budget " + budget + ")");
+        if (executions.hasRetry(executionId)) throw new ConflictException("Execution already retried");
         ConnectorExecution result = run(c, prior.operation(), ExecutionTrigger.RETRY, prior.attempt() + 1, executionId, prior.correlationId());
         audit(c, AuditAction.CONNECTOR_EXECUTION_RETRIED, result, "Retry of " + executionId);
         return result;
     }
 
     public List<ConnectorExecution> history(ConnectorId id, int limit) {
-        Connector c = connectors.findById(id).orElseThrow(() -> new NoSuchElementException("Connector not found: " + id));
+        Connector c = connectors.findById(id).orElseThrow(() -> new ResourceNotFoundException("Connector not found: " + id));
         guard.enforceWorkspaceAccess(c.workspaceId());
         return executions.findByConnector(id, limit);
     }
@@ -68,7 +71,7 @@ public class ConnectorExecutionService {
     }
 
     private ConnectorExecution run(ConnectorId id, ConnectorOperation op, ExecutionTrigger trigger, int attempt, String retryOf) {
-        Connector c = connectors.findById(id).orElseThrow(() -> new NoSuchElementException("Connector not found: " + id));
+        Connector c = connectors.findById(id).orElseThrow(() -> new ResourceNotFoundException("Connector not found: " + id));
         guard.enforceWorkspaceAndPermission(c.workspaceId(), Permission.CONNECTOR_EXECUTE);
         ConnectorExecution result = run(c, op, trigger, attempt, retryOf, null);
         audit(c, AuditAction.CONNECTOR_EXECUTED, result, op + " -> " + result.status());

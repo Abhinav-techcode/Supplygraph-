@@ -74,7 +74,7 @@ public class EventIngestionHistoryView extends VerticalLayout {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Import CSV Operational Events");
 
-        TextField wsField = new TextField("Workspace ID", "WS-AUTO-01");
+        TextField wsField = new TextField("Workspace ID", "WS-AUTO-01", "");
         TextArea csvArea = new TextArea("CSV Payload Content");
         csvArea.setWidthFull();
         csvArea.setMinHeight("200px");
@@ -107,7 +107,7 @@ public class EventIngestionHistoryView extends VerticalLayout {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Simulate Manual Operational Event");
 
-        TextField wsField = new TextField("Workspace ID", "WS-AUTO-01");
+        TextField wsField = new TextField("Workspace ID", "WS-AUTO-01", "");
         ComboBox<EventType> typeCombo = new ComboBox<>("Event Type", EventType.values());
         typeCombo.setValue(EventType.SUPPLIER_DELIVERY_DELAYED);
 

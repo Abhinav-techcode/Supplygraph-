@@ -1,5 +1,6 @@
 package com.supplygraph.application.service;
 
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.port.out.DigitalTwinRepositoryPort;
 import com.supplygraph.application.port.out.DisruptionRepositoryPort;
 import com.supplygraph.application.port.out.OptimizationRunRepositoryPort;
@@ -40,7 +41,7 @@ public class OptimizationApplicationService {
     @Transactional
     public OptimizationResult solve(WorkspaceId workspaceId, DisruptionId disruptionId, RecoveryOptimizationProblem problem) {
         Disruption disruption = disruptionRepository.findById(disruptionId)
-                .orElseThrow(() -> new NoSuchElementException("Disruption not found: " + disruptionId.value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Disruption not found: " + disruptionId.value()));
 
         OptimizationResult result = optimizer.solve(problem);
         optimizationRunRepository.save(result, workspaceId, disruptionId);
@@ -63,9 +64,9 @@ public class OptimizationApplicationService {
             int timeLimitSeconds
     ) {
         com.supplygraph.domain.model.twin.DigitalTwinState state = digitalTwinRepository.findByWorkspaceId(workspaceId)
-                .orElseThrow(() -> new NoSuchElementException("Digital twin not found: " + workspaceId.value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Digital twin not found: " + workspaceId.value()));
         Disruption disruption = disruptionRepository.findById(disruptionId)
-                .orElseThrow(() -> new NoSuchElementException("Disruption not found: " + disruptionId.value()));
+                .orElseThrow(() -> new ResourceNotFoundException("Disruption not found: " + disruptionId.value()));
         com.supplygraph.domain.model.twin.DigitalTwinSnapshot snapshot = state.createSnapshot();
 
         RecoveryOptimizationProblem problem = new RecoveryOptimizationProblem(

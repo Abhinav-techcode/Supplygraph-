@@ -1,9 +1,10 @@
 package com.supplygraph.domain.model.security;
 
+import com.supplygraph.domain.error.AccessDeniedException;
 /**
  * Thrown when an actor attempts an operation without holding the requisite permission.
  */
-public class UnauthorizedOperationException extends RuntimeException {
+public class UnauthorizedOperationException extends AccessDeniedException {
 
     private static final long serialVersionUID = 1L;
 

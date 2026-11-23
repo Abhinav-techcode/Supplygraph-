@@ -1,5 +1,6 @@
 package com.supplygraph.application.platform;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.platform.port.out.ApiKeyRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
 import com.supplygraph.domain.model.platform.ApiKeyId;
@@ -53,7 +54,7 @@ public class ApiDeveloperCentreService {
 
     public ApiKeyRecord revokeApiKey(ApiKeyId id) {
         ApiKeyRecord record = apiKeyRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("API Key not found: " + id.value()));
+                .orElseThrow(() -> new ValidationException("API Key not found: " + id.value()));
 
         ApiKeyRecord revoked = record.withActive(false);
         apiKeyRepository.save(revoked);

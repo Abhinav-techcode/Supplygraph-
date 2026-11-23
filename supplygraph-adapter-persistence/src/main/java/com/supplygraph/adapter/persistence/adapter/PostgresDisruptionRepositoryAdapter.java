@@ -1,5 +1,6 @@
 package com.supplygraph.adapter.persistence.adapter;
 
+import com.supplygraph.domain.error.StorageFailureException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.supplygraph.adapter.persistence.entity.DisruptionJpaEntity;
@@ -121,7 +122,7 @@ public class PostgresDisruptionRepositoryAdapter implements DisruptionRepository
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (Exception e) {
-            return "[]";
+            throw new StorageFailureException("Stored data could not be processed (PostgresDisruptionRepositoryAdapter)", e);
         }
     }
 
@@ -130,7 +131,7 @@ public class PostgresDisruptionRepositoryAdapter implements DisruptionRepository
         try {
             return objectMapper.readValue(json, new TypeReference<List<String>>() {});
         } catch (Exception e) {
-            return List.of();
+            throw new StorageFailureException("Stored data could not be processed (PostgresDisruptionRepositoryAdapter)", e);
         }
     }
 
@@ -139,7 +140,7 @@ public class PostgresDisruptionRepositoryAdapter implements DisruptionRepository
         try {
             return objectMapper.readValue(json, DisruptionImpactParameters.class);
         } catch (Exception e) {
-            return DisruptionImpactParameters.empty();
+            throw new StorageFailureException("Stored data could not be processed (PostgresDisruptionRepositoryAdapter)", e);
         }
     }
 }

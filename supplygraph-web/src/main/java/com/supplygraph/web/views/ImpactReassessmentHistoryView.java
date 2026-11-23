@@ -35,7 +35,7 @@ public class ImpactReassessmentHistoryView extends VerticalLayout {
         H2 title = new H2("Continuous Impact Reassessment History");
         Paragraph desc = new Paragraph("Subgraphs re-evaluated upon operational changes, highlighting preserved vs invalidated scopes.");
 
-        workspaceFilter = new TextField("Workspace ID", "WS-AUTO-01");
+        workspaceFilter = new TextField("Workspace ID", "WS-AUTO-01", "");
         workspaceFilter.addValueChangeListener(e -> refreshGrid());
 
         grid = new Grid<>();

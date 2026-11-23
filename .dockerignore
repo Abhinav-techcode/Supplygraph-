@@ -1,0 +1,12 @@
+**/target/
+**/node_modules/
+.git/
+.idea/
+.vscode/
+.m2-demo/
+.env
+.env.local
+*.zip
+docs/demo/
+**/*.log
+**/.DS_Store

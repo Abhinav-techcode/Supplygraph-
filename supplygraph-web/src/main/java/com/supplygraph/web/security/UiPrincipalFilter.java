@@ -18,9 +18,9 @@ import java.util.Set;
 
 /**
  * Establishes the thread-local {@link SecurityContext} for Vaadin requests.
- * IMPORTANT: SupplyGraph has no login system yet. The principal is a configured operator (role + workspace) held in the HTTP session;
- * an optional demo role switcher (supplygraph.ui.demo-role-switcher=true) lets one browser session act as different roles to
- * exercise separation of duties. This is NOT authentication and must not be exposed on an untrusted network.
+ * The principal is the signed-in user (see LoginView / AuthenticationService) held in the HTTP session. With supplygraph.auth.required=false
+ * (development only) a configured role is used instead. The optional demo role switcher (supplygraph.ui.demo-role-switcher=true) changes the role
+ * of the current session for demos and must never be enabled on an untrusted network.
  * All services still enforce permissions and workspace isolation server-side against this principal.
  */
 @Component
@@ -29,11 +29,14 @@ public class UiPrincipalFilter extends OncePerRequestFilter {
     public static final String WORKSPACE = "WS-AUTO-01";
 
     private final UserRole defaultRole;
+    private final boolean authRequired;
     private final com.supplygraph.application.port.out.UserProfileRepositoryPort users;
 
     public UiPrincipalFilter(@Value("${supplygraph.ui.default-role:SUPPLY_CHAIN_MANAGER}") String defaultRole,
+                             @Value("${supplygraph.auth.required:true}") boolean authRequired,
                              com.supplygraph.application.port.out.UserProfileRepositoryPort users) {
         this.defaultRole = UserRole.valueOf(defaultRole);
+        this.authRequired = authRequired;
         this.users = users;
     }
 
@@ -60,9 +63,13 @@ public class UiPrincipalFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         HttpSession session = request.getSession(true);
         UserProfile principal = (UserProfile) session.getAttribute(SESSION_ATTRIBUTE);
-        if (principal == null) {
+        if (principal == null && !authRequired) {   // development mode only: act as the configured role without signing in
             principal = principalFor(defaultRole);
             session.setAttribute(SESSION_ATTRIBUTE, principal);
+        }
+        if (principal == null) {   // not signed in: no principal at all, the route guard sends the user to the welcome / sign-in page
+            chain.doFilter(request, response);
+            return;
         }
         String flag = "supplygraph.ui.registered." + principal.id().value();
         if (session.getAttribute(flag) == null) {

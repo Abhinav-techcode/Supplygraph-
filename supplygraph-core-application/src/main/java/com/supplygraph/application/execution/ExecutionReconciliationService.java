@@ -1,5 +1,8 @@
 package com.supplygraph.application.execution;
 
+import com.supplygraph.domain.error.InvalidStateException;
+import com.supplygraph.domain.error.ValidationException;
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.port.out.ExecutionAttemptRepositoryPort;
 import com.supplygraph.application.port.out.ExecutionEvidenceRepositoryPort;
 import com.supplygraph.domain.model.audit.AuditAction;
@@ -28,12 +31,12 @@ public class ExecutionReconciliationService {
     public ExecutionWorkflow reconcile(String taskId, Resolution resolution, String rationale, Map<String, String> observed) {
         String workflowId = ExecutionSupport.workflowIdOf(taskId);
         support.load(workflowId, Permission.EXECUTION_RECONCILE);
-        if (rationale == null || rationale.isBlank()) throw new IllegalArgumentException("A reconciliation rationale is required");
+        if (rationale == null || rationale.isBlank()) throw new ValidationException("A reconciliation rationale is required");
         return support.withLock(workflowId, () -> {
             ExecutionWorkflow w = support.reload(workflowId);
-            ExecutionTask t = w.task(taskId).orElseThrow(() -> new NoSuchElementException("Task not found: " + taskId));
+            ExecutionTask t = w.task(taskId).orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
             if (t.status() != TaskStatus.RECONCILIATION_REQUIRED && t.status() != TaskStatus.AWAITING_ACK)
-                throw new IllegalStateException("Task " + taskId + " is " + t.status() + "; only RECONCILIATION_REQUIRED or AWAITING_ACK tasks can be reconciled");
+                throw new InvalidStateException("Task " + taskId + " is " + t.status() + "; only RECONCILIATION_REQUIRED or AWAITING_ACK tasks can be reconciled");
             boolean simulated = w.simulated() || attempts.attemptsByTask(taskId).stream().anyMatch(ExecutionAttempt::simulated);
             ExecutionEvidence.Kind kind = resolution == Resolution.CONFIRMED_NOT_EXECUTED ? ExecutionEvidence.Kind.MANUAL_NOT_EXECUTED : ExecutionEvidence.Kind.MANUAL_CONFIRMATION;
             ExecutionEvidence ev = evidence.save(ExecutionEvidence.of(workflowId, taskId, kind, simulated, "manual:" + support.actor(), resolution.name(),
@@ -41,7 +44,7 @@ public class ExecutionReconciliationService {
             ExecutionTask next = switch (resolution) {
                 case CONFIRMED_COMPLETED -> t.status() == TaskStatus.AWAITING_ACK || t.status() == TaskStatus.RECONCILIATION_REQUIRED ? t.complete(t.externalReference(), simulated) : t;
                 case CONFIRMED_NOT_EXECUTED -> {
-                    if (t.status() != TaskStatus.RECONCILIATION_REQUIRED) throw new IllegalStateException("Only unknown outcomes can be reopened");
+                    if (t.status() != TaskStatus.RECONCILIATION_REQUIRED) throw new InvalidStateException("Only unknown outcomes can be reopened");
                     yield t.reopenAfterReconciliation();
                 }
                 case CONFIRMED_FAILED -> t.failPermanently("Confirmed failed: " + rationale);
@@ -58,12 +61,12 @@ public class ExecutionReconciliationService {
     public ExecutionWorkflow recordObservation(String taskId, Map<String, String> observed, String source) {
         String workflowId = ExecutionSupport.workflowIdOf(taskId);
         support.load(workflowId, Permission.EXECUTION_RECONCILE);
-        if (source == null || source.isBlank()) throw new IllegalArgumentException("An observation source is required");
+        if (source == null || source.isBlank()) throw new ValidationException("An observation source is required");
         return support.withLock(workflowId, () -> {
             ExecutionWorkflow w = support.reload(workflowId);
-            ExecutionTask t = w.task(taskId).orElseThrow(() -> new NoSuchElementException("Task not found: " + taskId));
+            ExecutionTask t = w.task(taskId).orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
             if (t.status() != TaskStatus.AWAITING_ACK && t.status() != TaskStatus.RECONCILIATION_REQUIRED)
-                throw new IllegalStateException("Task " + taskId + " is " + t.status() + "; observations apply to AWAITING_ACK or RECONCILIATION_REQUIRED tasks");
+                throw new InvalidStateException("Task " + taskId + " is " + t.status() + "; observations apply to AWAITING_ACK or RECONCILIATION_REQUIRED tasks");
             boolean simulated = w.simulated();
             List<String> mismatches = mismatches(t.expectedOutcome(), observed);
             ExecutionEvidence ev = evidence.save(ExecutionEvidence.of(workflowId, taskId, ExecutionEvidence.Kind.OBSERVED_STATE, simulated, source, null,

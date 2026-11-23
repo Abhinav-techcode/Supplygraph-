@@ -1,5 +1,6 @@
 package com.supplygraph.web.init;
 
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.security.SecurityContext;
 import com.supplygraph.application.security.WorkspaceAccessGuard;
 import com.supplygraph.application.service.DisruptionApplicationService;
@@ -39,16 +40,16 @@ public class DemoScenarioService {
         for (RecoveryPlan p : existing) if (p.status() == RecoveryPlanStatus.APPROVED && !alreadyConverted.contains(p.id().value())) return p;
         if (existing.isEmpty()) {   // same call the Decision Centre's "Generate Candidate Alternatives" button makes
             var disruption = disruptions.listDisruptions(ws).stream().findFirst()
-                    .orElseThrow(() -> new NoSuchElementException("No disruption exists in this workspace to plan a recovery for."));
+                    .orElseThrow(() -> new ResourceNotFoundException("No disruption exists in this workspace to plan a recovery for."));
             planning.generateDefaultAlternatives(disruption.id(), ws);
         }
         final List<RecoveryPlan> plans = planning.listPlans(ws);
         RecoveryPlan candidate = plans.stream().filter(p -> p.status() == RecoveryPlanStatus.PENDING_APPROVAL).findFirst()
                 .or(() -> plans.stream().filter(p -> p.status() == RecoveryPlanStatus.DRAFT || p.status() == RecoveryPlanStatus.SIMULATED || p.status() == RecoveryPlanStatus.VALIDATED).findFirst())
-                .orElseThrow(() -> new NoSuchElementException("No candidate recovery plan is available. Generate alternatives in the Decision Centre first."));
+                .orElseThrow(() -> new ResourceNotFoundException("No candidate recovery plan is available. Generate alternatives in the Decision Centre first."));
         try {
             return validateAndApprove(candidate, user);
-        } catch (IllegalStateException stale) {
+        } catch (com.supplygraph.domain.error.ConflictException | IllegalStateException stale) {
             if (stale.getMessage() == null || !stale.getMessage().startsWith("Stale plan")) throw stale;
             // The seeded candidates were built on an older twin version. Do what an operator would: generate fresh alternatives, then validate + approve one.
             var disruption = disruptions.listDisruptions(ws).stream().findFirst().orElseThrow(() -> stale);

@@ -40,9 +40,13 @@ public class SensitivityAnalysisService {
         Objects.requireNonNull(workspaceId, "workspaceId cannot be null");
         Objects.requireNonNull(alternativeId, "alternativeId cannot be null");
 
-        BigDecimal cost = baselineCost != null ? baselineCost : BigDecimal.valueOf(50000.00);
-        double days = baselineRecoveryDays > 0 ? baselineRecoveryDays : 10.0;
-        double service = baselineServiceLevelPct > 0 ? baselineServiceLevelPct : 95.0;
+        // No invented baseline: the caller must supply the plan's own figures.
+        if (baselineCost == null || baselineCost.signum() <= 0) throw new com.supplygraph.domain.error.ValidationException("This plan has no modelled cost (cost is not known for it), so a cost sensitivity cannot be computed. Choose another plan.");
+        if (baselineRecoveryDays <= 0) throw new com.supplygraph.domain.error.ValidationException("A baseline recovery time above zero is required.");
+        if (baselineServiceLevelPct <= 0) throw new com.supplygraph.domain.error.ValidationException("A baseline service level above zero is required.");
+        BigDecimal cost = baselineCost;
+        double days = baselineRecoveryDays;
+        double service = baselineServiceLevelPct;
 
         String reportId = "SEN-RPT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         List<SensitivityTrialResult> trials = new ArrayList<>();

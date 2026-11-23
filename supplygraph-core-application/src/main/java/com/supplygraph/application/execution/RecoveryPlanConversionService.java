@@ -1,5 +1,8 @@
 package com.supplygraph.application.execution;
 
+import com.supplygraph.domain.error.InvalidStateException;
+import com.supplygraph.domain.error.ConflictException;
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.port.out.*;
 import com.supplygraph.application.service.RecoveryPlanningApplicationService;
 import com.supplygraph.domain.model.audit.AuditAction;
@@ -44,17 +47,17 @@ public class RecoveryPlanConversionService {
     }
 
     public ExecutionWorkflow convert(String planId) {
-        RecoveryPlan plan = plans.findById(RecoveryPlanId.of(planId)).orElseThrow(() -> new NoSuchElementException("Recovery plan not found: " + planId));
+        RecoveryPlan plan = plans.findById(RecoveryPlanId.of(planId)).orElseThrow(() -> new ResourceNotFoundException("Recovery plan not found: " + planId));
         support.guard().enforceWorkspaceAndPermission(plan.workspaceId(), Permission.EXECUTION_CREATE);
         UserProfile creator = support.user();
 
         // 1-2. approved + approval record
         if (plan.status() != RecoveryPlanStatus.APPROVED || plan.approval() == null || !"APPROVED".equals(plan.approval().decision())) {
-            throw new IllegalStateException("Only an APPROVED recovery plan can be converted (status: " + plan.status() + ")");
+            throw new InvalidStateException("Only an APPROVED recovery plan can be converted (status: " + plan.status() + ")");
         }
         for (ExecutionWorkflow existing : workflows.findByPlan(plan.workspaceId(), planId)) {
             if (!existing.status().isTerminal() && existing.status() != WorkflowStatus.BLOCKED) {
-                throw new IllegalStateException("An active execution workflow already exists for plan " + planId + ": " + existing.id());
+                throw new ConflictException("An active execution workflow already exists for plan " + planId + ": " + existing.id());
             }
         }
 

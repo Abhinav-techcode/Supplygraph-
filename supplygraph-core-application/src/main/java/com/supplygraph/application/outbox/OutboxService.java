@@ -1,5 +1,8 @@
 package com.supplygraph.application.outbox;
 
+import com.supplygraph.domain.error.ConflictException;
+import com.supplygraph.domain.error.ValidationException;
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.audit.AuditGovernanceService;
 import com.supplygraph.application.port.out.OutboxRepositoryPort;
 import com.supplygraph.application.security.SecurityContext;
@@ -37,7 +40,7 @@ public class OutboxService {
         this.guard = guard;
         this.audit = audit;
         for (OutboxHandler h : handlerList) {
-            if (handlers.put(h.eventType(), h) != null) throw new IllegalStateException("Duplicate outbox handler for " + h.eventType());
+            if (handlers.put(h.eventType(), h) != null) throw new ConflictException("Duplicate outbox handler for " + h.eventType());
         }
     }
 
@@ -72,9 +75,9 @@ public class OutboxService {
 
     /** Replays a dead-lettered event. Requires EVENT_REPLAY in the event's workspace; audited. */
     public OutboxEvent replay(String eventId, String rationale) {
-        OutboxEvent event = repository.findById(eventId).orElseThrow(() -> new NoSuchElementException("Outbox event not found: " + eventId));
+        OutboxEvent event = repository.findById(eventId).orElseThrow(() -> new ResourceNotFoundException("Outbox event not found: " + eventId));
         guard.enforceWorkspaceAndPermission(event.workspaceId(), Permission.EVENT_REPLAY);
-        if (rationale == null || rationale.isBlank()) throw new IllegalArgumentException("A replay rationale is required");
+        if (rationale == null || rationale.isBlank()) throw new ValidationException("A replay rationale is required");
         OutboxEvent replayed = repository.save(event.replay(Instant.now()));
         audit.logAction(SecurityContext.getCurrentUser().id(), event.workspaceId(), AuditAction.EVENT_REPLAYED, eventId,
                 OutboxStatus.DEAD_LETTER.name(), OutboxStatus.PENDING.name(), rationale, null);

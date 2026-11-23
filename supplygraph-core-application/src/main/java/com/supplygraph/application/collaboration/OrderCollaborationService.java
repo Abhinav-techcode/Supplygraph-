@@ -1,5 +1,6 @@
 package com.supplygraph.application.collaboration;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.collaboration.port.out.OrderCollaborationRepositoryPort;
 import com.supplygraph.domain.model.WorkspaceId;
 import com.supplygraph.domain.model.bom.MaterialId;
@@ -57,7 +58,7 @@ public class OrderCollaborationService {
             LocalDate confirmedPromisedDate
     ) {
         PoCollaborationRecord po = orderRepository.findPoById(poId)
-                .orElseThrow(() -> new IllegalArgumentException("PO not found: " + poId));
+                .orElseThrow(() -> new ValidationException("PO not found: " + poId));
 
         PoCollaborationRecord acknowledged = po.withStatus(PoStatus.ACKNOWLEDGED, confirmedPromisedDate);
         orderRepository.savePo(acknowledged);
@@ -73,7 +74,7 @@ public class OrderCollaborationService {
             LocalDate estimatedArrivalDate
     ) {
         PoCollaborationRecord po = orderRepository.findPoById(poId)
-                .orElseThrow(() -> new IllegalArgumentException("PO not found: " + poId));
+                .orElseThrow(() -> new ValidationException("PO not found: " + poId));
 
         AdvanceShippingNotice asn = new AdvanceShippingNotice(
                 AdvanceShippingNoticeId.generate(),

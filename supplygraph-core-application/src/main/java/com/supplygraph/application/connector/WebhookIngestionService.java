@@ -1,5 +1,6 @@
 package com.supplygraph.application.connector;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.outbox.InboxService;
 import com.supplygraph.application.outbox.OutboxService;
 import com.supplygraph.application.port.out.ConnectorExecutionRepositoryPort;
@@ -61,7 +62,7 @@ public class WebhookIngestionService {
         RecordPayloadInspector.Inspection inspection;
         try {
             inspection = inspector.inspect(body);
-        } catch (IllegalArgumentException e) {
+        } catch (ValidationException e) {
             executions.save(run.fail(ErrorCategory.INVALID_RESPONSE, "Payload malformed", false));
             return Outcome.REJECTED;
         }

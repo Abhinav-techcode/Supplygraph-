@@ -100,7 +100,7 @@ public class ExplainableRecommendationCentreView extends VerticalLayout {
         evidenceGrid.setItems(rec.evidenceList());
         evidenceGrid.addColumn(DecisionEvidence::title).setHeader("Signal Title").setAutoWidth(true);
         evidenceGrid.addColumn(DecisionEvidence::source).setHeader("Data Source").setAutoWidth(true);
-        evidenceGrid.addColumn(e -> (int) (e.confidenceScore() * 100) + "%").setHeader("Confidence").setAutoWidth(true);
+        evidenceGrid.addColumn(e -> e.confidenceScore() < 0 ? "not measured" : (int) (e.confidenceScore() * 100) + "%").setHeader("Measured confidence").setAutoWidth(true);
         evidenceGrid.addColumn(DecisionEvidence::summary).setHeader("Summary").setAutoWidth(true);
 
         // Constraints

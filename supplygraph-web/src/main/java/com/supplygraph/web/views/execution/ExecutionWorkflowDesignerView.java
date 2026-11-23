@@ -1,5 +1,6 @@
 package com.supplygraph.web.views.execution;
 
+import com.supplygraph.domain.error.ValidationException;
 import com.supplygraph.application.execution.ExecutionQueryService;
 import com.supplygraph.application.execution.RecoveryPlanConversionService;
 import com.supplygraph.application.execution.WorkflowPlanner;
@@ -45,7 +46,7 @@ public class ExecutionWorkflowDesignerView extends ExecutionViewBase {
         preview.setSizeFull();
         Button create = new Button("Create workflow from plan", e -> {
             RecoveryPlan p = planBox.getValue();
-            if (p == null) { UiSupport.error(new IllegalArgumentException("Select a plan first")); return; }
+            if (p == null) { UiSupport.error(new ValidationException("Select a plan first")); return; }
             ExecutionWorkflow w = UiSupport.call(() -> conversion.convert(p.id().value()), null);
             if (w != null) summary.setText("Workflow " + w.id() + " is " + w.status() + (w.statusReason() != null ? ": " + w.statusReason() : ". Go to Execution Approvals."));
         });

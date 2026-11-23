@@ -1,5 +1,7 @@
 package com.supplygraph.application.service;
 
+import com.supplygraph.domain.error.ConflictException;
+import com.supplygraph.domain.error.ResourceNotFoundException;
 import com.supplygraph.application.port.in.DigitalTwinUseCase;
 import com.supplygraph.application.port.out.DigitalTwinRepositoryPort;
 import com.supplygraph.application.port.out.InventoryLedgerRepositoryPort;
@@ -40,7 +42,7 @@ public class DigitalTwinApplicationService implements DigitalTwinUseCase {
     @Transactional
     public DigitalTwinState createDigitalTwin(WorkspaceId workspaceId, SupplyChainGraph graph, BillOfMaterials bom) {
         if (digitalTwinRepository.existsByWorkspaceId(workspaceId)) {
-            throw new IllegalStateException("Digital twin already exists for workspace: " + workspaceId);
+            throw new ConflictException("Digital twin already exists for workspace: " + workspaceId);
         }
         DigitalTwinState state = new DigitalTwinState(workspaceId, StateVersion.initial(), graph, bom);
         digitalTwinRepository.save(state);
@@ -51,7 +53,7 @@ public class DigitalTwinApplicationService implements DigitalTwinUseCase {
     @Transactional
     public boolean recordInventoryTransaction(WorkspaceId workspaceId, InventoryTransaction transaction, DomainEvent triggerEvent) {
         DigitalTwinState state = digitalTwinRepository.findByWorkspaceId(workspaceId)
-                .orElseThrow(() -> new NoSuchElementException("Digital twin not found for workspace: " + workspaceId));
+                .orElseThrow(() -> new ResourceNotFoundException("Digital twin not found for workspace: " + workspaceId));
 
         boolean applied = state.postInventoryTransaction(transaction, triggerEvent);
         if (applied) {
@@ -69,7 +71,7 @@ public class DigitalTwinApplicationService implements DigitalTwinUseCase {
     @Transactional
     public boolean reserveCapacity(WorkspaceId workspaceId, CapacityReservation reservation, DomainEvent triggerEvent, boolean allowOverbooking) {
         DigitalTwinState state = digitalTwinRepository.findByWorkspaceId(workspaceId)
-                .orElseThrow(() -> new NoSuchElementException("Digital twin not found for workspace: " + workspaceId));
+                .orElseThrow(() -> new ResourceNotFoundException("Digital twin not found for workspace: " + workspaceId));
 
         boolean reserved = state.bookCapacityReservation(reservation, triggerEvent, allowOverbooking);
         if (reserved) {
@@ -82,7 +84,7 @@ public class DigitalTwinApplicationService implements DigitalTwinUseCase {
     @Transactional(readOnly = true)
     public DigitalTwinSnapshot getSnapshot(WorkspaceId workspaceId) {
         DigitalTwinState state = digitalTwinRepository.findByWorkspaceId(workspaceId)
-                .orElseThrow(() -> new NoSuchElementException("Digital twin not found for workspace: " + workspaceId));
+                .orElseThrow(() -> new ResourceNotFoundException("Digital twin not found for workspace: " + workspaceId));
         return state.createSnapshot();
     }
 }

@@ -12,5 +12,8 @@ public interface DigitalTwinRepositoryPort {
     void save(DigitalTwinState state);
     Optional<DigitalTwinState> findByWorkspaceId(WorkspaceId workspaceId);
     boolean existsByWorkspaceId(WorkspaceId workspaceId);
+
+    /** Drops any in-memory copy so the next read rebuilds the twin from durable storage (call after writing balances through another port). */
+    default void reload(WorkspaceId workspaceId) {}
 }
 
