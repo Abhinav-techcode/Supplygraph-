@@ -1,16 +1,11 @@
-# Render Blueprint: one Docker web service (Vaadin UI + backend are the same app) + managed Postgres.
-databases:
-  - name: supplygraph-db
-    plan: basic-256mb
-    databaseName: supplygraph
-    user: supplygraph
-
+# Render Blueprint (free): one Docker web service. The database is a free Neon Postgres created separately
+# (Render's own free Postgres expires after 30 days). Vaadin UI and backend are the same app.
 services:
   - type: web
     name: supplygraph
     runtime: docker
     dockerfilePath: ./Dockerfile
-    plan: starter
+    plan: free
     healthCheckPath: /actuator/health
     envVars:
       - key: SPRING_PROFILES_ACTIVE
@@ -19,15 +14,17 @@ services:
         value: "true"
       - key: SERVER_PORT
         value: "8080"
-      - key: DB_HOST
-        fromDatabase: { name: supplygraph-db, property: host }
-      - key: DB_PORT
-        fromDatabase: { name: supplygraph-db, property: port }
-      - key: DB_NAME
-        fromDatabase: { name: supplygraph-db, property: database }
+      - key: JAVA_TOOL_OPTIONS
+        value: "-Xmx300m -XX:+UseSerialGC -XX:MaxMetaspaceSize=128m"   # the free tier has 512 MB of RAM
+      - key: DB_POOL_MAX
+        value: "5"
+      - key: DB_POOL_MIN_IDLE
+        value: "1"
+      - key: SPRING_DATASOURCE_URL
+        sync: false   # from Neon: jdbc:postgresql://<host>/<db>?sslmode=require
       - key: SPRING_DATASOURCE_USERNAME
-        fromDatabase: { name: supplygraph-db, property: user }
+        sync: false
       - key: SPRING_DATASOURCE_PASSWORD
-        fromDatabase: { name: supplygraph-db, property: password }
+        sync: false
       - key: SUPPLYGRAPH_ADMIN_PASSWORD
-        sync: false   # you type this in the Render dashboard; it is never stored in git
+        sync: false
