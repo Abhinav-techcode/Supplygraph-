@@ -145,7 +145,8 @@ public class IncidentWorkspaceView extends VerticalLayout {
 
     private void loadInitialDisruption() {
         List<Disruption> list = disruptionService.listDisruptions(ws);
-        selectedDisruption = list.stream().filter(d -> d.status() == DisruptionStatus.ACTIVE).findFirst().or(() -> list.stream().findFirst()).orElse(null);
+        selectedDisruption = list.stream().filter(d -> d.status() == DisruptionStatus.ACTIVE && hasPlans(d)).findFirst()   // start on an incident that has recovery options
+                .or(() -> list.stream().filter(d -> d.status() == DisruptionStatus.ACTIVE).findFirst()).or(() -> list.stream().findFirst()).orElse(null);
     }
 
     private void refreshStepper() {
@@ -284,9 +285,12 @@ public class IncidentWorkspaceView extends VerticalLayout {
         ComboBox<Disruption> selector = new ComboBox<>("Incident");
         selector.addClassName("sg-incident-select");
         selector.setWidth("480px");
-        List<Disruption> list = disruptionService.listDisruptions(ws);
+        List<Disruption> list = new ArrayList<>(disruptionService.listDisruptions(ws));
+        list.sort(java.util.Comparator.comparing((Disruption d) -> !hasPlans(d)).thenComparing(Disruption::title));   // incidents with recovery options first
+        java.util.Set<String> withPlans = new java.util.HashSet<>();
+        for (Disruption d : list) if (hasPlans(d)) withPlans.add(d.id().value());
         selector.setItems(list);
-        selector.setItemLabelGenerator(d -> d.title() + " [" + d.status() + "]");
+        selector.setItemLabelGenerator(d -> d.title() + " [" + d.status() + "]" + (withPlans.contains(d.id().value()) ? "" : "  (no recovery options derivable)"));
         if (selectedDisruption != null) selector.setValue(selectedDisruption);
 
         Div details = card();
@@ -441,6 +445,10 @@ public class IncidentWorkspaceView extends VerticalLayout {
         return p.actions().stream().anyMatch(a -> a.parameters() != null && a.parameters().containsKey("estimate"));
     }
 
+    private boolean hasPlans(Disruption d) {
+        try { return !planningService.listPlansByDisruption(d.id()).isEmpty(); } catch (RuntimeException ex) { return false; }
+    }
+
     private void loadPlans() {
         long twinVersion = graphService.build(ws).twinVersion();
         // Only plans made against the current twin are usable: a plan from an older twin version would be refused as stale.
@@ -457,7 +465,7 @@ public class IncidentWorkspaceView extends VerticalLayout {
             ensureAssessment();
             loadPlans();
         } catch (RuntimeException ex) {
-            stepContent.add(header, new Paragraph("No recovery option can be derived: " + ex.getMessage()), navigation(false, null));
+            stepContent.add(header, new Paragraph("No recovery option can be derived for this incident (the affected facility has nothing downstream with a known requirement, or no stock or supplier can reach it). Go back to step 1 and choose an incident that does not say \"no recovery options derivable\". Detail: " + ex.getMessage()), navigation(false, null));
             return;
         }
         Paragraph intro = new Paragraph("Each option is derived from the twin: stock that is actually on hand, suppliers that can still reach the plant over undisrupted lanes, and the lane costs along the route. "

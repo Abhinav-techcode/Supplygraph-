@@ -279,6 +279,84 @@ public class DemoDataInitializer implements CommandLineRunner {
         }
     }
 
+    /** Idempotent: about thirty live incidents spread over all ten supply chains, each on a real node of the twin, so the map and the recovery pages have plenty to show. */
+    private void addExtraDisruptions(WorkspaceId wsId) {
+        try {
+            var twin = digitalTwinRepo.findByWorkspaceId(wsId).orElse(null);
+            if (twin == null) return;
+            var existing = disruptionService.listDisruptions(wsId).stream().map(Disruption::title).collect(java.util.stream.Collectors.toSet());
+            String[] prefixes = {"ELEC-", "PHAR-", "AERO-", "FOOD-", "APPA-", "MEDI-", "SOLR-", "POLY-", "HEAV-", ""};
+            String[] labels = {"Electronics", "Pharma", "Aerospace", "Food & beverage", "Apparel", "Medical devices", "Solar", "Chemicals", "Heavy machinery", "Automotive"};
+            var all = new ArrayList<>(twin.getGraph().getAllNodes());
+            all.sort(java.util.Comparator.comparing(n -> n.getId().value()));
+            DisruptionCategory[] supCats = {DisruptionCategory.SUPPLIER_SHUTDOWN, DisruptionCategory.SUPPLIER_CAPACITY_REDUCTION, DisruptionCategory.RAW_MATERIAL_SHORTAGE};
+            String[] supWhy = {"shut down after a labour dispute", "running at reduced capacity after an equipment failure", "short of raw material after a delayed shipment"};
+            DisruptionCategory[] siteCats = {DisruptionCategory.MANUFACTURING_SITE_OUTAGE, DisruptionCategory.QUALITY_REJECTION, DisruptionCategory.INVENTORY_CONTAMINATION};
+            String[] siteWhy = {"stopped by a power and cooling failure", "holding output after a quality rejection", "quarantining stock after a contamination finding"};
+            DisruptionCategory[] hubCats = {DisruptionCategory.LOGISTICS_HUB_CLOSURE, DisruptionCategory.REGULATORY_RESTRICTION, DisruptionCategory.LEAD_TIME_INCREASE};
+            String[] hubWhy = {"closed by severe weather", "restricted by a customs inspection", "slowed by a congestion backlog"};
+            DisruptionSeverity[] sev = {DisruptionSeverity.CRITICAL, DisruptionSeverity.HIGH, DisruptionSeverity.MEDIUM};
+            int made = 0;
+            for (int g = 0; g < prefixes.length; g++) {
+                final String pre = prefixes[g];
+                final var group = all.stream().filter(n -> pre.isEmpty()
+                        ? java.util.stream.Stream.of("ELEC-", "PHAR-", "AERO-", "FOOD-", "APPA-", "MEDI-", "SOLR-", "POLY-", "HEAV-").noneMatch(x -> n.getId().value().startsWith(x))
+                        : n.getId().value().startsWith(pre)).toList();
+                var sups = group.stream().filter(n -> n instanceof Supplier).toList();
+                var sites = group.stream().filter(n -> n instanceof ManufacturingSite).toList();
+                var hubs = group.stream().filter(n -> n instanceof LogisticsHub || n instanceof Warehouse).toList();
+                java.util.List<com.supplygraph.domain.model.bom.MaterialId> mats = new ArrayList<>();
+                for (var e : twin.getInventoryLedger().getAllBalances().entrySet()) {
+                    String nid = e.getKey().nodeId().value();
+                    boolean inGroup = pre.isEmpty()
+                            ? java.util.stream.Stream.of("ELEC-", "PHAR-", "AERO-", "FOOD-", "APPA-", "MEDI-", "SOLR-", "POLY-", "HEAV-").noneMatch(nid::startsWith)
+                            : nid.startsWith(pre);
+                    if (inGroup && e.getKey().category() == BalanceCategory.ON_HAND_AVAILABLE && !mats.contains(e.getKey().materialId()) && mats.size() < 8) mats.add(e.getKey().materialId());
+                }
+                for (int k = 0; k < 3; k++) {
+                    var pool = k == 0 ? sups : k == 1 ? sites : hubs;
+                    if (pool.isEmpty()) continue;
+                    int v = (g + k) % 3;
+                    DisruptionCategory cat = k == 0 ? supCats[v] : k == 1 ? siteCats[v] : hubCats[v];
+                    String why = k == 0 ? supWhy[v] : k == 1 ? siteWhy[v] : hubWhy[v];
+                    int days = 4 + (g + k * 3) % 10;
+                    DisruptionImpactParameters params = new DisruptionImpactParameters(BigDecimal.valueOf(40 + ((g * 7 + k * 13) % 55)), 86400L * days, days, BigDecimal.valueOf(2000 + 500 * g), "PIECES", Map.of());
+                    // prefer a facility and material for which the twin can derive real recovery options
+                    SupplyChainNode node = null;
+                    Set<MaterialId> material = Set.of();
+                    for (int t = 0; t < Math.min(pool.size(), 12) && node == null; t++) {
+                        var cand = pool.get((g * 2 + k + t) % pool.size());
+                        for (var m : mats) {
+                            Disruption probe = Disruption.createDraft(wsId, "ALL", "DEMO_INCIDENT", "probe", "probe", cat, sev[(g + k) % 3], Set.of(cand.getId()), Set.of(), Set.of(m),
+                                    Instant.now(), Instant.now().plus(Duration.ofDays(days)), params, "probe");
+                            if (!com.supplygraph.application.service.RecoveryOptionDeriver.derive(probe, twin).isEmpty()) { node = cand; material = Set.of(m); break; }
+                        }
+                    }
+                    if (node == null) node = pool.get((g * 2 + k) % pool.size());
+                    String title = labels[g] + ": " + node.getName() + " " + why;
+                    if (existing.contains(title) || title.length() > 240) continue;
+                    try {
+                        Disruption d = disruptionService.createDraft(wsId, "ALL", "DEMO_INCIDENT", title,
+                                "Synthetic demo incident on " + node.getId().value() + " (" + node.getName() + ", " + node.getLocation() + "): " + why + "; expected to last about " + days + " days.",
+                                cat, sev[(g + k) % 3], Set.of(node.getId()), Set.of(), material,
+                                Instant.now().minus(Duration.ofHours(6 + g + k)), Instant.now().plus(Duration.ofDays(days)), params,
+                                "Synthetic demo data.");
+                        disruptionService.validateDisruption(d.id());
+                        Disruption live = disruptionService.activateDisruption(d.id());
+                        made++;
+                        try { impactService.analyzeCascadingImpact(live.id(), wsId); } catch (RuntimeException ignored) { }
+                        try { recoveryService.generateAlternativePlans(live.id(), wsId); } catch (RuntimeException ignored) { }
+                    } catch (RuntimeException ex) {
+                        log.warn("Demo incident '{}' skipped: {}", title, ex.getMessage());
+                    }
+                }
+            }
+            if (made > 0) log.info("Demo: {} extra live incidents added across the ten supply chains", made);
+        } catch (RuntimeException ex) {
+            log.warn("Non-fatal: extra incidents not added: {}", ex.getMessage());
+        }
+    }
+
     // 5c. Nine more industries beside the automotive chain, so the twin spans ten supply chains. Each is generated (real cities, invented companies and stock) and its ids carry a prefix so they never clash.
     private void addIndustryNetworks(WorkspaceId wsId) {
         if (networkImport != null && networkGenerator != null) {
@@ -315,6 +393,7 @@ public class DemoDataInitializer implements CommandLineRunner {
         if (alreadySeeded) {
             log.info("Demo workspace {} already fully seeded with planning and operations data", DEMO_WORKSPACE_ID);
             addIndustryNetworks(wsId);   // adds any industry networks that an earlier version of the seeder did not have
+            addExtraDisruptions(wsId);
             seedIntegrationActivity(wsId);   // adds the simulated connectors and their runs when an earlier version had none
             return;
         }
@@ -564,6 +643,8 @@ public class DemoDataInitializer implements CommandLineRunner {
                 log.info("No recovery option can be derived for '{}' yet: {}", liveStrike.title(), ex.getMessage());   // honest: the incident is shown without invented plans
             }
         }
+
+        addExtraDisruptions(wsId);
 
         // 9. Seed Default Continuous Monitoring Rules
         try {
