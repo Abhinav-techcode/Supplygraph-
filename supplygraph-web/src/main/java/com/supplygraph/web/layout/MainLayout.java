@@ -48,15 +48,6 @@ public class MainLayout extends AppLayout {
         createDrawer();
     }
 
-    @Override
-    protected void onAttach(com.vaadin.flow.component.AttachEvent attachEvent) {
-        super.onAttach(attachEvent);
-        // First visit: start the tour on the home page (completion is remembered in a cookie).
-        if (!GuidedTour.isDone() && attachEvent.getUI().getInternals().getActiveViewLocation().getPath().isEmpty()) {
-            attachEvent.getUI().access(() -> GuidedTour.start(attachEvent.getUI(), 0));
-        }
-    }
-
     private void createHeader() {
         DrawerToggle toggle = new DrawerToggle();
         toggle.setAriaLabel("Menu toggle");
@@ -109,12 +100,9 @@ public class MainLayout extends AppLayout {
             }
         });
 
-        Button tourBtn = new Button("Take the tour", VaadinIcon.QUESTION_CIRCLE.create(), e -> GuidedTour.start(UI.getCurrent(), 0));
-        tourBtn.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
-        tourBtn.addClassName("sg-tour-btn");
-        tourBtn.getStyle().set("margin-left", "auto");
+        badge.getStyle().set("margin-left", "auto");
 
-        HorizontalLayout header = new HorizontalLayout(toggle, title, badge, tourBtn);
+        HorizontalLayout header = new HorizontalLayout(toggle, title, badge);
         if (demoRoleSwitcher) header.add(roleSelect);   // demo only: acting as another role without signing in again
         if (current != null) {
             Span who = new Span(current.displayName() + " · " + current.role().getDisplayName());

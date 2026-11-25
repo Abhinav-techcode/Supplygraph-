@@ -184,9 +184,7 @@ public class HomeView extends VerticalLayout {
         Button guided = new Button("Start guided recovery", VaadinIcon.PLAY.create(), e -> UI.getCurrent().navigate(IncidentWorkspaceView.class));
         guided.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
         guided.addClassName("sg-cta-guided");
-        Button tour = new Button("Take the tour", VaadinIcon.QUESTION_CIRCLE_O.create(), e -> com.supplygraph.web.layout.GuidedTour.start(UI.getCurrent(), 0));
-        tour.addThemeVariants(ButtonVariant.LUMO_LARGE);
-        HorizontalLayout actions = new HorizontalLayout(guided, tour);
+        HorizontalLayout actions = new HorizontalLayout(guided);
         if (demoDataInitializer != null) {
             Button seed = new Button("Reload sample network", VaadinIcon.REFRESH.create(), e -> {
                 try {

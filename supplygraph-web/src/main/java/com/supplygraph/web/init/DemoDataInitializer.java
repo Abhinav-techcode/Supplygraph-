@@ -169,6 +169,9 @@ public class DemoDataInitializer implements CommandLineRunner {
     private com.supplygraph.application.connector.ConnectorRegistryService connectorRegistryService;
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.supplygraph.application.connector.ConnectorExecutionService connectorExecutionService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.supplygraph.application.port.out.ExecutionWorkflowRepositoryPort executionWorkflowRepo;
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
@@ -231,7 +234,52 @@ public class DemoDataInitializer implements CommandLineRunner {
         seedDemoData(false);
     }
 
-        // 5c. Nine more industries beside the automotive chain, so the twin spans ten supply chains. Each is generated (real cities, invented companies and stock) and its ids carry a prefix so they never clash.
+    private void ensureUser(String id, String username, String email, String displayName, UserRole role, WorkspaceId wsId) {
+        try {
+            if (userProfileRepo.findByUsername(username).isPresent()) return;
+            userProfileRepo.save(UserProfile.create(id, username, email, displayName, role, Set.of(wsId)));
+        } catch (Exception ex) {
+            log.warn("Non-fatal: user {} not seeded: {}", username, ex.getMessage());
+        }
+    }
+
+    /** Idempotent: SIMULATED connectors (they never contact anything), one test and one synchronisation each. */
+    private void seedIntegrationActivity(WorkspaceId wsId) {
+        if (connectorRegistryService == null || connectorExecutionService == null) return;
+        try {
+            UserProfile admin = userProfileRepo.findByUsername("admin").orElse(null);
+            if (admin == null) return;
+            SecurityContext.runAs(admin, () -> {
+                try {
+                    if (connectorRegistryService.list(wsId).isEmpty()) {
+                        record C(String name, ConnectorCategory cat) {}
+                        for (C c : List.of(new C("SAP S/4HANA ERP (simulated)", ConnectorCategory.ERP),
+                                new C("Manhattan SCALE WMS (simulated)", ConnectorCategory.WMS),
+                                new C("Oracle Transportation Management (simulated)", ConnectorCategory.TMS),
+                                new C("Siemens Teamcenter PLM (simulated)", ConnectorCategory.PLM))) {
+                            var created = connectorRegistryService.register(wsId, c.name(), c.cat(), ConnectorMode.SANDBOX_SIMULATED, "sandbox");
+                            var configured = connectorRegistryService.configure(created.id(), new ConnectorConfiguration(null, null, List.of(), 5000, 1_048_576, 3));
+                            connectorRegistryService.activate(configured.id());
+                        }
+                        log.info("Demo: 4 simulated connectors registered");
+                    }
+                    if (connectorExecutionService.workspaceHistory(wsId, 1).isEmpty()) {
+                        for (var c : connectorRegistryService.list(wsId)) {
+                            connectorExecutionService.testConnectivity(c.id());
+                            connectorExecutionService.synchronize(c.id());
+                        }
+                        log.info("Demo: simulated connector runs recorded");
+                    }
+                } catch (Exception ex) {
+                    log.warn("Non-fatal: integration activity seeding notice: {}", ex.getMessage());
+                }
+            });
+        } catch (Exception ex) {
+            log.warn("Non-fatal: integration activity seeding notice: {}", ex.getMessage());
+        }
+    }
+
+    // 5c. Nine more industries beside the automotive chain, so the twin spans ten supply chains. Each is generated (real cities, invented companies and stock) and its ids carry a prefix so they never clash.
     private void addIndustryNetworks(WorkspaceId wsId) {
         if (networkImport != null && networkGenerator != null) {
             record Extra(com.supplygraph.application.service.SyntheticNetworkGenerator.Industry industry, String prefix, long seed) {}
@@ -267,6 +315,7 @@ public class DemoDataInitializer implements CommandLineRunner {
         if (alreadySeeded) {
             log.info("Demo workspace {} already fully seeded with planning and operations data", DEMO_WORKSPACE_ID);
             addIndustryNetworks(wsId);   // adds any industry networks that an earlier version of the seeder did not have
+            seedIntegrationActivity(wsId);   // adds the simulated connectors and their runs when an earlier version had none
             return;
         }
 
@@ -602,23 +651,10 @@ public class DemoDataInitializer implements CommandLineRunner {
             log.info("Generated operational history: {} telemetry events over the last 14 days", written);
         }
 
-        // 11. Seed Enterprise Users (RBAC)
-        try {
-            userProfileRepo.save(UserProfile.create(
-                    "USR-ADMIN-01", "admin", "admin@supplygraph.io",
-                    "Enterprise System Administrator", UserRole.SYSTEM_ADMIN, Set.of(wsId)
-            ));
-            userProfileRepo.save(UserProfile.create(
-                    "USR-SCM-01", "sc_manager", "scm@supplygraph.io",
-                    "Lead Supply Chain Manager", UserRole.SUPPLY_CHAIN_MANAGER, Set.of(wsId)
-            ));
-            userProfileRepo.save(UserProfile.create(
-                    "USR-ANALYST-01", "analyst", "analyst@supplygraph.io",
-                    "Senior Operations Analyst", UserRole.ANALYST, Set.of(wsId)
-            ));
-        } catch (Exception ex) {
-            log.warn("Non-fatal: User profile seeding notice: {}", ex.getMessage());
-        }
+        // 11. Seed Enterprise Users (RBAC): each user on its own, so one that already exists never blocks the others
+        ensureUser("USR-ADMIN-01", "admin", "admin@supplygraph.io", "Enterprise System Administrator", UserRole.SYSTEM_ADMIN, wsId);
+        ensureUser("USR-SCM-01", "sc_manager", "scm@supplygraph.io", "Lead Supply Chain Manager", UserRole.SUPPLY_CHAIN_MANAGER, wsId);
+        ensureUser("USR-ANALYST-01", "analyst", "analyst@supplygraph.io", "Senior Operations Analyst", UserRole.ANALYST, wsId);
 
         // 12. Seed Governance Audit Sign-Off
         try {
@@ -805,39 +841,8 @@ public class DemoDataInitializer implements CommandLineRunner {
             log.warn("Non-fatal: Phase 9 demo execution seeding notice: {}", ex.getMessage());
         }
 
-        // 18. Seed Phase 10 Enterprise Connectors
-        try {
-            if (connectorRegistryService != null) {
-                UserProfile adminUser = userProfileRepo.findById(UserId.of("USR-ADMIN-01")).orElse(null);
-                if (adminUser != null) {
-                    SecurityContext.runAs(adminUser, () -> {
-                        try {
-                            var c1 = connectorRegistryService.register(wsId, "SAP S/4HANA Enterprise ERP", ConnectorCategory.ERP, ConnectorMode.LIVE, "REST_ODATA_CONNECTOR");
-                            connectorRegistryService.configure(c1.id(), new ConnectorConfiguration(URI.create("https://erp.internal.supplygraph.io/sap/opu/odata/sap/API_PURCHASEORDER_PROCESS_SRV"), new CredentialReference("vault:secrets/sap-s4hana"), List.of("erp.internal.supplygraph.io"), 5000, 5242880L, 3));
-                            connectorRegistryService.activate(c1.id());
-
-                            var c2 = connectorRegistryService.register(wsId, "Manhattan SCALE WMS", ConnectorCategory.WMS, ConnectorMode.LIVE, "EVENT_STREAM_CONNECTOR");
-                            connectorRegistryService.configure(c2.id(), new ConnectorConfiguration(URI.create("https://wms.internal.supplygraph.io/api/v2/inventory"), new CredentialReference("vault:secrets/manhattan-wms"), List.of("wms.internal.supplygraph.io"), 3000, 5242880L, 3));
-                            connectorRegistryService.activate(c2.id());
-
-                            var c3 = connectorRegistryService.register(wsId, "Oracle Transportation Management (OTM)", ConnectorCategory.TMS, ConnectorMode.LIVE, "EDI_CONNECTOR");
-                            connectorRegistryService.configure(c3.id(), new ConnectorConfiguration(URI.create("https://otm.internal.supplygraph.io/logistics/v1/shipments"), new CredentialReference("vault:secrets/oracle-otm"), List.of("otm.internal.supplygraph.io"), 5000, 5242880L, 3));
-                            connectorRegistryService.activate(c3.id());
-
-                            var c4 = connectorRegistryService.register(wsId, "Siemens Teamcenter PLM", ConnectorCategory.PLM, ConnectorMode.LIVE, "WEBHOOK_CONNECTOR");
-                            connectorRegistryService.configure(c4.id(), new ConnectorConfiguration(URI.create("https://plm.internal.supplygraph.io/api/bom/sync"), new CredentialReference("vault:secrets/siemens-plm"), List.of("plm.internal.supplygraph.io"), 4000, 5242880L, 3));
-                            connectorRegistryService.activate(c4.id());
-
-                            log.info("Phase 10 Demo: Seeded 4 active Enterprise Connectors (SAP, Manhattan, OTM, Teamcenter)");
-                        } catch (Exception ex) {
-                            log.warn("Non-fatal: Connector registration notice: {}", ex.getMessage());
-                        }
-                    });
-                }
-            }
-        } catch (Exception ex) {
-            log.warn("Non-fatal: Phase 10 connector seeding notice: {}", ex.getMessage());
-        }
+        // 18. Seed Phase 10 Enterprise Connectors (simulated), their synchronisation runs
+        seedIntegrationActivity(wsId);
 
         // 19. Seed Phase 11 Supply Chain Planning
         try {
