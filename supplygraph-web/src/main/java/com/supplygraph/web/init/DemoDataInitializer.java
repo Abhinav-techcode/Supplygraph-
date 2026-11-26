@@ -169,6 +169,12 @@ public class DemoDataInitializer implements CommandLineRunner {
     private com.supplygraph.application.connector.ConnectorRegistryService connectorRegistryService;
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.supplygraph.application.port.out.ExecutionEventRepositoryPort executionEventRepo;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.supplygraph.application.execution.ClosedLoopService closedLoopService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.supplygraph.application.port.out.BenchmarkExperimentRepositoryPort benchmarkExperimentRepo;
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
@@ -436,6 +442,78 @@ public class DemoDataInitializer implements CommandLineRunner {
         }
     }
 
+    /** Idempotent: execution timeline events and signed audit entries for the demo workflows, a data-quality audit, staged import jobs, and closed-loop reassessments. */
+    private void seedOperationalExtras(WorkspaceId wsId) {
+        try {
+            UserProfile admin = userProfileRepo.findByUsername("admin").orElse(null);
+            if (admin == null) return;
+            SecurityContext.runAs(admin, () -> {
+                try {
+                    log.info("Demo extras: eventRepo={} wfRepo={} closedLoop={} quality={} import={}", executionEventRepo != null, executionWorkflowRepo != null, closedLoopService != null, qualityService != null, importService != null);
+                    if (executionEventRepo != null && executionWorkflowRepo != null && executionEventRepo.eventsByWorkflow("WF-DEMO-01").isEmpty()) {
+                        for (int i = 0; i < 12; i++) {
+                            String wfId = String.format("WF-DEMO-%02d", i + 1);
+                            var opt = executionWorkflowRepo.findById(wfId);
+                            if (opt.isEmpty()) continue;
+                            var wf = opt.get();
+                            int kind = i % 6;
+                            java.util.function.BiConsumer<String, String> ev = (type, detail) -> executionEventRepo.append(com.supplygraph.domain.model.execution.ExecutionEvent.of(wf, null, type, "USR-ADMIN-01", detail));
+                            ev.accept("WORKFLOW_CREATED", "Workflow created from plan " + wf.planId());
+                            auditGovernanceService.logAction(com.supplygraph.domain.model.security.UserId.of("USR-SCM-01"), wsId, AuditAction.WORKFLOW_CREATED, wfId, "NONE", "DRAFT", "Workflow created from an approved recovery plan (demo)", null);
+                            if (kind == 5 && i % 2 == 0) continue;
+                            ev.accept("WORKFLOW_APPROVED", "Approved within policy");
+                            auditGovernanceService.logAction(com.supplygraph.domain.model.security.UserId.of("USR-ADMIN-01"), wsId, AuditAction.WORKFLOW_APPROVED, wfId, "DRAFT", "APPROVED", "Approved within policy (demo)", null);
+                            if (kind == 5) continue;
+                            ev.accept("WORKFLOW_STARTED", "Execution started");
+                            auditGovernanceService.logAction(com.supplygraph.domain.model.security.UserId.of("USR-ADMIN-01"), wsId, AuditAction.WORKFLOW_STARTED, wfId, "APPROVED", "EXECUTING", "Execution started (demo)", null);
+                            ev.accept("TASK_COMPLETED", "Allocate inventory completed");
+                            switch (kind) {
+                                case 0 -> { ev.accept("TASK_COMPLETED", "Reroute shipment completed"); ev.accept("TASK_COMPLETED", "Stakeholders notified"); ev.accept("WORKFLOW_COMPLETED", "All tasks verified"); }
+                                case 1 -> { ev.accept("TASK_FAILED", "Carrier rejected the reroute request"); ev.accept("WORKFLOW_COMPENSATION_REQUIRED", "Compensation needed for the completed allocation"); }
+                                case 2 -> ev.accept("TASK_FAILED", "Source stock was already reserved by another plan");
+                                case 3 -> ev.accept("TASK_AWAITING_ACK", "Waiting for the carrier acknowledgement");
+                                case 4 -> ev.accept("TASK_NEEDS_RECONCILIATION", "Target system state does not match the request");
+                                default -> { }
+                            }
+                        }
+                        log.info("Demo: execution timeline and audit entries seeded");
+                    }
+                } catch (RuntimeException ex) { log.warn("Non-fatal: execution trail not seeded: {}", ex.getMessage()); }
+                try {
+                    if (closedLoopService != null && closedLoopService.requests(wsId, 1).isEmpty()) {
+                        log.info("Demo extras: seeding closed loop");
+                        for (String wfId : new String[]{"WF-DEMO-01", "WF-DEMO-07"}) {
+                            try {
+                                closedLoopService.recordActual(wfId, com.supplygraph.domain.model.execution.OutcomeMetric.TOTAL_COST, 9.0e7, "ERP feed (demo data)", false);
+                                closedLoopService.recordActual(wfId, com.supplygraph.domain.model.execution.OutcomeMetric.RECOVERY_DURATION_DAYS, 120, "TMS feed (demo data)", false);
+                                closedLoopService.evaluateDeviation(wfId);
+                            } catch (RuntimeException ex) { log.info("Closed-loop demo for {} skipped: {}", wfId, ex.getMessage()); }
+                        }
+                    }
+                } catch (RuntimeException ex) { log.warn("Non-fatal: closed loop not seeded: {}", ex.getMessage()); }
+                try {
+                    if (qualityService != null && qualityService.getLatestReport(wsId.value()).isEmpty()) {
+                        log.info("Demo extras: running data quality audit");
+                        digitalTwinRepo.findByWorkspaceId(wsId).ifPresent(st -> qualityService.evaluateWorkspaceQuality(wsId.value(), st));
+                    }
+                } catch (RuntimeException ex) { log.warn("Non-fatal: data quality audit not seeded: {}", ex.getMessage()); }
+                try {
+                    if (importService != null && importService.listImportJobs(wsId.value()).size() < 3) {
+                        log.info("Demo extras: staging import jobs");
+                        String good = "supplier_id,name,location,tier,risk_score,lead_time\nSUP-IMP-001,Rhine Components GmbH,Duisburg DE,1,0.12,14\nSUP-IMP-002,Kanto Precision Parts,Yokohama JP,2,0.18,21\nSUP-IMP-003,Nordic Alloys AB,Gothenburg SE,2,0.09,10\n";
+                        String bad = "supplier_id,name,location,tier,risk_score,lead_time\nSUP-BAD-001,Valid Supplier,Pune IN,1,0.2,12\nSUP-BAD-001,Duplicate Id Supplier,Pune IN,1,0.2,12\n,Missing Id Supplier,Pune IN,1,0.2,12\nSUP-BAD-004,Bad Lead Time,Pune IN,1,0.2,-5\n";
+                        String mat = "material_id,name,criticality\nMAT-IMP-001,Copper busbar,HIGH\nMAT-IMP-002,Gasket set,LOW\n";
+                        importService.parseAndValidate(good.getBytes(java.nio.charset.StandardCharsets.UTF_8), com.supplygraph.domain.model.integration.ImportSourceType.CSV, com.supplygraph.domain.model.integration.DataCategory.SUPPLIER, "suppliers_batch_1.csv", wsId.value(), "USR-ADMIN-01");
+                        importService.parseAndValidate(bad.getBytes(java.nio.charset.StandardCharsets.UTF_8), com.supplygraph.domain.model.integration.ImportSourceType.CSV, com.supplygraph.domain.model.integration.DataCategory.SUPPLIER, "suppliers_with_errors.csv", wsId.value(), "USR-ADMIN-01");
+                        importService.parseAndValidate(mat.getBytes(java.nio.charset.StandardCharsets.UTF_8), com.supplygraph.domain.model.integration.ImportSourceType.CSV, com.supplygraph.domain.model.integration.DataCategory.MATERIAL, "materials_batch_1.csv", wsId.value(), "USR-ADMIN-01");
+                    }
+                } catch (Exception ex) { log.warn("Non-fatal: import jobs not seeded: {}", ex.getMessage()); }
+            });
+        } catch (RuntimeException ex) {
+            log.warn("Non-fatal: operational extras not seeded: {}", ex.getMessage());
+        }
+    }
+
     /** Idempotent: runs the eight specialist agents on twelve active incidents so the agent history has real, audited investigations. */
     private void seedAgentInvestigations(WorkspaceId wsId) {
         try {
@@ -529,6 +607,7 @@ public class DemoDataInitializer implements CommandLineRunner {
             addIndustryNetworks(wsId);   // adds any industry networks that an earlier version of the seeder did not have
             addExtraDisruptions(wsId);
             seedExecutionHistory(wsId);
+            seedOperationalExtras(wsId);
             seedAgentInvestigations(wsId);
             seedResearchData(wsId);
             seedIntegrationActivity(wsId);   // adds the simulated connectors and their runs when an earlier version had none
@@ -1060,6 +1139,7 @@ public class DemoDataInitializer implements CommandLineRunner {
         }
 
         seedExecutionHistory(wsId);
+        seedOperationalExtras(wsId);
         seedAgentInvestigations(wsId);
         seedResearchData(wsId);
 

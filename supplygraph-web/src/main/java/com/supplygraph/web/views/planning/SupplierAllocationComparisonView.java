@@ -90,6 +90,7 @@ public class SupplierAllocationComparisonView extends PlanningViewBase {
             Notification.show("Evaluated " + currentAllocations.size() + " supplier allocation splits", 2500, Notification.Position.TOP_END);
         });
         evaluateBtn.getElement().getThemeList().add("primary");
+        evaluateBtn.addAttachListener(att -> evaluateBtn.click());
 
         setupForm.add(materialField, totalVolumeField, primarySplitField, evaluateBtn);
         add(setupForm);

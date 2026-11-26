@@ -78,6 +78,7 @@ public class BenchmarkStudioView extends VerticalLayout {
 
         add(title, desc, controlRow, compHeading, comparisonGrid, historyHeading, historyGrid);
         refreshHistory();
+        addAttachListener(att -> { if (comparisonGrid.getListDataView().getItemCount() == 0) { try { runComparativeStudy(); } catch (RuntimeException ex) { /* leave the grid empty; the user can press the button */ } } });
     }
 
     private void configureMetricsGrid(Grid<BenchmarkExperimentRecord> grid) {

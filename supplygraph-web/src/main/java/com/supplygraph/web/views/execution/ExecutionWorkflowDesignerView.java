@@ -35,7 +35,8 @@ public class ExecutionWorkflowDesignerView extends ExecutionViewBase {
         this.conversion = conversion;
         planBox.setItemLabelGenerator(p -> p.id().value() + " · " + p.planName());
         planBox.setWidth("40em");
-        planBox.setItems(UiSupport.call(() -> planning.listPlans(UiSupport.workspace()), List.<RecoveryPlan>of()).stream().filter(p -> p.status() == RecoveryPlanStatus.APPROVED).toList());
+        planBox.setItems(UiSupport.call(() -> planning.listPlans(UiSupport.workspace()), List.<RecoveryPlan>of()).stream().filter(p -> p.status() == RecoveryPlanStatus.APPROVED || p.status() == RecoveryPlanStatus.DRAFT).limit(40).toList());
+        planBox.getListDataView().getItems().findFirst().ifPresent(planBox::setValue);
         planBox.addValueChangeListener(e -> showPreview(e.getValue()));
         preview.addColumn(ExecutionTask::sequence).setHeader("#").setAutoWidth(true);
         preview.addColumn(ExecutionTask::type).setHeader("Task type").setAutoWidth(true);
