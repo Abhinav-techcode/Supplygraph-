@@ -19,7 +19,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "sustainability/traceability/lots", layout = MainLayout.class)
-@PageTitle("Batch & Lot Traceability | SupplyGraph")
+@PageTitle("Batch & Lot Traceability | ORBIX")
 public class BatchLotTraceabilityView extends SustainabilityViewBase {
 
     private final ProductTraceabilityService traceabilityService;

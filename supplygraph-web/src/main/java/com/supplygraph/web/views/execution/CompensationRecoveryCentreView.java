@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Route(value = "execution-compensation", layout = MainLayout.class)
-@PageTitle("Compensation and Recovery Centre | SupplyGraph")
+@PageTitle("Compensation and Recovery Centre | ORBIX")
 public class CompensationRecoveryCentreView extends ExecutionViewBase {
     record Row(ExecutionWorkflow workflow, ExecutionTask task) {}
 

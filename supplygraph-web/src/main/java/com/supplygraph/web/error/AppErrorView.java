@@ -20,7 +20,7 @@ import java.util.UUID;
 
 /** Shown when a page fails while it is being built (for example because a service it needs is unavailable or the data is inconsistent). */
 @ParentLayout(MainLayout.class)
-@PageTitle("Something went wrong | SupplyGraph")
+@PageTitle("Something went wrong | ORBIX")
 public class AppErrorView extends VerticalLayout implements HasErrorParameter<Exception> {
     private static final Logger log = LoggerFactory.getLogger(AppErrorView.class);
 

@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  * simulation models, mathematical optimization runs, and governed execution workflows.
  */
 @Route(value = "", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Executive Control Tower")
+@PageTitle("ORBIX :: Executive Control Tower")
 public class HomeView extends VerticalLayout {
 
     private final DisruptionApplicationService disruptionService;
@@ -142,7 +142,7 @@ public class HomeView extends VerticalLayout {
         H4 t = new H4(net.isEmpty() ? "Add your supply chain to begin" : "Your data");
         t.getStyle().set("margin", "0");
         Paragraph p = new Paragraph(net.isEmpty()
-                ? "SupplyGraph has no network yet. Everything else (map, impact, agents, simulation) is built from it. Load the sample supply chain to explore, or import your own facilities, lanes and stock."
+                ? "ORBIX has no network yet. Everything else (map, impact, agents, simulation) is built from it. Load the sample supply chain to explore, or import your own facilities, lanes and stock."
                 : "The twin holds " + net.nodes().size() + " facilities and " + net.lanes().size() + " lanes (version " + net.twinVersion() + "). Replace it any time with the sample or your own data.");
         p.getStyle().set("margin", "4px 0 8px").set("color", "var(--lumo-secondary-text-color)");
         Button sample = new Button("Load sample supply chain", VaadinIcon.DATABASE.create(), e -> {

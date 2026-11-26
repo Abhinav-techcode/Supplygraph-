@@ -25,7 +25,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Route(value = "decision-intelligence", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Executive Decision Intelligence")
+@PageTitle("ORBIX :: Executive Decision Intelligence")
 public class ExecutiveDecisionIntelligenceDashboardView extends VerticalLayout {
 
     private final ExplainableRecommendationService recommendationService;

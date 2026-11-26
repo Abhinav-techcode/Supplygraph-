@@ -169,6 +169,21 @@ public class DemoDataInitializer implements CommandLineRunner {
     private com.supplygraph.application.connector.ConnectorRegistryService connectorRegistryService;
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.supplygraph.application.port.out.BenchmarkExperimentRepositoryPort benchmarkExperimentRepo;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.supplygraph.application.outbox.OutboxService outboxService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.transaction.PlatformTransactionManager txManager;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.supplygraph.adapter.ai.IncidentInvestigationService investigationService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.supplygraph.application.port.out.AgentInvestigationRepositoryPort agentInvestigationRepo;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.supplygraph.application.connector.ConnectorExecutionService connectorExecutionService;
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
@@ -267,8 +282,26 @@ public class DemoDataInitializer implements CommandLineRunner {
                         for (var c : connectorRegistryService.list(wsId)) {
                             connectorExecutionService.testConnectivity(c.id());
                             connectorExecutionService.synchronize(c.id());
+                            connectorExecutionService.synchronize(c.id());
                         }
                         log.info("Demo: simulated connector runs recorded");
+                    }
+                    if (outboxService != null && txManager != null && outboxService.list(wsId, null, 1).isEmpty()) {
+                        var legacy = connectorRegistryService.register(wsId, "Legacy EDI gateway (simulated, not activated)", ConnectorCategory.TMS, ConnectorMode.SANDBOX_SIMULATED, "sandbox");   // never activated, so its events cannot be applied
+                        var conns = connectorRegistryService.list(wsId).stream().filter(x -> !x.id().equals(legacy.id())).toList();
+                        new org.springframework.transaction.support.TransactionTemplate(txManager).executeWithoutResult(t -> {
+                            for (var c : conns) for (int n = 1; n <= 3; n++) {
+                                String payload = "{\"records\":[{\"id\":\"SIM-" + c.id().value().substring(0, 4) + "-" + n + "\",\"entityType\":\"SHIPMENT\",\"fields\":{\"milestone\":\"IN_TRANSIT\",\"delayHours\":\"" + (n * 4) + "\"}}]}";
+                                outboxService.enqueue(wsId, com.supplygraph.application.connector.WebhookIngestionService.EVENT_TYPE, c.id().value(), payload,
+                                        "demo-" + c.id().value() + "-" + n, "CORR-DEMO-HOOK-" + n);
+                            }
+                        });
+                        new org.springframework.transaction.support.TransactionTemplate(txManager).executeWithoutResult(t -> {
+                            for (int n = 1; n <= 4; n++) outboxService.enqueue(wsId, com.supplygraph.application.connector.WebhookIngestionService.EVENT_TYPE, legacy.id().value(),
+                                    "{\"records\":[{\"id\":\"EDI-" + n + "\",\"entityType\":\"SHIPMENT\",\"fields\":{\"milestone\":\"CUSTOMS_HOLD\"}}]}", "demo-legacy-" + n, "CORR-DEMO-LEGACY-" + n);
+                        });
+                        outboxService.dispatchBatch(50);
+                        log.info("Demo: simulated connector events queued and delivered");
                     }
                 } catch (Exception ex) {
                     log.warn("Non-fatal: integration activity seeding notice: {}", ex.getMessage());
@@ -284,7 +317,7 @@ public class DemoDataInitializer implements CommandLineRunner {
         try {
             var twin = digitalTwinRepo.findByWorkspaceId(wsId).orElse(null);
             if (twin == null) return;
-            var existing = disruptionService.listDisruptions(wsId).stream().map(Disruption::title).collect(java.util.stream.Collectors.toSet());
+            var existing = disruptionService.listDisruptions(wsId).stream().filter(x -> x.status() == com.supplygraph.domain.model.disruption.DisruptionStatus.ACTIVE).map(Disruption::title).collect(java.util.stream.Collectors.toSet());   // resolved or cancelled ones are recreated, so a reload restores the demo
             String[] prefixes = {"ELEC-", "PHAR-", "AERO-", "FOOD-", "APPA-", "MEDI-", "SOLR-", "POLY-", "HEAV-", ""};
             String[] labels = {"Electronics", "Pharma", "Aerospace", "Food & beverage", "Apparel", "Medical devices", "Solar", "Chemicals", "Heavy machinery", "Automotive"};
             var all = new ArrayList<>(twin.getGraph().getAllNodes());
@@ -357,6 +390,107 @@ public class DemoDataInitializer implements CommandLineRunner {
         }
     }
 
+    /** Idempotent: twelve governed workflows in different states (completed, partial, failed, waiting for acknowledgement, needing reconciliation, waiting for approval, ready), each tied to a real recovery plan. */
+    private void seedExecutionHistory(WorkspaceId wsId) {
+        try {
+            if (executionWorkflowRepo == null) return;
+            var plans = new ArrayList<>(recoveryService.listAllPlans(wsId));
+            if (plans.isEmpty()) return;
+            String[][] facilities = {{"HUB-FRANKFURT", "MCU-AUTO-32"}, {"HUB-CHICAGO", "MCU-AUTO-32"}, {"PORT-ROTTERDAM", "MCU-AUTO-32"}};
+            for (int i = 0; i < 12; i++) {
+                String wfId = String.format("WF-DEMO-%02d", i + 1);
+                if (executionWorkflowRepo.findById(wfId).isPresent()) continue;
+                String planId = plans.get(i % plans.size()).id().value();
+                String[] f = facilities[i % facilities.length];
+                ExecutionTask a = ExecutionTask.create(wfId, 1, TaskType.ALLOCATE_INVENTORY, "Release buffer stock from " + f[0] + " to the affected plant",
+                        Map.of("facility", f[0], "material", f[1], "quantity", Integer.toString(500 + 100 * i)), List.of(), Map.of("balanceCategory", "ALLOCATED"), 3);
+                ExecutionTask b = ExecutionTask.create(wfId, 2, TaskType.REROUTE_SHIPMENT, "Reroute the inbound shipment around the disrupted lane",
+                        Map.of("shipment", "SHP-" + (1000 + i), "via", f[0]), List.of(a.id()), Map.of("status", "REROUTED"), 3);
+                ExecutionTask c = ExecutionTask.create(wfId, 3, TaskType.NOTIFY_STAKEHOLDERS, "Notify planners and the affected supplier of the new plan",
+                        Map.of("audience", "planning-team"), List.of(b.id()), Map.of("status", "SENT"), 3);
+                int kind = i % 6;
+                ExecutionWorkflow base = ExecutionWorkflow.draft(wsId, planId, "USR-SCM-01", "USR-ADMIN-01", "v1", List.of(a, b, c), "CORR-DEMO-WF-" + (i + 1), 0).validate().submitForApproval();
+                WorkflowApproval ok = new WorkflowApproval(wfId, "USR-ADMIN-01", "SYSTEM_ADMIN", WorkflowApproval.Scope.WORKFLOW, true, "Approved within policy (demo)", Instant.now());
+                ExecutionWorkflow w;
+                switch (kind) {
+                    case 0 -> w = base.addApproval(ok).markApproved(false).markReady(true).markExecuting().withTasks(List.of(
+                            a.markReady().startAttempt().complete("ALLOC-" + (100 + i), true), b.markReady().startAttempt().complete("RR-" + (200 + i), true),
+                            c.markReady().startAttempt().complete("MSG-" + (300 + i), true))).settle();
+                    case 1 -> w = base.addApproval(ok).markApproved(false).markReady(true).markExecuting().withTasks(List.of(
+                            a.markReady().startAttempt().complete("ALLOC-" + (100 + i), true), b.markReady().startAttempt().failPermanently("Carrier rejected the reroute request"),
+                            c.markBlocked("Depends on a failed task"))).settle();
+                    case 2 -> w = base.addApproval(ok).markApproved(false).markReady(true).markExecuting().withTasks(List.of(
+                            a.markReady().startAttempt().failPermanently("Source stock was already reserved by another plan"), b.markBlocked("Depends on a failed task"),
+                            c.markBlocked("Depends on a failed task"))).settle();
+                    case 3 -> w = base.addApproval(ok).markApproved(false).markReady(true).markExecuting().withTasks(List.of(
+                            a.markReady().startAttempt().complete("ALLOC-" + (100 + i), true), b.markReady().startAttempt().awaitAck("ACK-REF-" + (400 + i)), c)).settle();
+                    case 4 -> w = base.addApproval(ok).markApproved(false).markReady(true).markExecuting().withTasks(List.of(
+                            a.markReady().startAttempt().complete("ALLOC-" + (100 + i), true), b.markReady().startAttempt().needsReconciliation("Target system state does not match the request"), c)).settle();
+                    default -> w = (i % 2 == 0) ? base : base.addApproval(ok).markApproved(false).markReady(true);
+                }
+                try { executionWorkflowRepo.save(w); } catch (RuntimeException ex) { log.info("Demo workflow {} skipped: {}", wfId, ex.getMessage()); }
+            }
+            log.info("Demo: execution history seeded");
+        } catch (RuntimeException ex) {
+            log.warn("Non-fatal: execution history not seeded: {}", ex.getMessage());
+        }
+    }
+
+    /** Idempotent: runs the eight specialist agents on twelve active incidents so the agent history has real, audited investigations. */
+    private void seedAgentInvestigations(WorkspaceId wsId) {
+        try {
+            if (investigationService == null || agentInvestigationRepo == null || !agentInvestigationRepo.findByWorkspaceId(wsId).isEmpty()) return;
+            int done = 0;
+            for (Disruption d : disruptionService.listDisruptions(wsId)) {
+                if (done >= 12) break;
+                if (d.status() != com.supplygraph.domain.model.disruption.DisruptionStatus.ACTIVE) continue;
+                try { investigationService.investigate(wsId, d); done++; } catch (RuntimeException ex) { log.info("Agent investigation skipped for '{}': {}", d.title(), ex.getMessage()); }
+            }
+            log.info("Demo: {} agent investigations recorded", done);
+        } catch (RuntimeException ex) {
+            log.warn("Non-fatal: agent investigations not seeded: {}", ex.getMessage());
+        }
+    }
+
+    /** Idempotent: a dozen explainable recommendations (one per incident that has a real plan) and a full benchmark grid, so the research and decision pages are populated. */
+    private void seedResearchData(WorkspaceId wsId) {
+        try {
+            if (explainableRecommendationService.findAll().size() < 10) {
+                int done = 0;
+                for (Disruption d : disruptionService.listDisruptions(wsId)) {
+                    if (done >= 12) break;
+                    if (d.status() != com.supplygraph.domain.model.disruption.DisruptionStatus.ACTIVE || !explainableRecommendationService.findByDisruptionId(d.id().value()).isEmpty()) continue;
+                    var plans = recoveryService.listPlansByDisruption(d.id());
+                    if (plans.isEmpty()) continue;
+                    var realPlan = plans.get(0);
+                    var m = realPlan.metrics();
+                    var alt = new com.supplygraph.domain.model.recovery.RecoveryPlanAlternative(
+                            com.supplygraph.domain.model.recovery.PlanAlternativeId.of("ALT-" + realPlan.id().value()), realPlan.planName(), realPlan.description(),
+                            m.totalCost(), m.recoveryDurationDays() * 24.0, m.serviceLevelImpactPercentage(),
+                            realPlan.actions().stream().map(com.supplygraph.domain.model.plan.PlanAction::description).toList());
+                    try { explainableRecommendationService.generateRecommendation(d.id().value(), "V" + realPlan.sourceTwinVersion().value(), alt); done++; }
+                    catch (RuntimeException ex) { log.info("Recommendation skipped for '{}': {}", d.title(), ex.getMessage()); }
+                }
+                log.info("Demo: {} explainable recommendations generated", done);
+            }
+        } catch (RuntimeException ex) {
+            log.warn("Non-fatal: recommendations not seeded: {}", ex.getMessage());
+        }
+        try {
+            if (benchmarkRunner != null && benchmarkExperimentRepo != null && benchmarkExperimentRepo.findAll().size() < 10) {
+                long seed = 100;
+                for (BenchmarkScenarioType sc : BenchmarkScenarioType.values())
+                    for (BenchmarkBaseline b : List.of(BenchmarkBaseline.CONCURGUARD_SELECTIVE_REPLANNING, BenchmarkBaseline.UNCOORDINATED_AGENTS)) {
+                        try { benchmarkRunner.runTrial(sc.getDisplayName() + " vs " + b.name().replace('_', ' ').toLowerCase(), sc, b, seed++, 3); }
+                        catch (RuntimeException ex) { log.info("Benchmark trial skipped: {}", ex.getMessage()); }
+                    }
+                log.info("Demo: benchmark grid recorded");
+            }
+        } catch (RuntimeException ex) {
+            log.warn("Non-fatal: benchmarks not seeded: {}", ex.getMessage());
+        }
+    }
+
     // 5c. Nine more industries beside the automotive chain, so the twin spans ten supply chains. Each is generated (real cities, invented companies and stock) and its ids carry a prefix so they never clash.
     private void addIndustryNetworks(WorkspaceId wsId) {
         if (networkImport != null && networkGenerator != null) {
@@ -394,6 +528,9 @@ public class DemoDataInitializer implements CommandLineRunner {
             log.info("Demo workspace {} already fully seeded with planning and operations data", DEMO_WORKSPACE_ID);
             addIndustryNetworks(wsId);   // adds any industry networks that an earlier version of the seeder did not have
             addExtraDisruptions(wsId);
+            seedExecutionHistory(wsId);
+            seedAgentInvestigations(wsId);
+            seedResearchData(wsId);
             seedIntegrationActivity(wsId);   // adds the simulated connectors and their runs when an earlier version had none
             return;
         }
@@ -613,7 +750,7 @@ public class DemoDataInitializer implements CommandLineRunner {
         }
 
         // 8c. Two more incidents on the generated part of the network, so the large map has several live situations
-        boolean extraIncidentsExist = disruptionService.listDisruptions(wsId).stream().anyMatch(x -> x.title().equals("Assembly plant paint-shop fire"));
+        boolean extraIncidentsExist = disruptionService.listDisruptions(wsId).stream().anyMatch(x -> x.title().equals("Assembly plant paint-shop fire") && x.status() == com.supplygraph.domain.model.disruption.DisruptionStatus.ACTIVE);
         if (!extraIncidentsExist && !generatedPlants.isEmpty() && !generatedSuppliers.isEmpty()) {
             Disruption plantFire = disruptionService.createDraft(wsId, "AUTOMOTIVE", "PLANT_FIRE", "Assembly plant paint-shop fire",
                     "A fire in the paint shop has stopped one assembly plant; inspection and repairs are expected to take about ten days.",
@@ -921,6 +1058,10 @@ public class DemoDataInitializer implements CommandLineRunner {
         } catch (Exception ex) {
             log.warn("Non-fatal: Phase 9 demo execution seeding notice: {}", ex.getMessage());
         }
+
+        seedExecutionHistory(wsId);
+        seedAgentInvestigations(wsId);
+        seedResearchData(wsId);
 
         // 18. Seed Phase 10 Enterprise Connectors (simulated), their synchronisation runs
         seedIntegrationActivity(wsId);

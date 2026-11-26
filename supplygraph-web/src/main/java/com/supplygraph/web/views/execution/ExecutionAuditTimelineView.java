@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Set;
 
 @Route(value = "execution-timeline", layout = MainLayout.class)
-@PageTitle("Execution Audit Timeline | SupplyGraph")
+@PageTitle("Execution Audit Timeline | ORBIX")
 public class ExecutionAuditTimelineView extends ExecutionViewBase {
     private static final Set<String> ACTIONS = Set.of("WORKFLOW_CREATED", "WORKFLOW_BLOCKED", "WORKFLOW_APPROVED", "WORKFLOW_REJECTED", "WORKFLOW_STARTED", "WORKFLOW_CANCELLED",
             "TASK_RETRIED", "TASK_RECONCILED", "TASK_COMPENSATED", "REASSESSMENT_PROPOSED", "REASSESSMENT_DECIDED");

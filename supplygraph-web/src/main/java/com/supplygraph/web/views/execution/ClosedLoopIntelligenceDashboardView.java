@@ -22,7 +22,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Route(value = "closed-loop", layout = MainLayout.class)
-@PageTitle("Closed-Loop Intelligence Dashboard | SupplyGraph")
+@PageTitle("Closed-Loop Intelligence Dashboard | ORBIX")
 public class ClosedLoopIntelligenceDashboardView extends ExecutionViewBase {
     private final ClosedLoopService closedLoop;
     private final Paragraph counts = new Paragraph();

@@ -20,7 +20,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "adaptive-replanning", layout = MainLayout.class)
-@PageTitle("Adaptive Replanning Monitor | SupplyGraph")
+@PageTitle("Adaptive Replanning Monitor | ORBIX")
 public class AdaptiveReplanningMonitorView extends VerticalLayout {
 
     private final AdaptiveReplanningService replanningService;

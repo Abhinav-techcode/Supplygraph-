@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 @Route(value = "sustainability", layout = MainLayout.class)
-@PageTitle("Sustainability Command Centre | SupplyGraph")
+@PageTitle("Sustainability Command Centre | ORBIX")
 public class SustainabilityCommandCentreView extends SustainabilityViewBase {
 
     private final CarbonAccountingService carbonService;

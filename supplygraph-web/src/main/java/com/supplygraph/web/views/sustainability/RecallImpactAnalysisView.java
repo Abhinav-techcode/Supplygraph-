@@ -17,7 +17,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
 @Route(value = "sustainability/traceability/recall", layout = MainLayout.class)
-@PageTitle("Recall Impact Analysis | SupplyGraph")
+@PageTitle("Recall Impact Analysis | ORBIX")
 public class RecallImpactAnalysisView extends SustainabilityViewBase {
 
     private final ProductTraceabilityService traceabilityService;

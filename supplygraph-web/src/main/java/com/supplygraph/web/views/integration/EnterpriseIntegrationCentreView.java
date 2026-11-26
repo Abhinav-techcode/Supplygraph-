@@ -16,7 +16,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "integration-centre", layout = MainLayout.class)
-@PageTitle("Enterprise Integration Centre | SupplyGraph")
+@PageTitle("Enterprise Integration Centre | ORBIX")
 public class EnterpriseIntegrationCentreView extends IntegrationViewBase {
     public EnterpriseIntegrationCentreView(ConnectorRegistryService registry, RuntimeOperationsService ops, SyncReconciliationService sync) {
         super("Enterprise Integration Centre", "Entry point to the connector runtime. Counts below come from persisted data.");

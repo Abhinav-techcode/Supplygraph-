@@ -18,7 +18,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "monitoring-rules", layout = MainLayout.class)
-@PageTitle("Monitoring Rules | SupplyGraph")
+@PageTitle("Monitoring Rules | ORBIX")
 public class MonitoringRulesView extends VerticalLayout {
 
     private final OperationalMonitoringService monitoringService;

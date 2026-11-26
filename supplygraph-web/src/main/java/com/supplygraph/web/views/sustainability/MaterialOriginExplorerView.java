@@ -20,7 +20,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "sustainability/traceability/origin", layout = MainLayout.class)
-@PageTitle("Material Origin Explorer | SupplyGraph")
+@PageTitle("Material Origin Explorer | ORBIX")
 public class MaterialOriginExplorerView extends SustainabilityViewBase {
 
     private final ProductTraceabilityService traceabilityService;

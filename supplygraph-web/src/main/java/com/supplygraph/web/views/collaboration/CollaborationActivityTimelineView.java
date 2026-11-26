@@ -24,7 +24,7 @@ import java.util.Comparator;
 import java.util.List;
 
 @Route(value = "collaboration/activity", layout = MainLayout.class)
-@PageTitle("Collaboration Activity & Audit Timeline | SupplyGraph")
+@PageTitle("Collaboration Activity & Audit Timeline | ORBIX")
 public class CollaborationActivityTimelineView extends CollaborationViewBase {
 
     public record ActivityEvent(String eventType, String entityId, String description, String theme, Instant timestamp) {}

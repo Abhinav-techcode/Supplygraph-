@@ -13,7 +13,7 @@ import com.vaadin.flow.router.Route;
 
 import java.util.List;
 
-@PageTitle("Audit & Governance Centre | SupplyGraph")
+@PageTitle("Audit & Governance Centre | ORBIX")
 @Route(value = "admin/audit", layout = MainLayout.class)
 public class AuditGovernanceCentreView extends PlatformAdminViewBase {
 

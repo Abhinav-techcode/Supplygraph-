@@ -21,7 +21,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "portal/evidence", layout = MainLayout.class)
-@PageTitle("Supplier Evidence & Assurance Centre | SupplyGraph")
+@PageTitle("Supplier Evidence & Assurance Centre | ORBIX")
 public class SupplierEvidenceCentreView extends CollaborationViewBase {
 
     private final SupplierPortalService portalService;

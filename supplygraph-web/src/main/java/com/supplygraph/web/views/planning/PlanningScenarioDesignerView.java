@@ -17,7 +17,7 @@ import com.vaadin.flow.router.Route;
 import java.math.BigDecimal;
 
 @Route(value = "planning/scenarios", layout = MainLayout.class)
-@PageTitle("Planning Scenario Designer | SupplyGraph")
+@PageTitle("Planning Scenario Designer | ORBIX")
 public class PlanningScenarioDesignerView extends PlanningViewBase {
 
     private final PlanningScenarioService scenarioService;

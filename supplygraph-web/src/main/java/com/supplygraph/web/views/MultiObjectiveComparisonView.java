@@ -18,7 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 
 @Route(value = "pareto-comparison", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Multi-Objective Pareto Frontier")
+@PageTitle("ORBIX :: Multi-Objective Pareto Frontier")
 public class MultiObjectiveComparisonView extends VerticalLayout {
 
     private final MultiObjectiveParetoService paretoService;

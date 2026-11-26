@@ -22,7 +22,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "planning", layout = MainLayout.class)
-@PageTitle("Planning Command Centre | SupplyGraph")
+@PageTitle("Planning Command Centre | ORBIX")
 public class PlanningCommandCentreView extends PlanningViewBase {
 
     private final DemandPlanningService demandService;

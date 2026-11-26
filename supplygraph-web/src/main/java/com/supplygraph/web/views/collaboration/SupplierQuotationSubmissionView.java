@@ -25,7 +25,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Route(value = "portal/rfq/submit", layout = MainLayout.class)
-@PageTitle("Submit RFQ Quotation | SupplyGraph")
+@PageTitle("Submit RFQ Quotation | ORBIX")
 public class SupplierQuotationSubmissionView extends CollaborationViewBase {
 
     private final RfqCollaborationService rfqService;

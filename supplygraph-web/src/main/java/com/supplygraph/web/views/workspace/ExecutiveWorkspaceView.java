@@ -20,7 +20,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "workspace/executive", layout = MainLayout.class)
-@PageTitle("Executive Workspace | SupplyGraph")
+@PageTitle("Executive Workspace | ORBIX")
 public class ExecutiveWorkspaceView extends WorkspaceViewBase {
 
     private final DisruptionApplicationService disruptionService;

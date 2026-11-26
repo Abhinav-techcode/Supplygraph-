@@ -23,7 +23,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Route(value = "sensitivity-analysis", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Sensitivity & Robustness Analysis")
+@PageTitle("ORBIX :: Sensitivity & Robustness Analysis")
 public class SensitivityAnalysisView extends VerticalLayout {
 
     private final SensitivityAnalysisService sensitivityService;

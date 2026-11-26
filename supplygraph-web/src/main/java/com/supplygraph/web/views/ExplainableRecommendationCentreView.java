@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 
 @Route(value = "recommendations-explainable", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Explainable Recovery Recommendations")
+@PageTitle("ORBIX :: Explainable Recovery Recommendations")
 public class ExplainableRecommendationCentreView extends VerticalLayout {
 
     private final ExplainableRecommendationService recommendationService;

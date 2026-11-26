@@ -24,7 +24,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "planning/approval", layout = MainLayout.class)
-@PageTitle("Planning Approval Handoff | SupplyGraph")
+@PageTitle("Planning Approval Handoff | ORBIX")
 public class PlanningApprovalHandoffView extends PlanningViewBase {
 
     private final PlanningScenarioService scenarioService;

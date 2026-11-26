@@ -18,7 +18,7 @@ import com.vaadin.flow.router.Route;
 
 import java.util.List;
 
-@PageTitle("Configuration Comparison & Policy Diff | SupplyGraph")
+@PageTitle("Configuration Comparison & Policy Diff | ORBIX")
 @Route(value = "admin/industry-policies/diff", layout = MainLayout.class)
 public class ConfigurationComparisonView extends PlatformAdminViewBase {
 

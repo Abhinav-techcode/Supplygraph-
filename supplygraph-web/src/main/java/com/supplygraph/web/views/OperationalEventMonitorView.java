@@ -21,7 +21,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "events", layout = MainLayout.class)
-@PageTitle("Operational Event Monitor | SupplyGraph")
+@PageTitle("Operational Event Monitor | ORBIX")
 public class OperationalEventMonitorView extends VerticalLayout {
 
     private final OperationalEventIngestionService ingestionService;

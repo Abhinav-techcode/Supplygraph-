@@ -20,7 +20,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "import-history", layout = MainLayout.class)
-@PageTitle("Import History & Audit Log | SupplyGraph")
+@PageTitle("Import History & Audit Log | ORBIX")
 public class ImportHistoryView extends VerticalLayout {
 
     private final EnterpriseDataImportService importService;

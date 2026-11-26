@@ -12,7 +12,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
-@PageTitle("Platform Health Dashboard | SupplyGraph")
+@PageTitle("Platform Health Dashboard | ORBIX")
 @Route(value = "admin/health", layout = MainLayout.class)
 public class PlatformHealthDashboardView extends PlatformAdminViewBase {
 

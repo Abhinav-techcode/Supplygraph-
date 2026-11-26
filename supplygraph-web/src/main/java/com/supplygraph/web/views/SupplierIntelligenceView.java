@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Route(value = "supplier-intelligence", layout = MainLayout.class)
-@PageTitle("Supplier Intelligence & Risk Profiling | SupplyGraph")
+@PageTitle("Supplier Intelligence & Risk Profiling | ORBIX")
 public class SupplierIntelligenceView extends VerticalLayout {
 
     private final SupplierIntelligenceService supplierService;

@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 
 @Route(value = "statistical-results", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Statistical Results & Hypothesis Testing")
+@PageTitle("ORBIX :: Statistical Results & Hypothesis Testing")
 public class StatisticalResultsView extends VerticalLayout {
 
     private final ComprehensiveBenchmarkSuiteService benchmarkSuiteService;

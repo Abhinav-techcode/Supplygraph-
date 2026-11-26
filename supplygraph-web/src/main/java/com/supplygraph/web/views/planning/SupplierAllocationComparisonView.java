@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Route(value = "planning/procurement/allocation", layout = MainLayout.class)
-@PageTitle("Supplier Allocation Comparison | SupplyGraph")
+@PageTitle("Supplier Allocation Comparison | ORBIX")
 public class SupplierAllocationComparisonView extends PlanningViewBase {
 
     private final ProcurementPlanningService procurementService;

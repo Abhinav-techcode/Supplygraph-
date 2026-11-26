@@ -13,7 +13,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "inventory-intelligence", layout = MainLayout.class)
-@PageTitle("Inventory Ledger Intelligence | SupplyGraph")
+@PageTitle("Inventory Ledger Intelligence | ORBIX")
 public class InventoryIntelligenceView extends VerticalLayout {
 
     private final MaterialIntelligenceService materialService;

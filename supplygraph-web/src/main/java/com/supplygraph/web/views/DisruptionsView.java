@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  * incident reporting, and real-time filtering.
  */
 @Route(value = "disruptions", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Disruption Management")
+@PageTitle("ORBIX :: Disruption Management")
 public class DisruptionsView extends VerticalLayout {
 
     private final DisruptionApplicationService disruptionService;

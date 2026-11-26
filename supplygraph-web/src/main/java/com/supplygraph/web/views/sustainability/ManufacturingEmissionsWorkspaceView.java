@@ -20,7 +20,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "sustainability/carbon/manufacturing", layout = MainLayout.class)
-@PageTitle("Manufacturing Emissions Workspace | SupplyGraph")
+@PageTitle("Manufacturing Emissions Workspace | ORBIX")
 public class ManufacturingEmissionsWorkspaceView extends SustainabilityViewBase {
 
     private final CarbonAccountingService carbonService;

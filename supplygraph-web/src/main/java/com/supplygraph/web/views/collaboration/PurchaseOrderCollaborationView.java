@@ -19,7 +19,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Route(value = "portal/orders", layout = MainLayout.class)
-@PageTitle("Purchase Order Collaboration | SupplyGraph")
+@PageTitle("Purchase Order Collaboration | ORBIX")
 public class PurchaseOrderCollaborationView extends CollaborationViewBase {
 
     private final OrderCollaborationService orderService;

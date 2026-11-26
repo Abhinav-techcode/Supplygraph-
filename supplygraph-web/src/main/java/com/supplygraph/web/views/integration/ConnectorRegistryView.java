@@ -16,7 +16,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
 @Route(value = "connectors", layout = MainLayout.class)
-@PageTitle("Connector Registry | SupplyGraph")
+@PageTitle("Connector Registry | ORBIX")
 public class ConnectorRegistryView extends IntegrationViewBase {
     private final ConnectorRegistryService service;
     private final Grid<Connector> grid = new Grid<>();

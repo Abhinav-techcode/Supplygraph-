@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Route(value = "event-ingestion", layout = MainLayout.class)
-@PageTitle("Event Ingestion History | SupplyGraph")
+@PageTitle("Event Ingestion History | ORBIX")
 public class EventIngestionHistoryView extends VerticalLayout {
 
     private final OperationalEventIngestionService ingestionService;

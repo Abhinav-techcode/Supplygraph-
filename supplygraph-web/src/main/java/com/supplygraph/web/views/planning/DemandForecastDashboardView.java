@@ -12,7 +12,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "planning/demand/forecasts", layout = MainLayout.class)
-@PageTitle("Demand Forecast Dashboard | SupplyGraph")
+@PageTitle("Demand Forecast Dashboard | ORBIX")
 public class DemandForecastDashboardView extends PlanningViewBase {
 
     public DemandForecastDashboardView(DemandPlanningService demandService) {

@@ -16,7 +16,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "planning/procurement", layout = MainLayout.class)
-@PageTitle("Procurement Planning Centre | SupplyGraph")
+@PageTitle("Procurement Planning Centre | ORBIX")
 public class ProcurementPlanningCentreView extends PlanningViewBase {
 
     public ProcurementPlanningCentreView(ProcurementPlanningService procurementService) {

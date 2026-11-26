@@ -64,7 +64,7 @@ import java.util.*;
  * Every figure comes from the twin or from a service; where the twin cannot supply a value the page says so.
  */
 @Route(value = "incident-workspace", layout = MainLayout.class)
-@PageTitle("Guided Incident Workspace | SupplyGraph")
+@PageTitle("Guided Incident Workspace | ORBIX")
 public class IncidentWorkspaceView extends VerticalLayout {
 
     private static final String[] STEP_LABELS = {"1. Detect", "2. Impact", "3. Agents", "4. Options", "5. ConcurGuard", "6. Approve", "7. Execute"};

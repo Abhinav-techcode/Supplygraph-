@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Route(value = "data-integration", layout = MainLayout.class)
-@PageTitle("Data Integration Centre | SupplyGraph")
+@PageTitle("Data Integration Centre | ORBIX")
 public class DataIntegrationCentreView extends VerticalLayout {
 
     private final EnterpriseDataImportService importService;

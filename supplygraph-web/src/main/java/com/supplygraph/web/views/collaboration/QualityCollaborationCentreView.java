@@ -22,7 +22,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "collaboration/quality", layout = MainLayout.class)
-@PageTitle("Quality Collaboration & 8D Problem Solving | SupplyGraph")
+@PageTitle("Quality Collaboration & 8D Problem Solving | ORBIX")
 public class QualityCollaborationCentreView extends CollaborationViewBase {
 
     private final SupplierQualityCollaborationService qualityService;

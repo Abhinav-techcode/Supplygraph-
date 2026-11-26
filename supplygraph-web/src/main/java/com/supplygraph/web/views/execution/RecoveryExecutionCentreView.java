@@ -20,7 +20,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "execution-centre", layout = MainLayout.class)
-@PageTitle("Recovery Execution Centre | SupplyGraph")
+@PageTitle("Recovery Execution Centre | ORBIX")
 public class RecoveryExecutionCentreView extends ExecutionViewBase {
     private final RecoveryPlanningApplicationService planning;
     private final RecoveryPlanConversionService conversion;

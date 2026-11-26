@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Route(value = "execution-failures", layout = MainLayout.class)
-@PageTitle("Execution Failure Management | SupplyGraph")
+@PageTitle("Execution Failure Management | ORBIX")
 public class ExecutionFailureManagementView extends ExecutionViewBase {
     record Row(ExecutionWorkflow workflow, ExecutionTask task) {}
 

@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Route(value = "portal/capacity", layout = MainLayout.class)
-@PageTitle("Supplier Capacity Confirmation | SupplyGraph")
+@PageTitle("Supplier Capacity Confirmation | ORBIX")
 public class CapacityConfirmationWorkspaceView extends CollaborationViewBase {
 
     private final SupplierPortalService portalService;

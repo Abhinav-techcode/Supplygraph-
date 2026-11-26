@@ -21,7 +21,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
 /** Digital twin explorer: graph, node table and lane table are all rendered from the same {@link NetworkGraphView} of the persisted twin. */
-@PageTitle("Supply Chain Network | SupplyGraph")
+@PageTitle("Supply Chain Network | ORBIX")
 @Route(value = "digital-twin", layout = MainLayout.class)
 public class DigitalTwinGraphExplorerView extends VerticalLayout {
 

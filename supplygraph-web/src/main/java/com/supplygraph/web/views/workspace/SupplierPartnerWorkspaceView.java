@@ -20,7 +20,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "workspace/supplier", layout = MainLayout.class)
-@PageTitle("Supplier Partner Workspace | SupplyGraph")
+@PageTitle("Supplier Partner Workspace | ORBIX")
 public class SupplierPartnerWorkspaceView extends WorkspaceViewBase {
 
     private final OrderCollaborationService orderService;

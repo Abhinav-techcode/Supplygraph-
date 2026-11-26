@@ -19,7 +19,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "workspace/quality", layout = MainLayout.class)
-@PageTitle("Quality Manager Workspace | SupplyGraph")
+@PageTitle("Quality Manager Workspace | ORBIX")
 public class QualityManagerWorkspaceView extends WorkspaceViewBase {
 
     private final SupplierQualityCollaborationService qualityService;

@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Route(value = "planning/inventory/reorder", layout = MainLayout.class)
-@PageTitle("Reorder Planning Workspace | SupplyGraph")
+@PageTitle("Reorder Planning Workspace | ORBIX")
 public class ReorderPlanningWorkspaceView extends PlanningViewBase {
 
     private final MultiEchelonInventoryService inventoryService;

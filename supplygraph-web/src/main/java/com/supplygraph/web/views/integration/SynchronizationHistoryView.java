@@ -16,7 +16,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "sync-history", layout = MainLayout.class)
-@PageTitle("Synchronization History | SupplyGraph")
+@PageTitle("Synchronization History | ORBIX")
 public class SynchronizationHistoryView extends IntegrationViewBase {
     private final ConnectorExecutionService executions;
     private final Grid<ConnectorExecution> grid = new Grid<>();

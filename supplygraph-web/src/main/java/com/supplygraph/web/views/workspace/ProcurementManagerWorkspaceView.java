@@ -19,7 +19,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "workspace/procurement", layout = MainLayout.class)
-@PageTitle("Procurement Manager Workspace | SupplyGraph")
+@PageTitle("Procurement Manager Workspace | ORBIX")
 public class ProcurementManagerWorkspaceView extends WorkspaceViewBase {
 
     private final ProcurementPlanningService procurementService;

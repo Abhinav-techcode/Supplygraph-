@@ -42,7 +42,7 @@ import java.util.List;
  * displaying ConcurGuard conflict statuses, validating stale-state preconditions, and recording audited human approvals.
  */
 @Route(value = "decision-centre", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Recovery Decision Centre")
+@PageTitle("ORBIX :: Recovery Decision Centre")
 public class RecoveryDecisionCentreView extends VerticalLayout {
 
     private final DisruptionApplicationService disruptionService;

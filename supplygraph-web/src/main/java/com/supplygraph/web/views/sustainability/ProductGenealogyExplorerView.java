@@ -25,7 +25,7 @@ import com.vaadin.flow.router.Route;
 import java.time.Instant;
 
 @Route(value = "sustainability/traceability/genealogy", layout = MainLayout.class)
-@PageTitle("Product Genealogy Explorer | SupplyGraph")
+@PageTitle("Product Genealogy Explorer | ORBIX")
 public class ProductGenealogyExplorerView extends SustainabilityViewBase {
 
     private final ProductTraceabilityService traceabilityService;

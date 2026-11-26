@@ -18,7 +18,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "provenance", layout = MainLayout.class)
-@PageTitle("Data Provenance & Traceability | SupplyGraph")
+@PageTitle("Data Provenance & Traceability | ORBIX")
 public class ProvenanceExplorerView extends VerticalLayout {
 
     private final DataProvenanceService provenanceService;

@@ -23,7 +23,7 @@ import com.vaadin.flow.router.Route;
 
 import java.util.List;
 
-@PageTitle("Industry Policy Configuration | SupplyGraph")
+@PageTitle("Industry Policy Configuration | ORBIX")
 @Route(value = "admin/industry-policies", layout = MainLayout.class)
 public class IndustryPolicyConfigurationView extends PlatformAdminViewBase {
 

@@ -18,7 +18,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "industry-config", layout = MainLayout.class)
-@PageTitle("Industry Configuration & Packs | SupplyGraph")
+@PageTitle("Industry Configuration & Packs | ORBIX")
 public class IndustryConfigurationView extends VerticalLayout {
 
     private final List<IndustryPackExtension> packs = List.of(

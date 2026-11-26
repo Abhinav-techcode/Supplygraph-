@@ -21,7 +21,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "audit-log", layout = MainLayout.class)
-@PageTitle("Audit History & Governance | SupplyGraph")
+@PageTitle("Audit History & Governance | ORBIX")
 public class AuditGovernanceView extends VerticalLayout {
 
     private final AuditGovernanceService auditService;

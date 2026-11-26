@@ -16,7 +16,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "supplier-dependencies", layout = MainLayout.class)
-@PageTitle("Supplier Dependency Explorer | SupplyGraph")
+@PageTitle("Supplier Dependency Explorer | ORBIX")
 public class SupplierDependencyExplorerView extends VerticalLayout {
 
     private final SupplierIntelligenceService supplierService;

@@ -19,7 +19,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "reassessments", layout = MainLayout.class)
-@PageTitle("Impact Reassessment History | SupplyGraph")
+@PageTitle("Impact Reassessment History | ORBIX")
 public class ImpactReassessmentHistoryView extends VerticalLayout {
 
     private final ContinuousImpactReassessmentService reassessmentService;

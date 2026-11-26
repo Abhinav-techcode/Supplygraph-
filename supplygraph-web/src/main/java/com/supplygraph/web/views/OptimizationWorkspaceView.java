@@ -35,7 +35,7 @@ import java.util.List;
  * production rebalancing, and transportation mode trade-offs.
  */
 @Route(value = "optimization", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Google OR-Tools Recovery Optimization")
+@PageTitle("ORBIX :: Google OR-Tools Recovery Optimization")
 public class OptimizationWorkspaceView extends VerticalLayout {
 
     private final DisruptionApplicationService disruptionService;

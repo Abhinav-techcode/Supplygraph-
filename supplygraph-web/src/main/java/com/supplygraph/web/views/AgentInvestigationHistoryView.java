@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 
 @Route(value = "agent-history", layout = MainLayout.class)
-@PageTitle("Agent Investigation History | SupplyGraph")
+@PageTitle("Agent Investigation History | ORBIX")
 public class AgentInvestigationHistoryView extends VerticalLayout {
 
     private final AgentInvestigationRepositoryPort investigationRepository;

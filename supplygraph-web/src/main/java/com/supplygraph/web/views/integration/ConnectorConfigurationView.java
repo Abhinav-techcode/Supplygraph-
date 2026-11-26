@@ -18,7 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Route(value = "connector-config", layout = MainLayout.class)
-@PageTitle("Connector Configuration | SupplyGraph")
+@PageTitle("Connector Configuration | ORBIX")
 public class ConnectorConfigurationView extends IntegrationViewBase {
     private final ConnectorRegistryService service;
     private final ComboBox<Connector> selector = new ComboBox<>("Connector");

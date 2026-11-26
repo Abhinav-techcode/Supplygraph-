@@ -16,7 +16,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "event-replay", layout = MainLayout.class)
-@PageTitle("Event Replay Centre | SupplyGraph")
+@PageTitle("Event Replay Centre | ORBIX")
 public class EventReplayCentreView extends IntegrationViewBase {
     private final OutboxService outbox;
     private final ComboBox<OutboxEvent> selector = new ComboBox<>("Dead-lettered event");

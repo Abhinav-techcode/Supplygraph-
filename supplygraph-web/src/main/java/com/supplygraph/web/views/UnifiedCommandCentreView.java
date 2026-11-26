@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Route(value = "command-center", layout = MainLayout.class)
-@PageTitle("Unified Command Centre | SupplyGraph")
+@PageTitle("Unified Command Centre | ORBIX")
 public class UnifiedCommandCentreView extends VerticalLayout {
 
     public record SearchResultItem(String category, String id, String title, String status, String targetRoute) {}

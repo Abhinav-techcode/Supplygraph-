@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 /** Sign-in page (public). Failures are explained in plain words; lockout and password checks live in {@link AuthenticationService}. */
 @Route("login")
-@PageTitle("Sign in | SupplyGraph")
+@PageTitle("Sign in | ORBIX")
 public class LoginView extends Div {
     public LoginView(AuthenticationService auth, SystemStatusService status,
                      @Value("${supplygraph.auth.show-demo-accounts:false}") boolean showDemo,
@@ -24,11 +24,11 @@ public class LoginView extends Div {
         addClassName("sg-login-page");
         Div card = new Div();
         card.addClassName("sg-login-card");
-        Anchor brand = new Anchor("welcome", "SupplyGraph");
+        Anchor brand = new Anchor("welcome", "ORBIX");
         brand.addClassName("sg-brand");
         H2 title = new H2("Sign in");
         title.getStyle().set("margin", "8px 0 4px");
-        Paragraph sub = new Paragraph("Use your SupplyGraph account to open the control tower.");
+        Paragraph sub = new Paragraph("Use your ORBIX account to open the control tower.");
         sub.getStyle().set("margin", "0 0 12px").set("color", "var(--lumo-secondary-text-color)");
 
         LoginForm form = new LoginForm();

@@ -16,7 +16,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import java.time.Instant;
 
 @Route(value = "runtime-operations", layout = MainLayout.class)
-@PageTitle("Runtime Operations | SupplyGraph")
+@PageTitle("Runtime Operations | ORBIX")
 public class RuntimeOperationsDashboardView extends IntegrationViewBase {
     private final RuntimeOperationsService ops;
     private final ObjectProvider<OutboxDispatcherWorker> worker;

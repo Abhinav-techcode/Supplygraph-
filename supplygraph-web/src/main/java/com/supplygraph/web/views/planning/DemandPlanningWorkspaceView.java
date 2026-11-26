@@ -26,7 +26,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Route(value = "planning/demand", layout = MainLayout.class)
-@PageTitle("Demand Planning Workspace | SupplyGraph")
+@PageTitle("Demand Planning Workspace | ORBIX")
 public class DemandPlanningWorkspaceView extends PlanningViewBase {
 
     private final DemandPlanningService demandService;

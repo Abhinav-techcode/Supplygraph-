@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Route(value = "security-admin", layout = MainLayout.class)
-@PageTitle("Security Administration & RBAC | SupplyGraph")
+@PageTitle("Security Administration & RBAC | ORBIX")
 public class SecurityAdminView extends VerticalLayout {
 
     private final UserManagementService userService;

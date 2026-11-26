@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Route(value = "benchmark-studio", layout = MainLayout.class)
-@PageTitle("Research Benchmark Studio | SupplyGraph")
+@PageTitle("Research Benchmark Studio | ORBIX")
 public class BenchmarkStudioView extends VerticalLayout {
 
     private final BenchmarkExperimentRunner runner;

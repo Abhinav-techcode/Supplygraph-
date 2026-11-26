@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 @Route(value = "workspace/logistics", layout = MainLayout.class)
-@PageTitle("Logistics Manager Workspace | SupplyGraph")
+@PageTitle("Logistics Manager Workspace | ORBIX")
 public class LogisticsManagerWorkspaceView extends WorkspaceViewBase {
 
     private final SupplyChainNetworkPlanningService networkService;

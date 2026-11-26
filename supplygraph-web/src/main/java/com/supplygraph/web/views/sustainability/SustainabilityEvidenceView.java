@@ -20,7 +20,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "sustainability/evidence", layout = MainLayout.class)
-@PageTitle("Sustainability Evidence & Regulatory Audit | SupplyGraph")
+@PageTitle("Sustainability Evidence & Regulatory Audit | ORBIX")
 public class SustainabilityEvidenceView extends SustainabilityViewBase {
 
     private final SupplierSustainabilityService esgService;

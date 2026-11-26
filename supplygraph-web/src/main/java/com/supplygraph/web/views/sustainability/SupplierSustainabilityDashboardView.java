@@ -20,7 +20,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "sustainability/esg", layout = MainLayout.class)
-@PageTitle("Supplier Sustainability & ESG | SupplyGraph")
+@PageTitle("Supplier Sustainability & ESG | ORBIX")
 public class SupplierSustainabilityDashboardView extends SustainabilityViewBase {
 
     private final SupplierSustainabilityService esgService;

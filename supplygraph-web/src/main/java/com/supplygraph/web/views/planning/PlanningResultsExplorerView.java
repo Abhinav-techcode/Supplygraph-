@@ -16,7 +16,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "planning/scenarios/results", layout = MainLayout.class)
-@PageTitle("Planning Results Explorer | SupplyGraph")
+@PageTitle("Planning Results Explorer | ORBIX")
 public class PlanningResultsExplorerView extends PlanningViewBase {
 
     public PlanningResultsExplorerView(PlanningScenarioService scenarioService) {

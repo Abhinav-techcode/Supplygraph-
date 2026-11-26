@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Collections;
 import java.util.List;
 
-@PageTitle("Industry Extension Registry | SupplyGraph")
+@PageTitle("Industry Extension Registry | ORBIX")
 @Route(value = "admin/extensions", layout = MainLayout.class)
 public class ExtensionRegistryView extends PlatformAdminViewBase {
 
@@ -65,7 +65,7 @@ public class ExtensionRegistryView extends PlatformAdminViewBase {
                 new H3("SPI Extensibility Architecture"),
                 new Span("• Pluggable SPI: New industry domains are integrated by implementing `IndustryPackExtension` without altering core domain code."),
                 new Span("• Dynamic Isolation: Industry policies, bill-of-materials structures, and validation algorithms execute inside their respective bounded contexts."),
-                new Span("• Multi-Domain Operations: A single SupplyGraph instance can concurrently evaluate multi-tier networks across automotive, electronics, and aerospace domains.")
+                new Span("• Multi-Domain Operations: A single ORBIX instance can concurrently evaluate multi-tier networks across automotive, electronics, and aerospace domains.")
         );
         add(detailCard);
     }

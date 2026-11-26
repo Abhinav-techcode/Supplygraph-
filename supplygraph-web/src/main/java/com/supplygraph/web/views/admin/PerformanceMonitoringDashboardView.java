@@ -12,7 +12,7 @@ import com.vaadin.flow.router.Route;
 
 import java.util.List;
 
-@PageTitle("Performance Monitoring Dashboard | SupplyGraph")
+@PageTitle("Performance Monitoring Dashboard | ORBIX")
 @Route(value = "admin/performance", layout = MainLayout.class)
 public class PerformanceMonitoringDashboardView extends PlatformAdminViewBase {
 

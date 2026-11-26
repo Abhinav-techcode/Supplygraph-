@@ -11,7 +11,7 @@ import com.vaadin.flow.router.Route;
 
 import java.util.List;
 
-@PageTitle("Release & Runtime Information | SupplyGraph")
+@PageTitle("Release & Runtime Information | ORBIX")
 @Route(value = "admin/version", layout = MainLayout.class)
 public class ReleaseVersionInfoView extends PlatformAdminViewBase {
 
@@ -28,7 +28,7 @@ public class ReleaseVersionInfoView extends PlatformAdminViewBase {
         HorizontalLayout kpis = new HorizontalLayout();
         kpis.setWidthFull();
         kpis.add(
-                createKpiCard("SupplyGraph Version", "v0.1.0-RELEASE", "Phases 1-15 Delivered", "success"),
+                createKpiCard("ORBIX Version", "v0.1.0-RELEASE", "Phases 1-15 Delivered", "success"),
                 createKpiCard("Java Platform", "Java 21 LTS", "OpenJDK 64-Bit VM", "primary"),
                 createKpiCard("UI Framework", "Vaadin Flow 24.5.4", "Java-First Full-Stack", "primary"),
                 createKpiCard("Persistence Engine", "PostgreSQL 16+", "Flyway v15 Schema", "success")
@@ -46,7 +46,7 @@ public class ReleaseVersionInfoView extends PlatformAdminViewBase {
         grid.addColumn(ReleaseComponent::notes).setHeader("Architectural Role").setAutoWidth(true);
 
         List<ReleaseComponent> components = List.of(
-                new ReleaseComponent("SupplyGraph Core Domain", "0.1.0-SNAPSHOT", "PRODUCTION READY", "100% Pure Java 21 standard library; zero external dependencies"),
+                new ReleaseComponent("ORBIX Core Domain", "0.1.0-SNAPSHOT", "PRODUCTION READY", "100% Pure Java 21 standard library; zero external dependencies"),
                 new ReleaseComponent("Spring Boot", "3.4.1", "STABLE GA", "Modular monolithic application orchestration"),
                 new ReleaseComponent("Vaadin Flow", "24.5.4", "STABLE GA", "Java-first enterprise UI component framework"),
                 new ReleaseComponent("Google OR-Tools", "9.11.4210", "STABLE GA", "MIP and LP mathematical solver for multi-echelon optimization"),

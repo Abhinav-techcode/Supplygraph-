@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
  * Table names are only ever taken from the database's own catalogue, and columns that hold secrets are masked.
  */
 @Route(value = "database", layout = MainLayout.class)
-@PageTitle("Database | SupplyGraph")
+@PageTitle("Database | ORBIX")
 public class DatabaseView extends VerticalLayout {
     private static final Pattern SECRET = Pattern.compile("(?i).*(password|hash|salt|secret|token|api_?key|signature|credential).*");
     private static final int PREVIEW_ROWS = 50;

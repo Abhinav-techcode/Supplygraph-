@@ -20,7 +20,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "execution-monitor", layout = MainLayout.class)
-@PageTitle("Live Execution Monitor | SupplyGraph")
+@PageTitle("Live Execution Monitor | ORBIX")
 public class LiveExecutionMonitorView extends ExecutionViewBase {
     private final ExecutionOrchestrationService orchestration;
     private final ComboBox<ExecutionWorkflow> selector = workflowSelector("Workflow");

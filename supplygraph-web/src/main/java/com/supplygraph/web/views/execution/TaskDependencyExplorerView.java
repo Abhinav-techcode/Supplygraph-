@@ -13,7 +13,7 @@ import com.vaadin.flow.router.Route;
 import java.util.*;
 
 @Route(value = "task-dependencies", layout = MainLayout.class)
-@PageTitle("Task Dependency Explorer | SupplyGraph")
+@PageTitle("Task Dependency Explorer | ORBIX")
 public class TaskDependencyExplorerView extends ExecutionViewBase {
     private final ComboBox<ExecutionWorkflow> selector = workflowSelector("Workflow");
     private final Html graph = new Html("<div></div>");

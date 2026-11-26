@@ -12,7 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 /** Friendly 404 inside the normal application frame. */
 @ParentLayout(MainLayout.class)
-@PageTitle("Page not found | SupplyGraph")
+@PageTitle("Page not found | ORBIX")
 public class NotFoundView extends VerticalLayout implements HasErrorParameter<NotFoundException> {
     @Override
     public int setErrorParameter(BeforeEnterEvent event, ErrorParameter<NotFoundException> parameter) {

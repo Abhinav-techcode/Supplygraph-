@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Route(value = "planning/demand/detail", layout = MainLayout.class)
-@PageTitle("Forecast Detail Explorer | SupplyGraph")
+@PageTitle("Forecast Detail Explorer | ORBIX")
 public class ForecastDetailExplorerView extends PlanningViewBase {
 
     private final DemandPlanningService demandService;

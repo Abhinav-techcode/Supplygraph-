@@ -23,7 +23,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "portal", layout = MainLayout.class)
-@PageTitle("Supplier Portal Command Centre | SupplyGraph")
+@PageTitle("Supplier Portal Command Centre | ORBIX")
 public class SupplierPortalView extends CollaborationViewBase {
 
     private final SupplierPortalService portalService;

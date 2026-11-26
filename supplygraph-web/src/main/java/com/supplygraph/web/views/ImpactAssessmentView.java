@@ -35,7 +35,7 @@ import java.util.List;
  * computing direct/indirect node disruptions, BOM explosion material shortages, and financial exposure.
  */
 @Route(value = "impact", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Cascading Impact Assessment")
+@PageTitle("ORBIX :: Cascading Impact Assessment")
 public class ImpactAssessmentView extends VerticalLayout {
 
     private final DisruptionApplicationService disruptionService;

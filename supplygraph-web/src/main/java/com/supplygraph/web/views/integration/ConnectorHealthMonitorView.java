@@ -15,7 +15,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "connector-health", layout = MainLayout.class)
-@PageTitle("Connector Health Monitor | SupplyGraph")
+@PageTitle("Connector Health Monitor | ORBIX")
 public class ConnectorHealthMonitorView extends IntegrationViewBase {
     private final RuntimeOperationsService ops;
     private final ConnectorExecutionService executions;

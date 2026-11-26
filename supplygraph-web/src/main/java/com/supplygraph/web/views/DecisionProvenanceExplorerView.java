@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 
 @Route(value = "decision-provenance", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Decision Provenance Explorer")
+@PageTitle("ORBIX :: Decision Provenance Explorer")
 public class DecisionProvenanceExplorerView extends VerticalLayout {
 
     private final DecisionProvenanceGraphService provenanceService;

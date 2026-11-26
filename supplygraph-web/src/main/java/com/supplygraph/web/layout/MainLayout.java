@@ -52,13 +52,15 @@ public class MainLayout extends AppLayout {
         DrawerToggle toggle = new DrawerToggle();
         toggle.setAriaLabel("Menu toggle");
 
-        H1 title = new H1("SupplyGraph");
+        H1 title = new H1("ORBIX");
         title.getStyle()
-                .set("font-size", "var(--lumo-font-size-l)")
+                .set("font-size", "var(--lumo-font-size-xl)")
+                .set("font-weight", "800")
+                .set("letter-spacing", "0.14em")
                 .set("margin", "0")
                 .set("color", "var(--lumo-primary-text-color)");
 
-        Span badge = new Span("Enterprise Twin & Recovery");
+        Span badge = new Span("Supply Chain Digital Twin & Recovery");
         badge.getElement().getThemeList().add("badge success small");
         badge.getStyle().set("margin-left", "var(--lumo-space-s)");
 

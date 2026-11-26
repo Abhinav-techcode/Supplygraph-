@@ -21,7 +21,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "sustainability/carbon/transport", layout = MainLayout.class)
-@PageTitle("Transportation Emissions Explorer | SupplyGraph")
+@PageTitle("Transportation Emissions Explorer | ORBIX")
 public class TransportationEmissionsExplorerView extends SustainabilityViewBase {
 
     private final CarbonAccountingService carbonService;

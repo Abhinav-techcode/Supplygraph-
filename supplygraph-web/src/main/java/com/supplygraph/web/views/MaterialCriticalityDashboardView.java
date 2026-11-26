@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Route(value = "material-criticality", layout = MainLayout.class)
-@PageTitle("Material Criticality Dashboard | SupplyGraph")
+@PageTitle("Material Criticality Dashboard | ORBIX")
 public class MaterialCriticalityDashboardView extends VerticalLayout {
 
     private final MaterialIntelligenceService materialService;

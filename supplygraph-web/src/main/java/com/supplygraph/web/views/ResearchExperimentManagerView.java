@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 
 @Route(value = "experiment-manager", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Research Experiment Manager")
+@PageTitle("ORBIX :: Research Experiment Manager")
 public class ResearchExperimentManagerView extends VerticalLayout {
 
     private final ComprehensiveBenchmarkSuiteService benchmarkSuiteService;

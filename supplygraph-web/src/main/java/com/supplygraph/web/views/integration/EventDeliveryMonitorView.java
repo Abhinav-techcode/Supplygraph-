@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 @Route(value = "event-delivery", layout = MainLayout.class)
-@PageTitle("Event Delivery Monitor | SupplyGraph")
+@PageTitle("Event Delivery Monitor | ORBIX")
 public class EventDeliveryMonitorView extends IntegrationViewBase {
     private final OutboxService outbox;
     private final Grid<OutboxEvent> grid = new Grid<>();

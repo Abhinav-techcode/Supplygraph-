@@ -18,7 +18,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "workspace/analyst", layout = MainLayout.class)
-@PageTitle("Supply Chain Analyst Workspace | SupplyGraph")
+@PageTitle("Supply Chain Analyst Workspace | ORBIX")
 public class AnalystWorkspaceView extends WorkspaceViewBase {
 
     private final WhatIfAnalysisService whatIfService;

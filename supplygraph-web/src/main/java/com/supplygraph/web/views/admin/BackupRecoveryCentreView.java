@@ -18,7 +18,7 @@ import com.vaadin.flow.router.Route;
 
 import java.util.List;
 
-@PageTitle("Disaster Recovery Vault | SupplyGraph")
+@PageTitle("Disaster Recovery Vault | ORBIX")
 @Route(value = "admin/backup", layout = MainLayout.class)
 public class BackupRecoveryCentreView extends PlatformAdminViewBase {
 

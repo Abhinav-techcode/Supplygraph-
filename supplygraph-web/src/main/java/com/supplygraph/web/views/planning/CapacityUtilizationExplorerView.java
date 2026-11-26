@@ -20,7 +20,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Route(value = "planning/production/capacity", layout = MainLayout.class)
-@PageTitle("Capacity Utilization Explorer | SupplyGraph")
+@PageTitle("Capacity Utilization Explorer | ORBIX")
 public class CapacityUtilizationExplorerView extends PlanningViewBase {
 
     public CapacityUtilizationExplorerView(ProductionPlanningService productionService) {

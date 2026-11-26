@@ -18,13 +18,13 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "reconciliation", layout = MainLayout.class)
-@PageTitle("Data Reconciliation Centre | SupplyGraph")
+@PageTitle("Data Reconciliation Centre | ORBIX")
 public class DataReconciliationCentreView extends IntegrationViewBase {
     private final SyncReconciliationService sync;
     private final Grid<ReconciliationItem> open = new Grid<>();
     private final Grid<ReconciliationItem> history = new Grid<>();
     private final TextArea rationale = new TextArea("Resolution rationale (required, audited)");
-    private final Span empty = new Span("No open conflicts. Conflicts appear when both SupplyGraph and the source system changed a value since the last sync.");
+    private final Span empty = new Span("No open conflicts. Conflicts appear when both ORBIX and the source system changed a value since the last sync.");
 
     public DataReconciliationCentreView(SyncReconciliationService sync) {
         super("Data Reconciliation Centre", "Resolve three-way conflicts (external vs internal vs last-synced) and configure field authority.");

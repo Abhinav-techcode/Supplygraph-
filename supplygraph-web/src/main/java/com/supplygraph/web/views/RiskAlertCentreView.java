@@ -24,7 +24,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "risk-alerts", layout = MainLayout.class)
-@PageTitle("Risk & Alert Centre | SupplyGraph")
+@PageTitle("Risk & Alert Centre | ORBIX")
 public class RiskAlertCentreView extends VerticalLayout {
 
     private final OperationalMonitoringService monitoringService;

@@ -20,7 +20,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "sustainability/circular", layout = MainLayout.class)
-@PageTitle("Circular Supply Chain & Recycling | SupplyGraph")
+@PageTitle("Circular Supply Chain & Recycling | ORBIX")
 public class CircularSupplyChainDashboardView extends SustainabilityViewBase {
 
     private final CircularEconomyService circularService;

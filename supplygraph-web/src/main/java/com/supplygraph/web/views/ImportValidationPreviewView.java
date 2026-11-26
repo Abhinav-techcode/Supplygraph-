@@ -18,7 +18,7 @@ import com.vaadin.flow.router.Route;
 import java.util.Optional;
 
 @Route(value = "import-preview", layout = MainLayout.class)
-@PageTitle("Import Validation & Preview | SupplyGraph")
+@PageTitle("Import Validation & Preview | ORBIX")
 public class ImportValidationPreviewView extends VerticalLayout {
 
     private final EnterpriseDataImportService importService;

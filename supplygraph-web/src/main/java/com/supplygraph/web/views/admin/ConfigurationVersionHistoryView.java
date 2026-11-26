@@ -15,7 +15,7 @@ import com.vaadin.flow.router.Route;
 
 import java.util.List;
 
-@PageTitle("Policy Configuration Version History | SupplyGraph")
+@PageTitle("Policy Configuration Version History | ORBIX")
 @Route(value = "admin/industry-policies/history", layout = MainLayout.class)
 public class ConfigurationVersionHistoryView extends PlatformAdminViewBase {
 

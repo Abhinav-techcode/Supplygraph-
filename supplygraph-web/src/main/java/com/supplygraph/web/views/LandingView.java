@@ -13,7 +13,7 @@ import java.util.List;
 
 /** Public welcome page: what SupplyGraph is, how to use it, what it will and will not do. */
 @Route("welcome")
-@PageTitle("SupplyGraph | Supply chain digital twin and governed recovery")
+@PageTitle("ORBIX | Supply chain digital twin and governed recovery")
 public class LandingView extends Div {
     private record Card(String title, String text) {}
     private record Step(String title, String text) {}
@@ -23,7 +23,7 @@ public class LandingView extends Div {
 
         Div nav = new Div();
         nav.addClassName("sg-land-nav");
-        Span brand = new Span("SupplyGraph");
+        Span brand = new Span("ORBIX");
         brand.addClassName("sg-brand");
         Button signIn = new Button("Sign in", e -> UI.getCurrent().navigate(LoginView.class));
         signIn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -33,7 +33,7 @@ public class LandingView extends Div {
         Div hero = new Div();
         hero.addClassName("sg-land-hero");
         H1 h1 = new H1("See the disruption coming. Recover with confidence.");
-        Paragraph lead = new Paragraph("SupplyGraph turns your supply chain into a living digital twin. It shows what a disruption reaches, lets specialist analysis agents propose recoveries, "
+        Paragraph lead = new Paragraph("ORBIX turns your supply chain into a living digital twin. It shows what a disruption reaches, lets specialist analysis agents propose recoveries, "
                 + "checks them for conflicts, and keeps people in charge with approval, execution tracking and a full audit trail.");
         lead.addClassName("sg-land-lead");
         Button start = new Button("Sign in to get started", e -> UI.getCurrent().navigate(LoginView.class));
@@ -42,7 +42,7 @@ public class LandingView extends Div {
 
         add(nav, hero,
                 section("What you can do", "Four jobs, one connected system.", List.of(
-                        new Card("Model your network", "Describe facilities, lanes, stock and the bill of materials once. SupplyGraph keeps them as a versioned digital twin, so every other screen works from the same facts."),
+                        new Card("Model your network", "Describe facilities, lanes, stock and the bill of materials once. ORBIX keeps them as a versioned digital twin, so every other screen works from the same facts."),
                         new Card("Understand impact", "When something breaks, see which facilities, materials and products are reached, how long stock will last, and which facilities have no way around the problem."),
                         new Card("Decide with agents and checks", "Eight rule-based specialist agents (plain Java analysis, not a language model) read the twin and propose actions with their evidence. ConcurGuard checks proposals do not overdraw stock or double-book lanes. Simulation shows the risk."),
                         new Card("Execute under control", "A person approves. Execution runs as a governed workflow with separation of duties, and confirmed outcomes update the twin so the next decision starts from reality."))),
@@ -70,7 +70,7 @@ public class LandingView extends Div {
         Div s = new Div();
         s.addClassNames("sg-land-section", "sg-land-alt");
         s.getElement().setAttribute("id", "how");
-        s.add(new H2("How to use SupplyGraph"), new Paragraph("Six steps from an empty system to a recovered disruption. The built-in tour will point at each of them."));
+        s.add(new H2("How to use ORBIX"), new Paragraph("Six steps from an empty system to a recovered disruption."));
         List<Step> steps = List.of(
                 new Step("Sign in", "Use the account you were given. What you can do depends on your role."),
                 new Step("Add your data", "On the home page, load the sample supply chain to explore, or import your own facilities, lanes and stock from CSV."),
@@ -114,7 +114,7 @@ public class LandingView extends Div {
         f.addClassName("sg-land-footer");
         Button in = new Button("Sign in", e -> UI.getCurrent().navigate(LoginView.class));
         in.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        f.add(new Span("SupplyGraph"), in, new SystemStatusPanel(status.current(), false));
+        f.add(new Span("ORBIX"), in, new SystemStatusPanel(status.current(), false));
         return f;
     }
 }

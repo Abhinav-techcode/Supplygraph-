@@ -15,7 +15,7 @@ import com.vaadin.flow.router.Route;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Route(value = "advanced-resilience", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Advanced Network Resilience")
+@PageTitle("ORBIX :: Advanced Network Resilience")
 public class AdvancedResilienceView extends VerticalLayout {
 
     private final AdvancedResilienceAnalyticsService resilienceService;

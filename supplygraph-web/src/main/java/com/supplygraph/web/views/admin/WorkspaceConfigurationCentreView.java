@@ -21,7 +21,7 @@ import com.vaadin.flow.router.Route;
 
 import java.util.List;
 
-@PageTitle("Workspace Quotas & Tenant Configuration | SupplyGraph")
+@PageTitle("Workspace Quotas & Tenant Configuration | ORBIX")
 @Route(value = "admin/workspaces", layout = MainLayout.class)
 public class WorkspaceConfigurationCentreView extends PlatformAdminViewBase {
 

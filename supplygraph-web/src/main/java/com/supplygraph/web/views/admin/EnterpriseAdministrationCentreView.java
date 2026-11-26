@@ -15,7 +15,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
-@PageTitle("Enterprise Administration Centre | SupplyGraph")
+@PageTitle("Enterprise Administration Centre | ORBIX")
 @Route(value = "admin/enterprise", layout = MainLayout.class)
 public class EnterpriseAdministrationCentreView extends PlatformAdminViewBase {
 
@@ -81,7 +81,7 @@ public class EnterpriseAdministrationCentreView extends PlatformAdminViewBase {
                 .set("margin-top", "var(--lumo-space-m)");
 
         summaryCard.add(
-                new H3("SupplyGraph Enterprise Platform Status"),
+                new H3("ORBIX Enterprise Platform Status"),
                 new Span("• Hexagonal Architecture Isolation: Verified"),
                 new Span("• Pure Domain Zero-Dependency Integrity: Verified"),
                 new Span("• ConcurGuard Conflict Avoidance Protocol: Active"),

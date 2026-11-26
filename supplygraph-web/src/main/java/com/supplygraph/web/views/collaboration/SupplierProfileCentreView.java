@@ -15,7 +15,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "portal/profile", layout = MainLayout.class)
-@PageTitle("Supplier Profile & Capabilities | SupplyGraph")
+@PageTitle("Supplier Profile & Capabilities | ORBIX")
 public class SupplierProfileCentreView extends CollaborationViewBase {
 
     private final SupplierPortalService portalService;

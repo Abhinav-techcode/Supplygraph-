@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @Route(value = "sustainability/carbon", layout = MainLayout.class)
-@PageTitle("Carbon Footprint Dashboard | SupplyGraph")
+@PageTitle("Carbon Footprint Dashboard | ORBIX")
 public class CarbonFootprintDashboardView extends SustainabilityViewBase {
 
     private final CarbonAccountingService carbonService;

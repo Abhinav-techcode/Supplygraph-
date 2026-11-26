@@ -21,7 +21,7 @@ import com.vaadin.flow.router.Route;
 import java.util.*;
 
 @Route(value = "execution-reconciliation", layout = MainLayout.class)
-@PageTitle("Reconciliation Workspace | SupplyGraph")
+@PageTitle("Reconciliation Workspace | ORBIX")
 public class ReconciliationWorkspaceView extends ExecutionViewBase {
     record Row(ExecutionWorkflow workflow, ExecutionTask task) {}
 

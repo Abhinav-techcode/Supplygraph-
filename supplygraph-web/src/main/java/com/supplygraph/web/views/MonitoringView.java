@@ -31,7 +31,7 @@ import java.util.function.ToDoubleFunction;
 
 /** Live system monitor: is the website healthy right now, how is it performing, what went wrong recently. Refreshes itself every 5 seconds. */
 @Route(value = "monitoring", layout = MainLayout.class)
-@PageTitle("System monitor | SupplyGraph")
+@PageTitle("System monitor | ORBIX")
 public class MonitoringView extends VerticalLayout {
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
 

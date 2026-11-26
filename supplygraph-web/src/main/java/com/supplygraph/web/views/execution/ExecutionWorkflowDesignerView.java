@@ -23,7 +23,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "execution-designer", layout = MainLayout.class)
-@PageTitle("Execution Workflow Designer | SupplyGraph")
+@PageTitle("Execution Workflow Designer | ORBIX")
 public class ExecutionWorkflowDesignerView extends ExecutionViewBase {
     private final RecoveryPlanConversionService conversion;
     private final ComboBox<RecoveryPlan> planBox = new ComboBox<>("Approved plan");

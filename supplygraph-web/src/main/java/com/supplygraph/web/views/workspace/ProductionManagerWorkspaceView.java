@@ -17,7 +17,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "workspace/production", layout = MainLayout.class)
-@PageTitle("Production Manager Workspace | SupplyGraph")
+@PageTitle("Production Manager Workspace | ORBIX")
 public class ProductionManagerWorkspaceView extends WorkspaceViewBase {
 
     private final ProductionPlanningService productionService;

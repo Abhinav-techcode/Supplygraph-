@@ -16,7 +16,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "planning/inventory", layout = MainLayout.class)
-@PageTitle("Inventory Optimization Centre | SupplyGraph")
+@PageTitle("Inventory Optimization Centre | ORBIX")
 public class InventoryOptimizationCentreView extends PlanningViewBase {
 
     public InventoryOptimizationCentreView(MultiEchelonInventoryService inventoryService) {

@@ -25,7 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 
 @Route(value = "what-if-workspace", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: What-If Scenario Workspace")
+@PageTitle("ORBIX :: What-If Scenario Workspace")
 public class WhatIfScenarioWorkspaceView extends VerticalLayout {
 
     private final WhatIfAnalysisService whatIfService;

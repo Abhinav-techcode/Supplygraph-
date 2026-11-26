@@ -24,7 +24,7 @@ import com.vaadin.flow.router.Route;
 import java.util.ArrayList;
 import java.util.List;
 
-@PageTitle("API Developer Centre | SupplyGraph")
+@PageTitle("API Developer Centre | ORBIX")
 @Route(value = "admin/api", layout = MainLayout.class)
 public class ApiDeveloperCentreView extends PlatformAdminViewBase {
 
@@ -54,7 +54,7 @@ public class ApiDeveloperCentreView extends PlatformAdminViewBase {
                 .set("box-shadow", "var(--lumo-box-shadow-xs)")
                 .set("margin-top", "var(--lumo-space-l)");
 
-        docCard.add(new H3("SupplyGraph External Integration API"));
+        docCard.add(new H3("ORBIX External Integration API"));
         docCard.add(new Span("Authenticate HTTP requests using the Authorization header with a Bearer token:"));
         Pre curlExample = new Pre(
                 "curl -X GET \"https://api.supplygraph.internal/api/v1/twin/nodes\" \\\n" +

@@ -18,7 +18,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "synchronization", layout = MainLayout.class)
-@PageTitle("Synchronization Centre | SupplyGraph")
+@PageTitle("Synchronization Centre | ORBIX")
 public class SynchronizationCentreView extends IntegrationViewBase {
     private final ConnectorRegistryService registry;
     private final ConnectorExecutionService executions;

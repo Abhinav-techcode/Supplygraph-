@@ -42,7 +42,7 @@ import java.util.*;
  * Every number comes from running the simulation engine on the current digital twin.
  */
 @Route(value = "simulation", layout = MainLayout.class)
-@PageTitle("Business Simulation | SupplyGraph")
+@PageTitle("Business Simulation | ORBIX")
 public class SimulationWorkspaceView extends VerticalLayout implements com.vaadin.flow.router.BeforeEnterObserver {
     private static final String[] COLOURS = {"#6b7280", "#2563eb", "#16a34a", "#d97706", "#9333ea", "#dc2626"};
 

@@ -34,7 +34,7 @@ import java.util.List;
  * and SLA violation probabilities across thousands of pseudo-random replications.
  */
 @Route(value = "monte-carlo", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Monte Carlo Uncertainty Analysis")
+@PageTitle("ORBIX :: Monte Carlo Uncertainty Analysis")
 public class MonteCarloWorkspaceView extends VerticalLayout {
 
     private final DisruptionApplicationService disruptionService;

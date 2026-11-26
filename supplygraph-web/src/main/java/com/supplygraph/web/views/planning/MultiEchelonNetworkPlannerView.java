@@ -15,7 +15,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "planning/network", layout = MainLayout.class)
-@PageTitle("Multi-Echelon Network Planner | SupplyGraph")
+@PageTitle("Multi-Echelon Network Planner | ORBIX")
 public class MultiEchelonNetworkPlannerView extends PlanningViewBase {
 
     private final SupplyChainNetworkPlanningService networkService;

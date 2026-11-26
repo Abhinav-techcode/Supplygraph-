@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Route(value = "benchmark-dashboard", layout = MainLayout.class)
-@PageTitle("SupplyGraph :: Empirical Benchmark Dashboard")
+@PageTitle("ORBIX :: Empirical Benchmark Dashboard")
 public class BenchmarkComparisonDashboardView extends VerticalLayout {
 
     public record BaselineSummaryRow(

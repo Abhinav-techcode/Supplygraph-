@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 @Route(value = "integration-security", layout = MainLayout.class)
-@PageTitle("Integration Security & Audit | SupplyGraph")
+@PageTitle("Integration Security & Audit | ORBIX")
 public class IntegrationSecurityAuditView extends IntegrationViewBase {
     private static final Set<String> ACTIONS = Set.of("CONNECTOR_REGISTERED", "CONNECTOR_CONFIGURED", "CONNECTOR_ACTIVATED", "CONNECTOR_DEACTIVATED",
             "CONNECTOR_EXECUTED", "CONNECTOR_EXECUTION_RETRIED", "EVENT_REPLAYED", "RECONCILIATION_RESOLVED", "FIELD_POLICY_CHANGED", "WEBHOOK_REJECTED");

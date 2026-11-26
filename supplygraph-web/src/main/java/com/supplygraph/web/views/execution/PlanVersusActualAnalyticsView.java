@@ -20,7 +20,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "plan-vs-actual", layout = MainLayout.class)
-@PageTitle("Plan-versus-Actual Analytics | SupplyGraph")
+@PageTitle("Plan-versus-Actual Analytics | ORBIX")
 public class PlanVersusActualAnalyticsView extends ExecutionViewBase {
     private final ClosedLoopService closedLoop;
     private final ExecutionAdvisoryService advisory;

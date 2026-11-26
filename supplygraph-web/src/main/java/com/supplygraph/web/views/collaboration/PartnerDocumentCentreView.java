@@ -21,7 +21,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "collaboration/documents", layout = MainLayout.class)
-@PageTitle("Partner Document Exchange & Vault | SupplyGraph")
+@PageTitle("Partner Document Exchange & Vault | ORBIX")
 public class PartnerDocumentCentreView extends CollaborationViewBase {
 
     private final PartnerDocumentExchangeService docService;

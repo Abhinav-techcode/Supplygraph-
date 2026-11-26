@@ -22,7 +22,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Route(value = "portal/deliveries", layout = MainLayout.class)
-@PageTitle("Delivery Confirmation & ASNs | SupplyGraph")
+@PageTitle("Delivery Confirmation & ASNs | ORBIX")
 public class DeliveryConfirmationCentreView extends CollaborationViewBase {
 
     private final OrderCollaborationService orderService;

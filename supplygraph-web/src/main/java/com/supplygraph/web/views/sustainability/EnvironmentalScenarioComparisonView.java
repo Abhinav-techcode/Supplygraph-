@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Route(value = "sustainability/scenarios", layout = MainLayout.class)
-@PageTitle("Environmental Scenario Comparison | SupplyGraph")
+@PageTitle("Environmental Scenario Comparison | ORBIX")
 public class EnvironmentalScenarioComparisonView extends SustainabilityViewBase {
 
     private final EnvironmentalScenarioService scenarioService;

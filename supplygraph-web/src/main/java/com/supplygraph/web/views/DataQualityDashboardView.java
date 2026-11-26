@@ -23,7 +23,7 @@ import com.vaadin.flow.router.Route;
 import java.util.Optional;
 
 @Route(value = "data-quality", layout = MainLayout.class)
-@PageTitle("Data Quality Dashboard | SupplyGraph")
+@PageTitle("Data Quality Dashboard | ORBIX")
 public class DataQualityDashboardView extends VerticalLayout {
 
     private final DataQualityEngineService qualityService;

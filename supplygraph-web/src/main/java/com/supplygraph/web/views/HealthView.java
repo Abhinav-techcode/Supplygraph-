@@ -20,7 +20,7 @@ import java.time.Duration;
  * Enterprise System Health, Runtime Diagnostics & Security Hardening Observability View.
  */
 @Route(value = "health", layout = MainLayout.class)
-@PageTitle("System Health & Security Diagnostics | SupplyGraph")
+@PageTitle("System Health & Security Diagnostics | ORBIX")
 public class HealthView extends VerticalLayout {
 
     private final TokenBucketRateLimiter rateLimiter;
@@ -35,7 +35,7 @@ public class HealthView extends VerticalLayout {
         H2 header = new H2("System Health, Runtime & Security Diagnostics");
         header.getStyle().set("margin-bottom", "var(--lumo-space-xs)");
 
-        Paragraph intro = new Paragraph("Operational readiness, rate-limiting capacity, and enterprise security indicators for the SupplyGraph platform.");
+        Paragraph intro = new Paragraph("Operational readiness, rate-limiting capacity, and enterprise security indicators for the ORBIX platform.");
         intro.getStyle().set("color", "var(--lumo-secondary-text-color)");
 
         VerticalLayout diagnosticsCard = createDiagnosticsCard();

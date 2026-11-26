@@ -15,7 +15,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "dead-letters", layout = MainLayout.class)
-@PageTitle("Dead-Letter Management | SupplyGraph")
+@PageTitle("Dead-Letter Management | ORBIX")
 public class DeadLetterManagementView extends IntegrationViewBase {
     private final OutboxService outbox;
     private final Grid<OutboxEvent> grid = new Grid<>();

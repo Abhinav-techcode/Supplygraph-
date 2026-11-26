@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Route(value = "execution-acknowledgements", layout = MainLayout.class)
-@PageTitle("External Acknowledgement Monitor | SupplyGraph")
+@PageTitle("External Acknowledgement Monitor | ORBIX")
 public class ExternalAcknowledgementMonitorView extends ExecutionViewBase {
     record Row(ExecutionWorkflow workflow, ExecutionTask task) {}
 

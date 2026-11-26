@@ -19,7 +19,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "collaboration/rfq/compare", layout = MainLayout.class)
-@PageTitle("Quotation Comparison & Tender Award | SupplyGraph")
+@PageTitle("Quotation Comparison & Tender Award | ORBIX")
 public class QuotationComparisonDashboardView extends CollaborationViewBase {
 
     private final RfqCollaborationService rfqService;

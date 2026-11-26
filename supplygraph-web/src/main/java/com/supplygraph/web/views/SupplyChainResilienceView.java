@@ -22,7 +22,7 @@ import com.vaadin.flow.router.Route;
 import java.util.Optional;
 
 @Route(value = "resilience-analytics", layout = MainLayout.class)
-@PageTitle("Supply Chain Resilience Analytics | SupplyGraph")
+@PageTitle("Supply Chain Resilience Analytics | ORBIX")
 public class SupplyChainResilienceView extends VerticalLayout {
 
     private final SupplyChainResilienceService resilienceService;

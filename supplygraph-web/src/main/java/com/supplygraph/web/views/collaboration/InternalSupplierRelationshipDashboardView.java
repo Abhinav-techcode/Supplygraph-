@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Route(value = "collaboration/suppliers", layout = MainLayout.class)
-@PageTitle("Supplier Relationship Management (SRM) | SupplyGraph")
+@PageTitle("Supplier Relationship Management (SRM) | ORBIX")
 public class InternalSupplierRelationshipDashboardView extends CollaborationViewBase {
 
     public record SrmPartnerRow(

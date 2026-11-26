@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-@PageTitle("User & Role Governance | SupplyGraph")
+@PageTitle("User & Role Governance | ORBIX")
 @Route(value = "admin/users", layout = MainLayout.class)
 public class UserRoleAdministrationView extends PlatformAdminViewBase {
 

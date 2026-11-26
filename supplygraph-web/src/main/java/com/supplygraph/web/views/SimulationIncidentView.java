@@ -41,7 +41,7 @@ import java.util.List;
  * generating time-series inventory, capacity, and service-level trajectories.
  */
 @Route(value = "simulation/incident", layout = MainLayout.class)
-@PageTitle("Simulation of a recorded incident | SupplyGraph")
+@PageTitle("Simulation of a recorded incident | ORBIX")
 public class SimulationIncidentView extends VerticalLayout {
 
     private final DisruptionApplicationService disruptionService;

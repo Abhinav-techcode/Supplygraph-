@@ -22,7 +22,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Route(value = "collaboration/rfq", layout = MainLayout.class)
-@PageTitle("RFQ Management Workspace | SupplyGraph")
+@PageTitle("RFQ Management Workspace | ORBIX")
 public class RfqManagementWorkspaceView extends CollaborationViewBase {
 
     private final RfqCollaborationService rfqService;

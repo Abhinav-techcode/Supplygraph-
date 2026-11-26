@@ -18,7 +18,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "execution-approvals", layout = MainLayout.class)
-@PageTitle("Execution Approval Centre | SupplyGraph")
+@PageTitle("Execution Approval Centre | ORBIX")
 public class ExecutionApprovalCentreView extends ExecutionViewBase {
     private final ExecutionApprovalService approvals;
     private final Grid<ExecutionWorkflow> grid = new Grid<>();

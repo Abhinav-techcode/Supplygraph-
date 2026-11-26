@@ -20,7 +20,7 @@ import com.vaadin.flow.router.Route;
 
 /** Step 1 of any real use: put your own facilities, lanes and stock into the digital twin. */
 @Route(value = "network-import", layout = MainLayout.class)
-@PageTitle("Add your data | SupplyGraph")
+@PageTitle("Add your data | ORBIX")
 public class SupplyChainImportView extends VerticalLayout {
     static final String FACILITIES = "id,name,type,location,tier,capacity\n"
             + "SUP-A,Resin Works Oslo,SUPPLIER,Oslo NO,1,\n"
@@ -41,7 +41,7 @@ public class SupplyChainImportView extends VerticalLayout {
         setPadding(true);
         setMaxWidth("1100px");
         getStyle().set("margin", "0 auto");
-        add(new H2("Add your data"), new Paragraph("Describe your supply chain in four small tables. SupplyGraph validates everything first and saves nothing unless every line is correct. "
+        add(new H2("Add your data"), new Paragraph("Describe your supply chain in four small tables. ORBIX validates everything first and saves nothing unless every line is correct. "
                 + "The result becomes the digital twin that the map, impact analysis, agents and simulations work from."));
 
         TextArea fac = area("1 · Facilities (id, name, type, location, tier, capacity)", FACILITIES);
@@ -67,7 +67,7 @@ public class SupplyChainImportView extends VerticalLayout {
         Div panel = new Div();
         panel.addClassName("sg-generator");
         panel.getStyle().set("border", "1px solid var(--lumo-contrast-20pct)").set("border-radius", "8px").set("padding", "16px").set("margin-bottom", "8px");
-        H3 title = new H3("No data yet? Let SupplyGraph create a network for you");
+        H3 title = new H3("No data yet? Let ORBIX create a network for you");
         Paragraph help = new Paragraph("Real city locations, with distances, transit times and freight costs worked out from the coordinates. Company names, capacities and stock levels are invented, "
                 + "and labelled as generated. Loading it replaces the current twin; swap in your own data any time on this page.");
         Select<SyntheticNetworkGenerator.Industry> industry = new Select<>();

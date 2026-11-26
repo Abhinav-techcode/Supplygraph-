@@ -16,7 +16,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
 @Route(value = "planning/inventory/safety-stock", layout = MainLayout.class)
-@PageTitle("Safety Stock Planner | SupplyGraph")
+@PageTitle("Safety Stock Planner | ORBIX")
 public class SafetyStockPlannerView extends PlanningViewBase {
 
     private final MultiEchelonInventoryService inventoryService;

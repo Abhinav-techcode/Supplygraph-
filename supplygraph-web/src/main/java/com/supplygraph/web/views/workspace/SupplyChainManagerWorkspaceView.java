@@ -18,7 +18,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "workspace/planner", layout = MainLayout.class)
-@PageTitle("Supply Chain Manager Workspace | SupplyGraph")
+@PageTitle("Supply Chain Manager Workspace | ORBIX")
 public class SupplyChainManagerWorkspaceView extends WorkspaceViewBase {
 
     private final DemandPlanningService demandService;

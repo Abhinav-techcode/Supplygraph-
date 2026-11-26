@@ -16,7 +16,7 @@ import com.vaadin.flow.router.Route;
 import java.util.List;
 
 @Route(value = "workspace/admin", layout = MainLayout.class)
-@PageTitle("Platform Admin Workspace | SupplyGraph")
+@PageTitle("Platform Admin Workspace | ORBIX")
 public class PlatformAdminWorkspaceView extends WorkspaceViewBase {
 
     private final UserManagementService userService;
